@@ -1,0 +1,78 @@
+:host {
+  display: block;
+}
+
+.map-panel {
+  position: relative;
+  min-height: 420px;
+  overflow: hidden;
+  border: 1px solid #c9c0a9;
+  border-radius: 4px;
+  background: #dfe9dd;
+  box-shadow: 0 22px 70px rgb(29 42 36 / 18%);
+}
+
+.map-container {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  min-height: 420px;
+}
+
+.map-overlay {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  left: 24px;
+  z-index: 2;
+  border: 1px solid rgb(207 197 173 / 86%);
+  border-radius: 4px;
+  background: rgb(255 255 255 / 88%);
+  padding: 20px;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+}
+
+:host ::ng-deep .leaflet-container {
+  font-family: 'Inter', 'Roboto', sans-serif;
+}
+
+:host ::ng-deep .leaflet-control-attribution {
+  border-radius: 4px 0 0;
+  background: rgb(255 255 255 / 86%);
+  color: #4b5a52;
+  font-size: 11px;
+}
+
+:host ::ng-deep .sale-marker {
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: #0f5a3d;
+  box-shadow: 0 10px 24px rgb(15 90 61 / 34%);
+  rotate: -45deg;
+}
+
+:host ::ng-deep .sale-marker span {
+  position: absolute;
+  inset: 7px;
+  border-radius: 999px;
+  background: #f0c65a;
+}
+
+:host ::ng-deep .leaflet-popup-content-wrapper {
+  border-radius: 4px;
+  color: #1d2a24;
+}
+
+@media (max-width: 640px) {
+  .map-panel,
+  .map-container {
+    min-height: 340px;
+  }
+
+  .map-overlay {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+  }
+}
