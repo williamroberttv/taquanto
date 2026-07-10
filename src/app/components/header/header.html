@@ -1,0 +1,27 @@
+<header class="border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
+  <div class="mx-auto flex max-w-5xl items-center justify-between gap-6 px-5 py-4">
+    <div class="inline-flex items-center gap-3" aria-label="TaQuanto">
+      <span
+        class="flex h-9 w-9 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900 font-['Roboto'] text-sm font-semibold text-zinc-50"
+      >
+        TQ
+      </span>
+      <span class="font-['Roboto'] text-base font-semibold text-zinc-50">TaQuanto</span>
+    </div>
+
+    <nav aria-label="Navegacao principal">
+      <ul class="flex items-center gap-1 sm:gap-2">
+        @for (item of navigation; track item) {
+          <li>
+            <button
+              type="button"
+              class="rounded-md px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-50"
+            >
+              {{ item }}
+            </button>
+          </li>
+        }
+      </ul>
+    </nav>
+  </div>
+</header>

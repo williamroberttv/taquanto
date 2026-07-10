@@ -1,0 +1,102 @@
+<div class="min-h-dvh bg-[#f7f4ea] font-['Inter'] text-[#1d2a24]">
+  <app-header />
+
+  <main>
+    <section class="relative overflow-hidden border-b border-[#d8d0bd] px-5 py-12 sm:py-16 lg:py-20">
+      <div class="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.92fr_1.08fr]">
+        <div class="max-w-2xl">
+          <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#6d5a32]">
+            Plataforma em construção
+          </p>
+          <h1 class="mt-4 font-['Roboto'] text-4xl font-bold leading-tight text-[#10221b] sm:text-6xl">
+            Consulte preços de produtos vendidos em Alagoas.
+          </h1>
+          <p class="mt-6 max-w-xl text-lg leading-8 text-[#4b5a52]">
+            O TaQuanto está sendo criado para reunir valores registrados em NF-e da SEFAZ AL e apresentar preço, estabelecimento e localização aproximada em uma consulta simples.
+          </p>
+
+          <div class="mt-8 flex flex-wrap gap-3" aria-label="Resumo do projeto">
+            @for (metric of metrics; track metric.label) {
+              <div class="rounded-sm border border-[#cfc5ad] bg-white/70 px-4 py-3 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#756747]">{{ metric.label }}</p>
+                <p class="mt-1 font-['Roboto'] text-lg font-semibold text-[#10221b]">{{ metric.value }}</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="map-panel">
+          <div
+            #mapContainer
+            class="map-container"
+            role="img"
+            aria-label="Mapa de Maceió com uma prévia de estabelecimentos que tiveram vendas registradas."
+          ></div>
+          <div class="map-overlay">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-[#6d5a32]">Prévia do mapa</p>
+            <p class="mt-2 font-['Roboto'] text-2xl font-semibold text-[#10221b]">Vendas recentes por região</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="px-5 py-12 sm:py-16" aria-labelledby="como-funciona">
+      <div class="mx-auto max-w-6xl">
+        <div class="max-w-2xl">
+          <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#6d5a32]">Como o app deve funcionar</p>
+          <h2 id="como-funciona" class="mt-3 font-['Roboto'] text-3xl font-bold text-[#10221b] sm:text-4xl">
+            Da nota fiscal para uma consulta mais clara de preço.
+          </h2>
+        </div>
+
+        <div class="mt-8 grid gap-4 md:grid-cols-3">
+          @for (feature of features; track feature.title) {
+            <article class="rounded-sm border border-[#d8d0bd] bg-white p-6 shadow-sm">
+              <h3 class="font-['Roboto'] text-xl font-semibold text-[#10221b]">{{ feature.title }}</h3>
+              <p class="mt-3 leading-7 text-[#4b5a52]">{{ feature.description }}</p>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="border-y border-[#d8d0bd] bg-[#e9f0e7] px-5 py-12 sm:py-16" aria-labelledby="ultimas-vendas">
+      <div class="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#55705a]">Em breve</p>
+          <h2 id="ultimas-vendas" class="mt-3 font-['Roboto'] text-3xl font-bold text-[#10221b] sm:text-4xl">
+            Uma visão direta das últimas vendas encontradas.
+          </h2>
+          <p class="mt-4 leading-7 text-[#4b5a52]">
+            A primeira versão deve ajudar a comparar preço, local e estabelecimento sem transformar a consulta em um relatório técnico.
+          </p>
+        </div>
+
+        <div class="overflow-hidden rounded-sm border border-[#cbd8c8] bg-white shadow-sm">
+          <div class="grid grid-cols-[1fr_auto] gap-4 border-b border-[#e2e8df] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#667465] sm:grid-cols-[1.2fr_0.7fr_1fr]">
+            <span>Produto</span>
+            <span>Valor</span>
+            <span class="hidden sm:block">Estabelecimento</span>
+          </div>
+          <div class="divide-y divide-[#e2e8df]">
+            @for (sale of salesPreview; track sale.product) {
+              <article class="grid grid-cols-[1fr_auto] gap-4 px-4 py-4 sm:grid-cols-[1.2fr_0.7fr_1fr] sm:items-center">
+                <div>
+                  <h3 class="font-semibold text-[#10221b]">{{ sale.product }}</h3>
+                  <p class="mt-1 text-sm text-[#617067] sm:hidden">{{ sale.place }} - {{ sale.area }}</p>
+                </div>
+                <p class="font-['Roboto'] text-lg font-bold text-[#0f5a3d]">{{ sale.price }}</p>
+                <p class="hidden text-sm leading-6 text-[#4b5a52] sm:block">
+                  {{ sale.place }}<br />
+                  <span class="text-[#6c7a71]">{{ sale.area }}</span>
+                </p>
+              </article>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <app-footer />
+</div>
