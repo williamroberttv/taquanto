@@ -25,9 +25,10 @@ describe('Home', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const text = compiled.textContent ?? '';
 
-    expect(text).toContain('Consulte preços de produtos vendidos em Alagoas.');
-    expect(text).toContain('SEFAZ AL');
-    expect(text).toContain('Prévia do mapa');
-    expect(text).toContain('Preços recentes');
+    expect(text).toContain('Encontre melhores preços antes de comprar.');
+    expect(text).toContain('Menos tempo pesquisando, mais chance de economizar.');
+    expect(text).toContain('Buscar produto');
+    expect(text).toContain('Prévia no mapa');
+    expect(text).toContain('Compare preços em Alagoas');
   });
 });

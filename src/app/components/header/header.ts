@@ -1,5 +1,10 @@
 import { Component } from '@angular/core';
 
+interface NavigationItem {
+  label: string;
+  href: string;
+}
+
 @Component({
   selector: 'app-header',
   host: {
@@ -8,5 +13,9 @@ import { Component } from '@angular/core';
   templateUrl: './header.html',
 })
 export class Header {
-  protected readonly navigation = ['Sobre', 'Pesquisar', 'Contato'];
+  protected readonly navigation: NavigationItem[] = [
+    { label: 'Como funciona', href: '#como-funciona' },
+    { label: 'Vantagens', href: '#dados' },
+    { label: 'Buscar', href: '#pesquisa' },
+  ];
 }

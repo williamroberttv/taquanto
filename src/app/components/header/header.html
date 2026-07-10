@@ -1,24 +1,24 @@
-<header class="border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
-  <div class="mx-auto flex max-w-5xl items-center justify-between gap-6 px-5 py-4">
-    <div class="inline-flex items-center gap-3" aria-label="TaQuanto">
-      <span
-        class="flex h-9 w-9 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900 font-['Roboto'] text-sm font-semibold text-zinc-50"
-      >
-        TQ
-      </span>
-      <span class="font-['Roboto'] text-base font-semibold text-zinc-50">TaQuanto</span>
-    </div>
+<header class="sticky top-0 z-20 border-b border-[#e0e0e5] bg-white/88 backdrop-blur-md">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
+    <a
+      href="#topo"
+      class="inline-flex min-h-11 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6c47ff]"
+      aria-label="TaQuanto, voltar ao início"
+    >
+      <span class="flex h-9 w-9 items-center justify-center rounded-md bg-[#6c47ff] font-semibold text-white">TQ</span>
+      <span class="font-semibold text-[#131316]">TaQuanto</span>
+    </a>
 
-    <nav aria-label="Navegacao principal">
-      <ul class="flex items-center gap-1 sm:gap-2">
-        @for (item of navigation; track item) {
+    <nav class="hidden sm:block" aria-label="Navegação principal">
+      <ul class="flex items-center gap-1">
+        @for (item of navigation; track item.href) {
           <li>
-            <button
-              type="button"
-              class="rounded-md px-3 py-2 text-sm text-zinc-400 transition hover:bg-zinc-900 hover:text-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-50"
+            <a
+              [href]="item.href"
+              class="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-[#747686] transition hover:bg-[#f7f7f8] hover:text-[#131316] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6c47ff]"
             >
-              {{ item }}
-            </button>
+              {{ item.label }}
+            </a>
           </li>
         }
       </ul>
