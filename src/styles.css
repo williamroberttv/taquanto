@@ -4,9 +4,16 @@
 
 :root {
   font-family: 'Inter', 'Roboto', sans-serif;
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   font-family: 'Inter', 'Roboto', sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
 }

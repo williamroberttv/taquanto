@@ -1,14 +1,10 @@
-import { afterNextRender, Component, DestroyRef, ElementRef, inject, viewChild } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { afterNextRender, Component, DestroyRef, ElementRef, PLATFORM_ID, inject, viewChild } from '@angular/core';
 import type * as Leaflet from 'leaflet';
 import { Footer } from '../../components/footer/footer';
 import { Header } from '../../components/header/header';
 
-interface Metric {
-  label: string;
-  value: string;
-}
-
-interface Feature {
+interface Step {
   title: string;
   description: string;
 }
@@ -18,6 +14,7 @@ interface SalePreview {
   price: string;
   place: string;
   area: string;
+  time: string;
   coordinates: [number, number];
 }
 
@@ -29,27 +26,22 @@ interface SalePreview {
 })
 export class Home {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly mapContainer = viewChild<ElementRef<HTMLElement>>('mapContainer');
   private map?: Leaflet.Map;
 
-  protected readonly metrics: Metric[] = [
-    { label: 'Base inicial', value: 'SEFAZ AL' },
-    { label: 'Consulta', value: 'últimas NF-e' },
-    { label: 'Status', value: 'em construção' },
-  ];
-
-  protected readonly features: Feature[] = [
+  protected readonly steps: Step[] = [
     {
-      title: 'Preços recentes',
-      description: 'Consulte valores praticados em vendas registradas em notas fiscais eletrônicas.',
+      title: 'Procure o produto',
+      description: 'Digite o nome do item ou use o código de barras quando tiver a embalagem por perto.',
     },
     {
-      title: 'Estabelecimentos',
-      description: 'Veja onde a venda foi registrada e compare referencias entre mercados, farmácias e lojas.',
+      title: 'Compare preços reais',
+      description: 'Veja quanto outras pessoas pagaram recentemente e onde esses valores apareceram.',
     },
     {
-      title: 'Mapa por localização',
-      description: 'Visualize pontos aproximados para entender onde os valores foram encontrados.',
+      title: 'Escolha melhor onde comprar',
+      description: 'Encontre uma referência antes de sair de casa e evite pagar mais caro por falta de informação.',
     },
   ];
 
@@ -59,6 +51,7 @@ export class Home {
       price: 'R$ 8,79',
       place: 'Mercado Ponta Verde',
       area: 'Maceió',
+      time: 'há 2 h',
       coordinates: [-9.6621, -35.7047],
     },
     {
@@ -66,20 +59,24 @@ export class Home {
       price: 'R$ 5,49',
       place: 'Atacarejo Farol',
       area: 'Maceió',
+      time: 'há 4 h',
       coordinates: [-9.6464, -35.7351],
     },
     {
       product: 'Arroz 1 kg',
       price: 'R$ 6,29',
-      place: 'Supermercado Jatiuca',
+      place: 'Supermercado Jatiúca',
       area: 'Maceió',
+      time: 'hoje',
       coordinates: [-9.6501, -35.7012],
     },
   ];
 
   constructor() {
     afterNextRender(() => {
-      void this.initializeMap();
+      if (isPlatformBrowser(this.platformId)) {
+        void this.initializeMap();
+      }
     });
 
     this.destroyRef.onDestroy(() => {
@@ -108,14 +105,19 @@ export class Home {
       zoom: 13,
       zoomControl: false,
       scrollWheelZoom: false,
+      dragging: false,
     });
 
-    leaflet
-      .tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 19,
-      })
-      .addTo(this.map);
+    const tileLayer = leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19,
+    });
+
+    tileLayer.addTo(this.map);
+
+    requestAnimationFrame(() => {
+      this.map?.invalidateSize();
+    });
 
     for (const sale of this.salesPreview) {
       leaflet

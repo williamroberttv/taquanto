@@ -1,59 +1,68 @@
-# Taquanto
+# TaQuanto Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.6.
+TaQuanto is a public price-consultation frontend for Alagoas. It presents product-price information from the TaQuanto API, which is the separate backend responsible for integrating with the official Economiza Alagoas/SEFAZ-AL API.
 
-## Development server
+This repository must not call SEFAZ directly and must not expose SEFAZ credentials in browser code.
 
-To start a local development server, run:
+## Current State
 
-```bash
-ng serve
-```
+- Angular 22 frontend with SSR/prerender configured.
+- Public landing page at `/`.
+- Static preview content only; real search is not connected yet.
+- Leaflet is dynamically imported after browser render for the landing map preview.
+- Tailwind CSS is available through `src/styles.css`.
+- Unit tests run through Angular's unit-test builder with Vitest installed.
+- Production Docker image builds the Angular app and runs the SSR server on port `4000`.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Not implemented yet: TaQuanto API integration, product search route, authentication, saved searches, alerts, consumer pages, and personalized history.
 
-## Code scaffolding
+## Architecture Rules
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- Public pages use SSR/prerender for fast first load and shareable/indexable content.
+- Authenticated pages should behave as SPA views after login is available.
+- The frontend talks to API TaQuanto, never directly to Economiza Alagoas/SEFAZ-AL.
+- Basic product search must stay public; login is only for future personal features.
+- Map coordinates are optional. If the API does not provide coordinates, show textual location and do not invent map points.
+- Prices are historical NFC-e sale records, not guaranteed offers or promotions.
 
-```bash
-ng generate component component-name
-```
+## Design Direction
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+The UI follows `DESIGN.md`, the Clerk-inspired design notes currently used for this project: white and cool gray surfaces, polished embedded-product feel, restrained purple primary actions, Inter typography, compact cards, clear focus states, and WCAG AA contrast.
 
-```bash
-ng generate --help
-```
+TaQuanto-specific content should stay grounded in price discovery: product, value, establishment, location, and sale recency. Avoid marketing copy that implies discounts, offers, or official SEFAZ ownership.
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Development
 
 ```bash
-ng test
+npm install
+npm start
 ```
 
-## Running end-to-end tests
+Open `http://localhost:4200/`.
 
-For end-to-end (e2e) testing, run:
+## Build
 
 ```bash
-ng e2e
+npm run build
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Tests
 
-## Additional Resources
+```bash
+npm test
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Production Container
+
+```bash
+docker build -f ci/prod/Dockerfile -t taquanto-frontend .
+docker run --rm -p 4000:4000 taquanto-frontend
+```
+
+Angular SSR validates the request host. For a real domain, pass the allowed host explicitly:
+
+```bash
+docker run --rm -p 4000:4000 -e NG_ALLOWED_HOSTS=taquanto.com.br taquanto-frontend
+```
+
+Use a comma-separated list for multiple domains. Do not use `*` unless another trusted layer validates `Host` and `X-Forwarded-Host`.
