@@ -24,19 +24,12 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles.css"
-            ],
-            "allowedCommonJsDependencies": [
-              "leaflet"
-            ],
+            "styles": ["src/styles.css"],
+            "allowedCommonJsDependencies": ["leaflet"],
             "server": "src/main.server.ts",
             "outputMode": "server",
             "security": {
-              "allowedHosts": [
-                "localhost",
-                "127.0.0.1"
-              ]
+              "allowedHosts": ["localhost", "127.0.0.1"]
             },
             "ssr": {
               "entry": "src/server.ts"
@@ -79,7 +72,21 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "coverageThresholds": {
+              "statements": 75,
+              "branches": 75,
+              "functions": 75,
+              "lines": 75
+            }
+          }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+          }
         }
       }
     }
