@@ -8,7 +8,7 @@ on:
 jobs:
   ci:
     name: Lint and Tests
-    runs_on: ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
