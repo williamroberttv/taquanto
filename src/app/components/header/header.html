@@ -1,27 +1,55 @@
-<header class="sticky top-0 z-20 border-b border-[#e0e0e5] bg-white/88 backdrop-blur-md">
+<header class="sticky top-0 z-20 border-b border-[var(--tq-border)] bg-[color-mix(in_srgb,var(--tq-canvas)_88%,transparent)] backdrop-blur-md">
   <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
     <a
-      href="#topo"
+      href="/"
       class="inline-flex min-h-11 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6c47ff]"
       aria-label="TaQuanto, voltar ao início"
     >
       <span class="flex h-9 w-9 items-center justify-center rounded-md bg-[#6c47ff] font-semibold text-white">TQ</span>
-      <span class="font-semibold text-[#131316]">TaQuanto</span>
+      <span class="font-semibold text-[var(--tq-ink)]">TaQuanto</span>
     </a>
 
-    <nav class="hidden sm:block" aria-label="Navegação principal">
-      <ul class="flex items-center gap-1">
-        @for (item of navigation; track item.href) {
-          <li>
-            <a
-              [href]="item.href"
-              class="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-[#747686] transition hover:bg-[#f7f7f8] hover:text-[#131316] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6c47ff]"
-            >
-              {{ item.label }}
-            </a>
-          </li>
+    <div class="flex items-center gap-2">
+      <nav class="hidden sm:block" aria-label="Navegação principal">
+        <ul class="flex items-center gap-1">
+          @for (item of navigation; track item.href) {
+            <li>
+              <a
+                [href]="item.href"
+                class="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-[var(--tq-muted)] transition hover:bg-[var(--tq-surface)] hover:text-[var(--tq-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6c47ff]"
+              >
+                {{ item.label }}
+              </a>
+            </li>
+          }
+        </ul>
+      </nav>
+
+      <button
+        type="button"
+        class="inline-flex h-11 w-11 items-center justify-center rounded-md border border-[var(--tq-border)] bg-[var(--tq-canvas)] text-[var(--tq-ink)] transition hover:bg-[var(--tq-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6c47ff]"
+        [attr.aria-label]="themeToggleLabel()"
+        [attr.title]="themeToggleLabel()"
+        (click)="toggleTheme()"
+      >
+        @if (isDark()) {
+          <svg class="h-5 w-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2" />
+            <path d="M12 20v2" />
+            <path d="m4.93 4.93 1.41 1.41" />
+            <path d="m17.66 17.66 1.41 1.41" />
+            <path d="M2 12h2" />
+            <path d="M20 12h2" />
+            <path d="m6.34 17.66-1.41 1.41" />
+            <path d="m19.07 4.93-1.41 1.41" />
+          </svg>
+        } @else {
+          <svg class="h-5 w-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3a6 6 0 0 0 9 7.5A9 9 0 1 1 12 3Z" />
+          </svg>
         }
-      </ul>
-    </nav>
+      </button>
+    </div>
   </div>
 </header>

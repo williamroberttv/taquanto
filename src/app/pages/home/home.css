@@ -4,7 +4,7 @@
 
 .hero {
   background:
-    linear-gradient(180deg, rgb(247 247 248 / 84%), rgb(255 255 255 / 96%) 42%, #fff),
+    linear-gradient(180deg, var(--tq-s84), var(--tq-c96) 42%, var(--tq-card)),
     radial-gradient(circle at 74% 8%, rgb(108 71 255 / 12%), transparent 34%);
 }
 
@@ -42,7 +42,6 @@
   width: 20px;
   height: 20px;
   color: #6c47ff;
-  animation: icon-breathe 2.8s ease-in-out infinite;
 }
 
 .step-icon {
@@ -52,14 +51,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: #f7f7f8;
+  background: var(--tq-surface);
   color: #6c47ff;
 }
 
 .step-icon svg {
   width: 23px;
   height: 23px;
-  animation: icon-float 3.2s ease-in-out infinite;
 }
 
 .mini-icon {
@@ -98,10 +96,10 @@
   left: 0;
   z-index: 5;
   width: min(430px, 92%);
-  border: 1px solid #e0e0e5;
+  border: 1px solid var(--tq-border);
   border-radius: 12px;
-  background: rgb(255 255 255 / 90%);
-  box-shadow: 0 16px 48px rgb(0 0 0 / 16%);
+  background: var(--tq-card90);
+  box-shadow: 0 16px 48px var(--tq-elevated-shadow);
   padding: 22px;
 }
 
@@ -110,9 +108,9 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
   align-items: center;
-  border: 1px solid #e0e0e5;
+  border: 1px solid var(--tq-border);
   border-radius: 8px;
-  background: rgb(255 255 255 / 92%);
+  background: var(--tq-card92);
   padding: 14px;
 }
 
@@ -123,10 +121,10 @@
   width: min(520px, 88%);
   height: 470px;
   overflow: hidden;
-  border: 1px solid #e0e0e5;
+  border: 1px solid var(--tq-border);
   border-radius: 12px;
-  background: #f7f7f8;
-  box-shadow: 0 8px 32px rgb(0 0 0 / 12%);
+  background: var(--tq-surface);
+  box-shadow: 0 8px 32px var(--tq-shadow);
 }
 
 .map-fallback {
@@ -135,9 +133,9 @@
   z-index: 2;
   overflow: hidden;
   background:
-    linear-gradient(90deg, rgb(224 224 229 / 70%) 1px, transparent 1px),
-    linear-gradient(0deg, rgb(224 224 229 / 70%) 1px, transparent 1px),
-    #f7f7f8;
+    linear-gradient(90deg, var(--tq-border70) 1px, transparent 1px),
+    linear-gradient(0deg, var(--tq-border70) 1px, transparent 1px),
+    var(--tq-surface);
   background-size: 64px 64px;
   color: #6c47ff;
 }
@@ -168,7 +166,7 @@
   position: absolute;
   width: 24px;
   height: 24px;
-  border: 3px solid #fff;
+  border: 3px solid var(--tq-card);
   border-radius: 50% 50% 50% 0;
   background: #6c47ff;
   box-shadow: 0 10px 24px rgb(108 71 255 / 28%);
@@ -180,7 +178,7 @@
   position: absolute;
   inset: 6px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--tq-card);
 }
 
 .map-pin-one {
@@ -203,16 +201,16 @@
   right: 22px;
   bottom: 22px;
   left: 22px;
-  border: 1px solid #e0e0e5;
+  border: 1px solid var(--tq-border);
   border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 8px 32px rgb(0 0 0 / 12%);
+  background: var(--tq-card);
+  box-shadow: 0 8px 32px var(--tq-shadow);
   padding: 18px;
 }
 
 .map-fallback-card p {
   margin: 0 0 6px;
-  color: #747686;
+  color: var(--tq-muted);
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -223,7 +221,7 @@
   inset: 0;
   z-index: 4;
   pointer-events: none;
-  background: linear-gradient(135deg, rgb(108 71 255 / 18%), transparent 38%, rgb(255 255 255 / 16%));
+  background: linear-gradient(135deg, rgb(108 71 255 / 18%), transparent 38%, var(--tq-card16));
 }
 
 .map-container {
@@ -239,13 +237,13 @@
 
 :host ::ng-deep .leaflet-control-attribution {
   border-radius: 8px 0 0;
-  background: rgb(255 255 255 / 88%);
-  color: #747686;
+  background: var(--tq-card88);
+  color: var(--tq-muted);
   font-size: 11px;
 }
 
 :host ::ng-deep .sale-marker {
-  border: 3px solid #fff;
+  border: 3px solid var(--tq-card);
   border-radius: 50% 50% 50% 0;
   background: #6c47ff;
   box-shadow: 0 10px 24px rgb(108 71 255 / 34%);
@@ -256,12 +254,12 @@
   position: absolute;
   inset: 7px;
   border-radius: 999px;
-  background: #fff;
+  background: var(--tq-card);
 }
 
 :host ::ng-deep .leaflet-popup-content-wrapper {
   border-radius: 8px;
-  color: #131316;
+  color: var(--tq-ink);
 }
 
 @media (max-width: 1023px) {

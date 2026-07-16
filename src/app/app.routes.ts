@@ -6,4 +6,8 @@ export const routes: Routes = [
     path: '',
     component: Home,
   },
+  {
+    path: 'buscar',
+    loadComponent: () => import('./pages/search/search').then((m) => m.SearchPage),
+  },
 ];
