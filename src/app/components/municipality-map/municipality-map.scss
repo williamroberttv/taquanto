@@ -1,0 +1,128 @@
+:host {
+  display: block;
+}
+
+.municipality-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.map-panel {
+  min-width: 0;
+}
+
+.municipality-map {
+  min-height: 25rem;
+  border: 1px solid var(--tq-border);
+  border-radius: 0.75rem;
+  background:
+    radial-gradient(
+      circle at 78% 18%,
+      color-mix(in srgb, #6c47ff 10%, transparent),
+      transparent 34%
+    ),
+    var(--tq-card);
+}
+
+.map-caption {
+  margin: 0.625rem 0 0;
+  color: var(--tq-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.filter-panel {
+  display: grid;
+  align-content: start;
+  gap: 1.25rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--tq-ink);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+select {
+  min-height: 3rem;
+  width: 100%;
+  border: 1px solid var(--tq-border);
+  border-radius: 0.5rem;
+  background: var(--tq-card);
+  color: var(--tq-ink);
+  padding: 0.75rem;
+  font: inherit;
+}
+
+select:focus-visible {
+  outline: 2px solid #6c47ff;
+  outline-offset: 2px;
+}
+
+.selected-city {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  color: var(--tq-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.selected-city span {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 0.2rem;
+  background: #6c47ff;
+}
+
+.map-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+:host ::ng-deep .municipality-map .leaflet-interactive {
+  cursor: pointer;
+}
+
+:host ::ng-deep .municipality-map .leaflet-interactive:focus {
+  outline: 3px solid #27156d;
+  outline-offset: 2px;
+}
+
+:host ::ng-deep .municipality-map .municipality-name {
+  border: 0;
+  border-radius: 0.35rem;
+  background: #27156d;
+  box-shadow: none;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.35rem 0.45rem;
+}
+
+:host ::ng-deep .municipality-map .municipality-name::before {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .municipality-layout {
+    grid-template-columns: minmax(0, 1.55fr) minmax(16rem, 0.75fr);
+    align-items: start;
+  }
+}
+
+@media (max-width: 767px) {
+  .filter-panel {
+    grid-row: 1;
+  }
+
+  .municipality-map {
+    min-height: 21rem;
+  }
+}

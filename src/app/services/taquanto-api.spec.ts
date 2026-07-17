@@ -20,46 +20,37 @@ describe('TaquantoApi', () => {
     http.verify();
   });
 
-  it("requests categories through the configured API base URL", () => {
+  it('requests paginated prices for a municipality and period', () => {
     let response: SearchResponse | undefined;
 
-    api.categories("arroz").subscribe((value) => {
-      response = value;
-    });
-
-    const request = http.expectOne((req) => req.url === "http://localhost:8080/v1/categories");
-    expect(request.request.params.get("query")).toBe("arroz");
-
-    request.flush({
-      query: "arroz",
-      source: "test",
-      results: [],
-      categories: [{ source_sku: "50000000", name: "Alimentos", count: 2 }],
-    });
-
-    expect(response?.categories?.[0]?.source_sku).toBe("50000000");
-  });
-
-  it('requests paginated prices with category', () => {
-    let response: SearchResponse | undefined;
-
-    api.prices('arroz', { category: '50000000', limit: 10, page: 2 }).subscribe((value) => {
-      response = value;
-    });
+    api
+      .prices('arroz', { municipality: '2700300', days: 3, limit: 50, page: 2 })
+      .subscribe((value) => {
+        response = value;
+      });
 
     const request = http.expectOne((req) => req.url === 'http://localhost:8080/v1/prices');
     expect(request.request.params.get('query')).toBe('arroz');
-    expect(request.request.params.get('category')).toBe('50000000');
-    expect(request.request.params.get('limit')).toBe('10');
+    expect(request.request.params.get('municipality')).toBe('2700300');
+    expect(request.request.params.get('days')).toBe('3');
+    expect(request.request.params.get('limit')).toBe('50');
     expect(request.request.params.get('page')).toBe('2');
 
     request.flush({
       query: 'arroz',
       source: 'test',
       results: [],
-      pagination: { page: 2, offset: 10, limit: 10, total: 21 },
+      pagination: {
+        page: 2,
+        page_size: 50,
+        page_records: 1,
+        total_records: 51,
+        total_pages: 2,
+        first_page: false,
+        last_page: true,
+      },
     });
 
-    expect(response?.pagination?.total).toBe(21);
+    expect(response?.pagination.total_records).toBe(51);
   });
 });

@@ -6,53 +6,49 @@ export interface SearchResponse {
   query: string;
   source: string;
   results: PriceRecord[];
-  categories?: CategoryCandidate[];
-  pagination?: Pagination;
+  pagination: Pagination;
 }
 
 export interface Pagination {
   page: number;
-  offset: number;
-  limit: number;
-  total: number;
-}
-
-export interface CategoryCandidate {
-  source_sku: string;
-  name: string;
-  count: number;
+  page_size: number;
+  page_records: number;
+  total_records: number;
+  total_pages: number;
+  first_page: boolean;
+  last_page: boolean;
 }
 
 export interface PriceRecord {
   description: string;
-  barcode: string | null;
-  source_sku: string | null;
-  unit_price_cents: number;
-  unit: string | null;
-  last_sale_cents: number;
-  last_sale_age: string | null;
-  sold_at: string | null;
+  gtin: string;
+  source_product_code: string;
+  declared_value_cents: number;
+  sale_value_cents: number;
+  unit: string;
+  sold_at: string;
   store: Store;
   location: Location;
 }
 
 export interface Store {
   name: string;
-  source_id: string | null;
+  cnpj: string;
 }
 
 export interface Location {
-  latitude: number | string | null;
-  longitude: number | string | null;
-  address: string | null;
-  district: string | null;
-  city: string | null;
-  zip_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  address: string;
+  district: string;
+  city: string;
+  zip_code: string;
   source: string;
 }
 
 export interface PricePageParams {
-  category?: string;
+  municipality: string;
+  days: number;
   limit: number;
   page: number;
 }
@@ -62,23 +58,15 @@ export class TaquantoApi {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiBaseUrl.replace(/\/$/, '');
 
-  categories(query: string) {
-    return this.http.get<SearchResponse>(`${this.baseUrl}/categories`, {
-      params: { query },
-    });
-  }
-
   prices(query: string, pageParams: PricePageParams) {
-    const params: Record<string, string> = {
-      limit: String(pageParams.limit),
-      page: String(pageParams.page),
-      query,
-    };
-
-    if (pageParams.category) {
-      params['category'] = pageParams.category;
-    }
-
-    return this.http.get<SearchResponse>(`${this.baseUrl}/prices`, { params });
+    return this.http.get<SearchResponse>(`${this.baseUrl}/prices`, {
+      params: {
+        days: String(pageParams.days),
+        limit: String(pageParams.limit),
+        municipality: pageParams.municipality,
+        page: String(pageParams.page),
+        query,
+      },
+    });
   }
 }

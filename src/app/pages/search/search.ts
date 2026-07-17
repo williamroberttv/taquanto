@@ -1,11 +1,22 @@
 import { isPlatformBrowser } from '@angular/common';
-import { afterNextRender, Component, DestroyRef, ElementRef, PLATFORM_ID, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  DestroyRef,
+  ElementRef,
+  PLATFORM_ID,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 import type * as Leaflet from 'leaflet';
+import { firstValueFrom } from 'rxjs';
 import { Footer } from '../../components/footer/footer';
 import { Header } from '../../components/header/header';
-import { CategoryCandidate, Pagination, PriceRecord, TaquantoApi } from '../../services/taquanto-api';
+import { MunicipalityMap } from '../../components/municipality-map/municipality-map';
+import { Pagination, PriceRecord, TaquantoApi } from '../../services/taquanto-api';
 
 type ToastType = 'error' | 'warning';
 
@@ -21,7 +32,7 @@ interface RecentSearch {
 
 @Component({
   selector: 'app-search',
-  imports: [Header, Footer],
+  imports: [Header, Footer, MunicipalityMap],
   host: {
     '(document:keydown.escape)': 'closeRecordDetail()',
   },
@@ -35,12 +46,14 @@ export class SearchPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly detailMapContainer = viewChild<ElementRef<HTMLElement>>('detailMapContainer');
-  private readonly detailCloseButton = viewChild<ElementRef<HTMLButtonElement>>('detailCloseButton');
+  private readonly detailCloseButton =
+    viewChild<ElementRef<HTMLButtonElement>>('detailCloseButton');
   private readonly loadMoreTrigger = viewChild<ElementRef<HTMLElement>>('loadMoreTrigger');
 
+  private readonly defaultMunicipality = '2704302';
   private readonly recentSearchesKey = 'taquanto:recent-searches';
-  private readonly pageSize = 10;
-  private categoryRequestId = 0;
+  private readonly pageSize = 50;
+  private readonly periodValues = [1, 3, 7, 10];
   private priceRequestId = 0;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
   private leaflet?: typeof Leaflet;
@@ -50,31 +63,27 @@ export class SearchPage {
   private previouslyFocusedElement?: HTMLElement;
   private loadedPriceKey: string | null = null;
   private currentPriceQuery = '';
-  private currentPriceCategory: string | undefined;
+  private pendingInitialQuery: string | null = null;
 
   protected readonly query = signal('');
   protected readonly activeQuery = signal('');
-  protected readonly categories = signal<CategoryCandidate[]>([]);
-  protected readonly categoriesSearched = signal(false);
-  protected readonly directPriceSearch = signal(false);
-  protected readonly selectedCategory = signal<string | null>(null);
+  protected readonly municipality = signal(this.defaultMunicipality);
+  protected readonly days = signal(7);
+  protected readonly filtersReady = signal(false);
   protected readonly records = signal<PriceRecord[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
-  protected readonly searchLoading = signal(false);
   protected readonly pricesLoading = signal(false);
   protected readonly loadingMore = signal(false);
-  protected readonly loadingPriceKey = signal<string | null>(null);
   protected readonly inlineMessage = signal<string | null>(null);
   protected readonly toast = signal<ToastMessage | null>(null);
   protected readonly selectedRecord = signal<PriceRecord | null>(null);
   protected readonly recentSearches = signal<RecentSearch[]>([]);
 
   protected readonly hasResults = computed(() => this.records().length > 0);
-  protected readonly hasMoreRecords = computed(() => {
-    const pagination = this.pagination();
-    return pagination ? pagination.offset + pagination.limit < pagination.total : false;
-  });
-  protected readonly totalRecords = computed(() => this.pagination()?.total ?? this.records().length);
+  protected readonly hasMoreRecords = computed(() => this.pagination()?.last_page === false);
+  protected readonly totalRecords = computed(
+    () => this.pagination()?.total_records ?? this.records().length,
+  );
 
   constructor() {
     afterNextRender(() => {
@@ -82,12 +91,22 @@ export class SearchPage {
         return;
       }
 
+      const queryParams = this.route.snapshot.queryParamMap;
+      const initialMunicipality = queryParams.get('municipality');
+      const initialDays = Number(queryParams.get('days'));
+      if (this.isMunicipalityCode(initialMunicipality)) {
+        this.municipality.set(initialMunicipality);
+      }
+      if (this.periodValues.includes(initialDays)) {
+        this.days.set(initialDays);
+      }
+
       this.initializeInfiniteScroll();
       this.recentSearches.set(this.loadRecentSearches());
-      const initialQuery = this.route.snapshot.queryParamMap.get('q')?.trim();
+      const initialQuery = queryParams.get('q')?.trim();
       if (initialQuery) {
         this.query.set(initialQuery);
-        void this.runSearch(initialQuery, false);
+        this.pendingInitialQuery = initialQuery;
       }
     });
 
@@ -102,13 +121,18 @@ export class SearchPage {
 
   protected submitSearch(event: SubmitEvent): void {
     event.preventDefault();
-    const normalizedQuery = this.query().trim();
-
-    void this.runSearch(normalizedQuery, true);
+    if (!this.filtersReady()) {
+      return;
+    }
+    void this.runSearch(this.query().trim(), true);
   }
 
   protected repeatSearch(search: RecentSearch): void {
     this.query.set(search.query);
+    if (!this.filtersReady()) {
+      this.pendingInitialQuery = search.query;
+      return;
+    }
     void this.runSearch(search.query, true);
   }
 
@@ -116,32 +140,57 @@ export class SearchPage {
     this.query.set((event.target as HTMLInputElement).value);
   }
 
-  protected async selectCategory(category: CategoryCandidate): Promise<void> {
-    const query = this.activeQuery();
-    const key = this.priceKey(query, category.source_sku);
-
-    if (!query || this.loadingPriceKey() === key || (this.loadedPriceKey === key && this.selectedCategory() === category.source_sku)) {
+  protected selectMunicipality(code: string): void {
+    if (!this.isMunicipalityCode(code) || code === this.municipality()) {
       return;
     }
+    this.municipality.set(code);
+    this.filtersChanged();
+  }
 
-    this.selectedCategory.set(category.source_sku);
-    await this.loadPrices(query, category.source_sku);
+  protected selectPeriod(event: Event): void {
+    const days = Number((event.target as HTMLSelectElement).value);
+    if (!this.periodValues.includes(days) || days === this.days()) {
+      return;
+    }
+    this.days.set(days);
+    this.filtersChanged();
+  }
+
+  protected municipalityMapReady(code: string): void {
+    const changed = code !== this.municipality();
+    if (changed) {
+      this.municipality.set(code);
+    }
+    this.filtersReady.set(true);
+
+    const pendingQuery = this.pendingInitialQuery;
+    this.pendingInitialQuery = null;
+    if (pendingQuery) {
+      void this.runSearch(pendingQuery, changed);
+    } else if (changed) {
+      this.updateUrl();
+    }
   }
 
   protected async loadNextPage(): Promise<void> {
     const pagination = this.pagination();
-
     if (!pagination || this.pricesLoading() || this.loadingMore() || !this.hasMoreRecords()) {
       return;
     }
-
-    await this.requestPricePage(this.currentPriceQuery, this.currentPriceCategory, pagination.page + 1, this.priceRequestId, true);
+    await this.requestPricePage(
+      this.currentPriceQuery,
+      pagination.page + 1,
+      this.priceRequestId,
+      true,
+    );
   }
 
   protected openRecordDetail(record: PriceRecord): void {
     this.selectedRecord.set(record);
     if (isPlatformBrowser(this.platformId)) {
-      this.previouslyFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+      this.previouslyFocusedElement =
+        document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
       requestAnimationFrame(() => {
         this.detailCloseButton()?.nativeElement.focus();
         void this.initializeDetailMap();
@@ -163,39 +212,41 @@ export class SearchPage {
     this.previouslyFocusedElement = undefined;
   }
 
-  protected categoryInitials(name: string): string {
-    const words = name.split(/[/\s]+/).filter(Boolean);
-    return words
-      .slice(0, 2)
-      .map((word) => word[0]?.toUpperCase() ?? '')
-      .join('');
-  }
-
   protected formatMoney(cents: number): string {
-    return new Intl.NumberFormat('pt-BR', { currency: 'BRL', style: 'currency' }).format(cents / 100);
+    return new Intl.NumberFormat('pt-BR', { currency: 'BRL', style: 'currency' }).format(
+      cents / 100,
+    );
   }
 
-  protected formatUnitPrice(record: PriceRecord): string {
-    return `${this.formatMoney(record.unit_price_cents)}${record.unit ? ` / ${record.unit}` : ''}`;
+  protected formatSaleValue(record: PriceRecord): string {
+    return `${this.formatMoney(record.sale_value_cents)}${record.unit ? ` / ${record.unit}` : ''}`;
   }
 
-  protected formatLastSale(record: PriceRecord): string {
-    const price = record.last_sale_cents > 0 ? this.formatMoney(record.last_sale_cents) : null;
-    const age = record.last_sale_age ?? record.sold_at;
-
-    if (price && age) {
-      return `Última venda ${price} · ${age}`;
+  protected formatSaleDate(record: PriceRecord): string {
+    const date = new Date(record.sold_at);
+    if (Number.isNaN(date.getTime())) {
+      return 'Data da venda não informada';
     }
+    const formatted = new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+      .format(date)
+      .replace(', ', ' às ');
+    return `Venda em ${formatted}`;
+  }
 
-    if (price) {
-      return `Última venda ${price}`;
-    }
-
-    return age ? `Última venda ${age}` : 'Última venda não informada';
+  protected hasDifferentDeclaredValue(record: PriceRecord): boolean {
+    return record.declared_value_cents !== record.sale_value_cents;
   }
 
   protected locationLine(record: PriceRecord): string {
-    const parts = [record.location.district, record.location.city, record.location.zip_code].filter(Boolean);
+    const parts = [record.location.district, record.location.city, record.location.zip_code].filter(
+      Boolean,
+    );
     return parts.length ? parts.join(' · ') : 'Localização textual não informada';
   }
 
@@ -208,117 +259,82 @@ export class SearchPage {
     const minuteMs = 60 * 1000;
     const hourMs = 60 * minuteMs;
     const dayMs = 24 * hourMs;
-    const date = new Date(search.searchedAt);
-    const dateTime = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(date);
+    const dateTime = new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      month: '2-digit',
+    }).format(new Date(search.searchedAt));
 
     if (diffMs < minuteMs) {
       return 'agora · ' + dateTime;
     }
-
     if (diffMs < hourMs) {
       const minutes = Math.floor(diffMs / minuteMs);
       return 'há ' + minutes + ' ' + (minutes === 1 ? 'minuto' : 'minutos') + ' · ' + dateTime;
     }
-
     if (diffMs < dayMs) {
       const hours = Math.floor(diffMs / hourMs);
       return 'há ' + hours + ' ' + (hours === 1 ? 'hora' : 'horas') + ' · ' + dateTime;
     }
-
     if (diffMs < 2 * dayMs) {
       return 'ontem · ' + dateTime;
     }
-
     const days = Math.floor(diffMs / dayMs);
     return 'há ' + days + ' dias · ' + dateTime;
   }
 
+  private filtersChanged(): void {
+    this.loadedPriceKey = null;
+    this.updateUrl();
+    const query = this.activeQuery();
+    if (query) {
+      void this.loadPrices(query);
+    }
+  }
+
   private async runSearch(query: string, updateUrl: boolean): Promise<void> {
-    if (query.length < 3 || query.length > 30) {
-      this.inlineMessage.set('Digite entre 3 e 30 caracteres para buscar.');
-      this.showToast('warning', 'Digite entre 3 e 30 caracteres para buscar.');
+    if (!this.isGTIN(query) && (query.length < 3 || query.length > 50)) {
+      this.inlineMessage.set('Digite uma descrição de 3 a 50 caracteres ou um GTIN válido.');
+      this.showToast('warning', 'Digite uma descrição de 3 a 50 caracteres ou um GTIN válido.');
       return;
     }
 
     this.query.set(query);
     this.activeQuery.set(query);
     this.inlineMessage.set(null);
-    this.categories.set([]);
     this.records.set([]);
     this.pagination.set(null);
-    this.categoriesSearched.set(true);
-    this.directPriceSearch.set(this.isBarcode(query));
-    this.selectedCategory.set(null);
     this.loadedPriceKey = null;
-    this.currentPriceQuery = '';
-    this.currentPriceCategory = undefined;
-    this.loadingPriceKey.set(null);
-    this.categoryRequestId += 1;
     this.priceRequestId += 1;
     this.saveRecentSearch(query);
 
     if (updateUrl) {
-      void this.router.navigate([], {
-        queryParams: { q: query },
-        relativeTo: this.route,
-        replaceUrl: true,
-      });
+      this.updateUrl();
     }
-
-    if (this.isBarcode(query)) {
-      await this.loadPrices(query);
-      return;
-    }
-
-    await this.loadCategories(query, this.categoryRequestId);
+    await this.loadPrices(query);
   }
 
-  private async loadCategories(query: string, requestId: number): Promise<void> {
-    this.searchLoading.set(true);
-
-    try {
-      const response = await firstValueFrom(this.api.categories(query));
-      if (requestId !== this.categoryRequestId) {
-        return;
-      }
-
-      const categories = response.categories ?? [];
-      this.categories.set(categories);
-
-      if (categories.length === 0) {
-        await this.loadPrices(query);
-      }
-    } catch {
-      if (requestId === this.categoryRequestId) {
-        this.inlineMessage.set('Não foi possível buscar categorias agora.');
-        this.showToast('error', 'Não foi possível buscar categorias agora.');
-      }
-    } finally {
-      if (requestId === this.categoryRequestId) {
-        this.searchLoading.set(false);
-      }
-    }
-  }
-
-  private async loadPrices(query: string, category?: string): Promise<void> {
-    const key = this.priceKey(query, category);
-
-    if (this.loadingPriceKey() === key || this.loadedPriceKey === key) {
+  private async loadPrices(query: string): Promise<void> {
+    const key = this.priceKey(query);
+    if (this.loadedPriceKey === key) {
       return;
     }
 
     const requestId = this.priceRequestId + 1;
     this.priceRequestId = requestId;
     this.currentPriceQuery = query;
-    this.currentPriceCategory = category;
-    this.loadingPriceKey.set(key);
     this.pagination.set(null);
     this.records.set([]);
-
-    await this.requestPricePage(query, category, 1, requestId, false);
+    await this.requestPricePage(query, 1, requestId, false);
   }
 
-  private async requestPricePage(query: string, category: string | undefined, page: number, requestId: number, append: boolean): Promise<void> {
+  private async requestPricePage(
+    query: string,
+    page: number,
+    requestId: number,
+    append: boolean,
+  ): Promise<void> {
     if (append) {
       this.loadingMore.set(true);
     } else {
@@ -326,19 +342,26 @@ export class SearchPage {
     }
 
     try {
-      const response = await firstValueFrom(this.api.prices(query, { category, limit: this.pageSize, page }));
+      const response = await firstValueFrom(
+        this.api.prices(query, {
+          days: this.days(),
+          limit: this.pageSize,
+          municipality: this.municipality(),
+          page,
+        }),
+      );
       if (requestId !== this.priceRequestId) {
         return;
       }
 
-      const records = response.results ?? [];
-      this.records.set(append ? [...this.records(), ...records] : records);
-      this.pagination.set(response.pagination ?? null);
-      this.loadedPriceKey = this.priceKey(query, category);
-      this.inlineMessage.set(this.records().length ? null : 'Nenhum registro encontrado.');
-
+      this.records.set(append ? [...this.records(), ...response.results] : response.results);
+      this.pagination.set(response.pagination);
+      this.loadedPriceKey = this.priceKey(query);
+      this.inlineMessage.set(
+        this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
+      );
       if (this.records().length === 0) {
-        this.showToast('warning', 'Nenhum registro encontrado.');
+        this.showToast('warning', 'Nenhum registro encontrado para esses filtros.');
       }
     } catch {
       if (requestId === this.priceRequestId) {
@@ -347,17 +370,27 @@ export class SearchPage {
       }
     } finally {
       if (requestId === this.priceRequestId) {
-        this.loadingPriceKey.set(null);
         this.pricesLoading.set(false);
         this.loadingMore.set(false);
       }
     }
   }
 
+  private updateUrl(): void {
+    void this.router.navigate([], {
+      queryParams: {
+        q: this.activeQuery() || null,
+        municipality: this.municipality(),
+        days: this.days(),
+      },
+      relativeTo: this.route,
+      replaceUrl: true,
+    });
+  }
+
   private async initializeDetailMap(): Promise<void> {
     const container = this.detailMapContainer()?.nativeElement;
     const record = this.selectedRecord();
-
     if (!container || !record) {
       return;
     }
@@ -367,23 +400,17 @@ export class SearchPage {
     const coordinates = this.coordinates(record);
     const center = coordinates ?? ([-9.653, -35.716] as Leaflet.LatLngExpression);
 
-    if (!this.detailMap) {
-      this.detailMap = leaflet.map(container, {
-        center,
-        zoom: coordinates ? 16 : 8,
-        scrollWheelZoom: true,
-      });
-      leaflet
-        .tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors',
-          maxZoom: 19,
-        })
-        .addTo(this.detailMap);
-    }
-
-    this.detailMarker?.remove();
-    this.detailMarker = undefined;
-    this.detailMap.setView(center, coordinates ? 16 : 8);
+    this.detailMap = leaflet.map(container, {
+      center,
+      scrollWheelZoom: true,
+      zoom: coordinates ? 16 : 8,
+    });
+    leaflet
+      .tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19,
+      })
+      .addTo(this.detailMap);
 
     if (coordinates) {
       this.detailMarker = leaflet
@@ -395,18 +422,23 @@ export class SearchPage {
             iconSize: [28, 28],
             popupAnchor: [0, -26],
           }),
-          title: record.store.name + ' - ' + this.formatUnitPrice(record),
+          title: record.store.name + ' - ' + this.formatSaleValue(record),
         })
-        .bindPopup('<strong>' + this.escapeHtml(record.description) + '</strong><br>' + this.escapeHtml(this.formatUnitPrice(record)) + '<br>' + this.escapeHtml(record.store.name))
+        .bindPopup(
+          '<strong>' +
+            this.escapeHtml(record.description) +
+            '</strong><br>' +
+            this.escapeHtml(this.formatSaleValue(record)) +
+            '<br>' +
+            this.escapeHtml(record.store.name),
+        )
         .addTo(this.detailMap);
     }
-
     requestAnimationFrame(() => this.detailMap?.invalidateSize());
   }
 
   private initializeInfiniteScroll(): void {
     const target = this.loadMoreTrigger()?.nativeElement;
-
     if (!target || this.loadMoreObserver || typeof IntersectionObserver === 'undefined') {
       return;
     }
@@ -424,35 +456,27 @@ export class SearchPage {
 
   private coordinates(record: PriceRecord): Leaflet.LatLngExpression | null {
     const { latitude, longitude } = record.location;
-    const parsedLatitude = this.coordinate(latitude);
-    const parsedLongitude = this.coordinate(longitude);
-
-    if (parsedLatitude === null || parsedLongitude === null) {
+    if (
+      latitude === null ||
+      longitude === null ||
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude)
+    ) {
       return null;
     }
-
-    return [parsedLatitude, parsedLongitude];
+    return [latitude, longitude];
   }
 
-  private coordinate(value: number | string | null): number | null {
-    if (typeof value === 'number') {
-      return Number.isFinite(value) ? value : null;
-    }
-
-    if (typeof value !== 'string' || !value.trim()) {
-      return null;
-    }
-
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
+  private priceKey(query: string): string {
+    return `${query}:${this.municipality()}:${this.days()}`;
   }
 
-  private priceKey(query: string, category?: string): string {
-    return `${query}:${category ?? ''}`;
+  private isGTIN(query: string): boolean {
+    return /^(?:\d{8}|\d{12}|\d{13}|\d{14})$/.test(query);
   }
 
-  private isBarcode(query: string): boolean {
-    return /^\d{8,14}$/.test(query);
+  private isMunicipalityCode(code: string | null): code is string {
+    return /^\d{7}$/.test(code ?? '');
   }
 
   private showToast(type: ToastType, text: string): void {
@@ -469,13 +493,11 @@ export class SearchPage {
       if (!Array.isArray(parsed)) {
         return [];
       }
-
       return parsed
         .filter((item): item is RecentSearch => {
           if (!item || typeof item !== 'object') {
             return false;
           }
-
           const search = item as Record<string, unknown>;
           return typeof search['query'] === 'string' && typeof search['searchedAt'] === 'number';
         })
@@ -487,8 +509,10 @@ export class SearchPage {
 
   private saveRecentSearch(query: string): void {
     const search: RecentSearch = { query, searchedAt: Date.now() };
-    const searches = [search, ...this.recentSearches().filter((item) => item.query.toLowerCase() !== query.toLowerCase())].slice(0, 10);
-
+    const searches = [
+      search,
+      ...this.recentSearches().filter((item) => item.query.toLowerCase() !== query.toLowerCase()),
+    ].slice(0, 10);
     this.recentSearches.set(searches);
 
     try {
