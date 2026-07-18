@@ -51,8 +51,15 @@ describe('FavoritesPage', () => {
     expect(records).toHaveLength(2);
     expect(records[0].textContent).toContain('Feijão carioca 1kg');
     expect(records[0].textContent).toContain('R$ 5,99');
-    expect(records[0].querySelector('a')).toBeNull();
-    expect(records[1].querySelector('a')?.textContent).toContain('Abrir no mapa');
+    expect(records[0].querySelector('.map-button')).toBeNull();
+    expect(records[1].querySelector<HTMLButtonElement>('.map-button')?.textContent).toContain(
+      'Abrir no mapa',
+    );
+    expect(records[1].querySelector('a[href*="openstreetmap"]')).toBeNull();
+
+    records[1].querySelector<HTMLButtonElement>('.map-button')?.click();
+    await fixture.whenStable();
+    expect(element.querySelector('dialog')?.textContent).toContain('Mercado Centro');
 
     records[0].querySelector<HTMLButtonElement>('.favorite-toggle')?.click();
     await fixture.whenStable();

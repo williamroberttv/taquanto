@@ -9,9 +9,7 @@ import { PriceRecord } from '../../services/taquanto-api';
   template: `
     <button
       type="button"
-      class="favorite-toggle btn btn-square min-h-11"
-      [class.btn-primary]="favorite()"
-      [class.btn-outline]="!favorite()"
+      class="favorite-toggle btn btn-square btn-ghost min-h-11 border-0 text-primary shadow-none hover:border-0"
       [attr.aria-pressed]="favorite()"
       [attr.aria-label]="label()"
       (click)="toggled.emit(record())"

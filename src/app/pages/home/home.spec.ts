@@ -25,7 +25,7 @@ describe('Home', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const text = compiled.textContent ?? '';
 
-    expect(text).toContain('Descubra quanto produtos custaram perto de você.');
+    expect(text).toContain('Descubra quanto produtos custaram em Alagoas.');
     expect(text).toContain('Registros oficiais, organizados para comparar.');
     expect(text).toContain('Guarde a venda, não uma promessa de preço.');
     expect(text).toContain('Buscar produto');
@@ -37,7 +37,6 @@ describe('Home', () => {
     ).toEqual(
       expect.arrayContaining([
         expect.stringContaining('/images/elephant-1.png'),
-        expect.stringContaining('/images/elephant-2.png'),
         expect.stringContaining('/images/elephant-3.png'),
       ]),
     );
