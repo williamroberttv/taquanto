@@ -362,7 +362,7 @@ export class SearchPage {
       return;
     }
 
-    const leaflet = this.leaflet ?? (await import('leaflet'));
+    const leaflet = this.leaflet ?? (await import('leaflet')).default;
     this.leaflet = leaflet;
     const coordinates = this.coordinates(record);
     const center = coordinates ?? ([-9.653, -35.716] as Leaflet.LatLngExpression);
