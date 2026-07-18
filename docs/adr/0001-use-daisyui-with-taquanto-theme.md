@@ -1,0 +1,3 @@
+# Use daisyUI without replacing the TaQuanto design
+
+Use daisyUI as the Tailwind CSS component layer for every compatible interface control, configured with custom light and dark TaQuanto themes derived from `DESIGN.md`. Prefer the native semantic element used by daisyUI, including `<dialog>` for modal content, while preserving the current visual identity; when the current CSS diverges from `DESIGN.md`, the documented design wins. Keep application-specific layouts and Leaflet presentation in local CSS instead of adopting daisyUI's default appearance or forcing elements without a daisyUI equivalent into a component.

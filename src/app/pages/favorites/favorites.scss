@@ -1,0 +1,37 @@
+:host {
+  display: block;
+}
+
+.favorites-shell {
+  background:
+    radial-gradient(
+      circle at 80% 4%,
+      color-mix(in srgb, var(--color-primary) 12%, transparent),
+      transparent 28%
+    ),
+    var(--tq-canvas);
+}
+
+.eyebrow {
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.favorite-record .detail-grid {
+  grid-template-columns: 1fr;
+}
+
+.map-link-icon {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.map-link-icon {
+  fill: none;
+}

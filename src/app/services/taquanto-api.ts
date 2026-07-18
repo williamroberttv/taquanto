@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
+import { timeout } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface SearchResponse {
@@ -37,8 +38,8 @@ export interface Store {
 }
 
 export interface Location {
-  latitude: number | null;
-  longitude: number | null;
+  latitude: number | string | null;
+  longitude: number | string | null;
   address: string;
   district: string;
   city: string;
@@ -57,16 +58,19 @@ export interface PricePageParams {
 export class TaquantoApi {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiBaseUrl.replace(/\/$/, '');
+  private readonly priceTimeoutMs = 120000;
 
   prices(query: string, pageParams: PricePageParams) {
-    return this.http.get<SearchResponse>(`${this.baseUrl}/prices`, {
-      params: {
-        days: String(pageParams.days),
-        limit: String(pageParams.limit),
-        municipality: pageParams.municipality,
-        page: String(pageParams.page),
-        query,
-      },
-    });
+    return this.http
+      .get<SearchResponse>(`${this.baseUrl}/prices`, {
+        params: {
+          days: String(pageParams.days),
+          limit: String(pageParams.limit),
+          municipality: pageParams.municipality,
+          page: String(pageParams.page),
+          query,
+        },
+      })
+      .pipe(timeout(this.priceTimeoutMs));
   }
 }

@@ -48,12 +48,6 @@ export class MunicipalityMap {
       ? this.selectedCode()
       : this.defaultMunicipality,
   );
-  protected readonly selectedName = computed(
-    () =>
-      this.municipalities().find(
-        (municipality) => municipality.code === this.resolvedSelectedCode(),
-      )?.name ?? 'Maceió',
-  );
 
   private leaflet?: typeof Leaflet;
   private map?: Leaflet.Map;
@@ -164,8 +158,8 @@ export class MunicipalityMap {
       path.bindTooltip(properties.name, {
         className: 'municipality-name',
         direction: 'center',
-        permanent: selected,
-        sticky: !selected,
+        permanent: false,
+        sticky: true,
       });
       path.getElement()?.setAttribute('aria-pressed', String(selected));
     });
@@ -173,8 +167,8 @@ export class MunicipalityMap {
 
   private layerStyle(selected: boolean): Leaflet.PathOptions {
     return {
-      color: selected ? '#5635d8' : '#9b91c3',
-      fillColor: selected ? '#6c47ff' : '#f0edff',
+      color: selected ? 'var(--color-primary)' : '#9b91c3',
+      fillColor: selected ? 'var(--color-primary)' : 'var(--color-base-300)',
       fillOpacity: selected ? 0.9 : 0.72,
       weight: selected ? 2 : 1,
     };

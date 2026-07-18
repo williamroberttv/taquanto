@@ -11,10 +11,11 @@
   </div>
 
   <div class="filter-panel">
-    <div>
-      <label for="municipality-select">Município</label>
+    <div class="fieldset">
+      <label class="fieldset-legend" for="municipality-select">Município</label>
       <select
         id="municipality-select"
+        class="select w-full"
         [value]="resolvedSelectedCode()"
         (change)="selectFromControl($event)"
       >
@@ -27,16 +28,12 @@
           </option>
         }
       </select>
-      <p class="selected-city" aria-live="polite">
-        <span aria-hidden="true"></span>
-        {{ selectedName() }} selecionada
-      </p>
     </div>
 
     <ng-content />
 
     @if (loadError()) {
-      <p class="map-error" role="alert">
+      <p class="map-error text-error" role="alert">
         Não foi possível carregar o mapa. Recarregue a página para tentar novamente.
       </p>
     }

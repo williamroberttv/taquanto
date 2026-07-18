@@ -8,9 +8,8 @@ TaQuanto is a public price-consultation app for Alagoas that presents real NFC-e
 O produto TaQuanto para consulta publica de precos de produtos em Alagoas, composto por este frontend e por uma API separada que integra com o Economiza Alagoas/SEFAZ-AL.
 _Avoid_: substituto da SEFAZ, scraper do Economiza Alagoas
 
-
 **Frontend TaQuanto**:
-Este repositorio: a aplicacao Angular que renderiza paginas publicas com SSR e paginas autenticadas como SPA quando o login estiver pronto. Nao chama a API da SEFAZ diretamente.
+Este repositorio: a aplicacao Angular responsavel pela interface publica e pelas futuras experiencias autenticadas do TaQuanto. Nao chama a API da SEFAZ diretamente.
 _Avoid_: backend, proxy SEFAZ, token SEFAZ no browser
 
 **API TaQuanto**:
@@ -29,10 +28,17 @@ _Avoid_: oferta, promocao, preco garantido, compra do usuario
 A visualizacao detalhada de um Registro de Venda NFC-e selecionado na Consulta Publica, usando os dados do registro exibido e mantendo o foco na venda real, nao em um produto agregado criado pelo TaQuanto.
 _Avoid_: pagina de produto agregado, ficha de oferta, detalhe de promocao
 
+**Registro de Venda Favorito**:
+O retrato de um Registro de Venda NFC-e escolhido pelo visitante para consulta posterior no mesmo dispositivo, preservando os dados exibidos no momento em que foi favoritado e sem exigir uma conta TaQuanto.
+_Avoid_: produto favorito, oferta salva, favorito da conta
+
+**Lista de Favoritos**:
+A colecao de Registros de Venda Favoritos preservados pelo visitante para consulta posterior.
+_Avoid_: consulta salva, lista de produtos, ofertas favoritas
+
 **Promocao**:
 Um rotulo comercial de oferta ou desconto que o TaQuanto nao infere a partir de registros de venda NFC-e.
 _Avoid_: preco baixo, menor preco, venda recente
-
 
 **Consulta Publica**:
 A experiencia sem login para pesquisar precos de produtos e consultar registros recentes de venda NFC-e.

@@ -4,27 +4,29 @@
 
 .hero {
   background:
-    linear-gradient(180deg, var(--tq-s84), var(--tq-c96) 42%, var(--tq-card)),
-    radial-gradient(circle at 74% 8%, rgb(108 71 255 / 12%), transparent 34%);
+    radial-gradient(
+      circle at 82% 10%,
+      color-mix(in srgb, var(--color-primary) 18%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(180deg, var(--tq-s84), var(--tq-c96));
 }
 
-.eyebrow {
-  color: #6c47ff;
+.eyebrow,
+.guide-eyebrow {
   font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 800;
   text-transform: uppercase;
 }
 
-.hero-preview {
-  position: relative;
-  min-height: 560px;
+.eyebrow {
+  color: var(--color-primary);
 }
 
 .button-icon,
-.search-icon,
-.step-icon svg,
-.mini-icon {
+.search-icon {
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -32,75 +34,70 @@
   stroke-width: 2;
 }
 
-.button-icon {
-  width: 18px;
-  height: 18px;
-  margin-right: 8px;
+.brand-banner {
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 32%, var(--tq-border));
+  border-radius: 28px;
+  background: #29136d;
+  box-shadow: 0 28px 70px color-mix(in srgb, var(--color-primary) 26%, transparent);
 }
 
-.search-icon {
-  width: 20px;
-  height: 20px;
-  color: #6c47ff;
+.brand-banner img,
+.guide-art img,
+.favorites-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
-.step-icon {
-  display: inline-flex;
-  width: 44px;
-  height: 44px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
+.experience-section {
   background: var(--tq-surface);
-  color: #6c47ff;
 }
 
-.step-icon svg {
-  width: 23px;
-  height: 23px;
+.fact-list {
+  display: grid;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--tq-border);
+  border-radius: 12px;
+  background: var(--tq-border);
 }
 
-.mini-icon {
-  width: 16px;
-  height: 16px;
-  color: #6c47ff;
+.fact-list div {
+  display: grid;
+  gap: 4px;
+  background: var(--tq-card);
+  padding: 14px 16px;
 }
 
-@keyframes icon-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-3px);
-  }
+.fact-list dt {
+  color: var(--color-primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
-@keyframes icon-breathe {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+.fact-list dd {
+  font-weight: 700;
+}
 
-  50% {
-    transform: scale(1.08);
-    opacity: 0.78;
-  }
+.experience-preview {
+  position: relative;
+  min-height: 550px;
 }
 
 .search-card {
   position: absolute;
-  top: 34px;
+  top: 0;
   left: 0;
   z-index: 5;
   width: min(430px, 92%);
-  border: 1px solid var(--tq-border);
-  border-radius: 12px;
-  background: var(--tq-card90);
-  box-shadow: 0 16px 48px var(--tq-elevated-shadow);
   padding: 22px;
+}
+
+.search-icon {
+  color: var(--color-primary);
 }
 
 .result-row {
@@ -108,9 +105,6 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
   align-items: center;
-  border: 1px solid var(--tq-border);
-  border-radius: 8px;
-  background: var(--tq-card92);
   padding: 14px;
 }
 
@@ -119,134 +113,120 @@
   right: 0;
   bottom: 0;
   width: min(520px, 88%);
-  height: 470px;
+  height: 445px;
   overflow: hidden;
   border: 1px solid var(--tq-border);
-  border-radius: 12px;
+  border-radius: 20px;
   background: var(--tq-surface);
-  box-shadow: 0 8px 32px var(--tq-shadow);
+  box-shadow: 0 18px 48px var(--tq-shadow);
 }
 
 .map-fallback {
   position: absolute;
   inset: 0;
   z-index: 2;
-  overflow: hidden;
   background:
     linear-gradient(90deg, var(--tq-border70) 1px, transparent 1px),
-    linear-gradient(0deg, var(--tq-border70) 1px, transparent 1px),
-    var(--tq-surface);
-  background-size: 64px 64px;
-  color: #6c47ff;
-}
-
-.map-road {
-  position: absolute;
-  border-radius: 999px;
-  background: rgb(108 71 255 / 18%);
-}
-
-.map-road-main {
-  top: 46%;
-  left: -12%;
-  width: 124%;
-  height: 18px;
-  rotate: -18deg;
-}
-
-.map-road-side {
-  top: -10%;
-  left: 58%;
-  width: 16px;
-  height: 124%;
-  rotate: 24deg;
-}
-
-.map-pin {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  border: 3px solid var(--tq-card);
-  border-radius: 50% 50% 50% 0;
-  background: #6c47ff;
-  box-shadow: 0 10px 24px rgb(108 71 255 / 28%);
-  rotate: -45deg;
-}
-
-.map-pin::after {
-  content: '';
-  position: absolute;
-  inset: 6px;
-  border-radius: 999px;
-  background: var(--tq-card);
-}
-
-.map-pin-one {
-  top: 30%;
-  left: 24%;
-}
-
-.map-pin-two {
-  top: 50%;
-  left: 62%;
-}
-
-.map-pin-three {
-  top: 65%;
-  left: 42%;
+    linear-gradient(0deg, var(--tq-border70) 1px, transparent 1px), var(--tq-surface);
+  background-size: 56px 56px;
 }
 
 .map-fallback-card {
   position: absolute;
-  right: 22px;
-  bottom: 22px;
-  left: 22px;
+  right: 20px;
+  bottom: 20px;
+  left: 20px;
+  display: grid;
+  gap: 5px;
   border: 1px solid var(--tq-border);
   border-radius: 12px;
-  background: var(--tq-card);
-  box-shadow: 0 8px 32px var(--tq-shadow);
-  padding: 18px;
+  background: var(--tq-card88);
+  padding: 16px;
 }
 
-.map-fallback-card p {
-  margin: 0 0 6px;
+.map-fallback-card span {
   color: var(--tq-muted);
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 800;
   text-transform: uppercase;
 }
 
-.map-frame::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-  background: linear-gradient(135deg, rgb(108 71 255 / 18%), transparent 38%, var(--tq-card16));
+.map-fallback-card strong {
+  color: var(--tq-ink);
 }
 
 .map-container {
   position: absolute;
   inset: 0;
   z-index: 3;
-  background: transparent;
 }
 
-:host ::ng-deep .leaflet-container {
-  font-family: 'Inter', sans-serif;
+.guide-banner {
+  border-radius: 28px;
+  background: radial-gradient(circle at 90% 10%, rgb(140 114 255 / 42%), transparent 34%), #24105d;
+  color: #fff;
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
-:host ::ng-deep .leaflet-control-attribution {
-  border-radius: 8px 0 0;
-  background: var(--tq-card88);
-  color: var(--tq-muted);
-  font-size: 11px;
+.guide-art img {
+  height: 100%;
+  object-fit: cover;
+}
+
+.guide-copy {
+  padding: 32px 28px 32px 0;
+}
+
+.guide-eyebrow {
+  color: #c6baff;
+}
+
+.guide-step {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 8%);
+  padding: 16px;
+}
+
+.guide-step > span {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 10px;
+  background: #fff;
+  color: #32177d;
+  font-weight: 900;
+}
+
+.favorites-banner {
+  overflow: hidden;
+  border: 1px solid var(--tq-border);
+  border-radius: 28px;
+  background:
+    radial-gradient(
+      circle at 8% 22%,
+      color-mix(in srgb, var(--color-primary) 18%, transparent),
+      transparent 34%
+    ),
+    var(--tq-surface);
+}
+
+.favorites-banner img {
+  height: 100%;
+  min-height: 300px;
+  object-fit: cover;
 }
 
 :host ::ng-deep .sale-marker {
   border: 3px solid var(--tq-card);
   border-radius: 50% 50% 50% 0;
-  background: #6c47ff;
-  box-shadow: 0 10px 24px rgb(108 71 255 / 34%);
+  background: var(--color-primary);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--color-primary) 34%, transparent);
   rotate: -45deg;
 }
 
@@ -257,13 +237,8 @@
   background: var(--tq-card);
 }
 
-:host ::ng-deep .leaflet-popup-content-wrapper {
-  border-radius: 8px;
-  color: var(--tq-ink);
-}
-
 @media (max-width: 1023px) {
-  .hero-preview {
+  .experience-preview {
     min-height: auto;
   }
 
@@ -274,16 +249,33 @@
   }
 
   .search-card {
-    top: 0;
     margin-bottom: 18px;
   }
 
   .map-frame {
     height: 380px;
   }
+
+  .guide-copy {
+    padding: 0 28px 32px;
+  }
+
+  .guide-art img {
+    max-height: 440px;
+  }
+
+  .favorites-banner img {
+    max-height: 420px;
+  }
 }
 
 @media (max-width: 640px) {
+  .brand-banner,
+  .guide-banner,
+  .favorites-banner {
+    border-radius: 20px;
+  }
+
   .search-card {
     padding: 18px;
   }
@@ -291,14 +283,8 @@
   .map-frame {
     height: 320px;
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
+  .guide-copy {
+    padding: 0 20px 24px;
   }
 }

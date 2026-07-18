@@ -1,7 +1,12 @@
 <div class="min-h-dvh bg-[var(--tq-canvas)] font-['Inter'] text-[var(--tq-ink)]">
-  <app-header />
+  <app-header [attr.inert]="pricesLoading() ? '' : null" />
 
-  <main class="search-shell px-5 py-10 sm:py-12" aria-labelledby="search-title">
+  <main
+    class="search-shell px-5 py-10 sm:py-12"
+    aria-labelledby="search-title"
+    [attr.aria-busy]="pricesLoading()"
+    [attr.inert]="pricesLoading() ? '' : null"
+  >
     <section class="mx-auto max-w-6xl">
       <div class="max-w-3xl">
         <p class="eyebrow">Consulta de produto</p>
@@ -11,20 +16,66 @@
         >
           Buscar preços reais
         </h1>
-        <p class="mt-4 max-w-2xl leading-7 text-[var(--tq-muted)]">
+        <p class="mt-4 leading-7 text-[var(--tq-muted)]">
           Digite um produto ou código de barras para comparar registros de venda NFC-e retornados
           pela API TaQuanto.
         </p>
       </div>
+
+      <section
+        class="location-filter card card-border mt-8 bg-base-200"
+        aria-labelledby="location-filter-title"
+      >
+        <div class="location-filter-heading">
+          <div>
+            <p class="eyebrow">Onde e quando procurar</p>
+            <h2 id="location-filter-title" class="mt-2 text-2xl font-bold text-[var(--tq-ink)]">
+              Escolha um município de Alagoas
+            </h2>
+            <p class="mt-2 text-sm leading-6 text-[var(--tq-muted)]">
+              Cada consulta usa um município e o período recente selecionado. Use 24 horas ou GTIN
+              para respostas mais rápidas.
+            </p>
+          </div>
+        </div>
+
+        <app-municipality-map
+          [selectedCode]="municipality()"
+          (municipalityChange)="selectMunicipality($event)"
+          (municipalityReady)="municipalityMapReady($event)"
+        >
+          <div class="fieldset period-filter">
+            <label class="fieldset-legend" for="search-period">Período</label>
+            <select
+              id="search-period"
+              class="select w-full"
+              [value]="days()"
+              (change)="selectPeriod($event)"
+            >
+              <option value="1">Últimas 24 horas (mais rápido)</option>
+              <option value="3">Últimos 3 dias</option>
+              <option value="7">1 semana</option>
+              <option value="10">Últimos 10 dias</option>
+            </select>
+            <p>O Economiza Alagoas aceita consultas entre 1 e 10 dias.</p>
+          </div>
+        </app-municipality-map>
+      </section>
 
       @if (recentSearches().length > 0) {
         <section class="recent-searches" aria-labelledby="recent-searches-title">
           <h2 id="recent-searches-title" class="recent-searches-title">Últimas pesquisas</h2>
           <div class="recent-search-list">
             @for (search of recentSearches(); track search.query) {
-              <button type="button" class="recent-search-chip" (click)="repeatSearch(search)">
+              <button
+                type="button"
+                class="recent-search-chip group badge badge-outline badge-primary h-auto min-h-11 cursor-pointer transition-colors hover:bg-primary hover:text-primary-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                (click)="repeatSearch(search)"
+              >
                 <span class="recent-search-query">{{ search.query }}</span>
-                <span class="recent-search-time">{{ formatRecentSearchTime(search) }}</span>
+                <span class="recent-search-time group-hover:text-primary-content">{{
+                  formatRecentSearchTime(search)
+                }}</span>
               </button>
             }
           </div>
@@ -32,9 +83,20 @@
       }
 
       <form
-        class="mt-8 grid gap-3 rounded-md border border-[var(--tq-border)] bg-[var(--tq-card)] p-4 shadow-sm sm:grid-cols-[1fr_auto]"
+        class="card card-border mt-8 grid gap-3 bg-base-100 p-4 shadow-sm sm:grid-cols-[1fr_auto]"
+        aria-labelledby="product-search-title"
         (submit)="submitSearch($event)"
       >
+        <div class="sm:col-span-2">
+          <p class="eyebrow">O que procurar</p>
+          <h2 id="product-search-title" class="mt-2 text-2xl font-bold text-[var(--tq-ink)]">
+            Digite o produto que deseja buscar
+          </h2>
+          <p class="mt-2 text-sm leading-6 text-[var(--tq-muted)]">
+            Use exemplos como “café torrado e moído 250 g” ou “arroz parboilizado 1 kg”. Quanto mais
+            descritiva for a busca, melhor será a resposta.
+          </p>
+        </div>
         <label class="sr-only" for="product-query">Produto ou código de barras</label>
         <div class="search-input-wrap">
           <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -50,13 +112,13 @@
             maxlength="50"
             [value]="query()"
             (input)="updateQuery($event)"
-            class="min-h-12 w-full rounded-md border border-[var(--tq-border)] bg-[var(--tq-card)] py-3 pl-11 pr-4 text-base text-[var(--tq-ink)] outline-none transition focus:border-[#6c47ff] focus:ring-2 focus:ring-[#6c47ff]/20"
+            class="input min-h-12 w-full bg-base-100 pl-11 text-base"
             placeholder="Ex.: arroz, café 250g ou GTIN"
           />
         </div>
         <button
           type="submit"
-          class="inline-flex min-h-12 items-center justify-center rounded-md bg-[#6c47ff] px-5 text-sm font-semibold text-white transition hover:bg-[#5a35ee] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6c47ff] disabled:cursor-not-allowed disabled:bg-[#b7a9ff]"
+          class="btn btn-primary min-h-12"
           [disabled]="!filtersReady() || pricesLoading()"
         >
           <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -68,44 +130,10 @@
       </form>
 
       @if (inlineMessage()) {
-        <p
-          class="mt-3 rounded-md border border-[var(--tq-border)] bg-[var(--tq-surface)] px-4 py-3 text-sm font-medium text-[var(--tq-muted)]"
-          role="status"
-        >
+        <p class="mt-3 text-sm font-semibold text-warning" role="status">
           {{ inlineMessage() }}
         </p>
       }
-
-      <section class="location-filter mt-8" aria-labelledby="location-filter-title">
-        <div class="location-filter-heading">
-          <div>
-            <p class="eyebrow">Onde e quando procurar</p>
-            <h2 id="location-filter-title" class="mt-2 text-2xl font-bold text-[var(--tq-ink)]">
-              Escolha um município de Alagoas
-            </h2>
-            <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--tq-muted)]">
-              Cada consulta usa um município e o período recente selecionado.
-            </p>
-          </div>
-        </div>
-
-        <app-municipality-map
-          [selectedCode]="municipality()"
-          (municipalityChange)="selectMunicipality($event)"
-          (municipalityReady)="municipalityMapReady($event)"
-        >
-          <div class="period-filter">
-            <label for="search-period">Período</label>
-            <select id="search-period" [value]="days()" (change)="selectPeriod($event)">
-              <option value="1">Últimas 24 horas</option>
-              <option value="3">Últimos 3 dias</option>
-              <option value="7">1 semana</option>
-              <option value="10">Últimos 10 dias</option>
-            </select>
-            <p>O Economiza Alagoas aceita consultas entre 1 e 10 dias.</p>
-          </div>
-        </app-municipality-map>
-      </section>
 
       <section class="mt-8" aria-label="Resultados de preços">
         <div class="results-list">
@@ -114,19 +142,22 @@
               <p class="eyebrow">Vendas e preços</p>
               <div class="mt-2 flex items-center gap-2">
                 <h2 class="text-2xl font-bold text-[var(--tq-ink)]">Registros encontrados</h2>
-                <span class="info-wrap">
+                <span class="tooltip tooltip-left tooltip-info">
                   <button
                     type="button"
-                    class="info-button"
+                    class="btn btn-circle btn-ghost btn-xs h-7 min-h-7 w-7 p-0 text-info"
                     aria-label="Como os produtos são exibidos"
                     aria-describedby="products-info"
                   >
                     i
                   </button>
-                  <span id="products-info" class="info-popover" role="tooltip">
-                    Mostramos registros de vendas reais NFC-e dos últimos até 10 dias, conforme
-                    disponibilidade da SEFAZ-AL. Os dados podem aparecer com atraso de até 1 hora
-                    por cache do TaQuanto. Preços não são ofertas e podem mudar no estabelecimento.
+                  <span
+                    id="products-info"
+                    class="tooltip-content z-10 max-w-xs text-left"
+                    role="tooltip"
+                  >
+                    Exibimos registros de venda NFC-e do município e período selecionados. Os
+                    valores são históricos, não ofertas, e podem mudar no estabelecimento.
                   </span>
                 </span>
               </div>
@@ -140,16 +171,17 @@
 
           @if (pricesLoading()) {
             <p
-              class="mt-5 rounded-md border border-[var(--tq-border)] bg-[var(--tq-card)] px-4 py-5 text-sm font-medium text-[var(--tq-muted)]"
+              class="mt-5 flex items-center gap-3 text-sm font-medium text-[var(--tq-muted)]"
               role="status"
             >
-              Carregando preços...
+              <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+              Consultando a SEFAZ. Buscas por descrição podem demorar...
             </p>
           } @else if (hasResults()) {
             <div class="mt-5 grid gap-4 lg:grid-cols-2">
               @for (record of records(); track $index) {
-                <article class="price-card">
-                  <div class="price-card-main">
+                <article class="card card-border bg-base-100 shadow-sm">
+                  <div class="card-body gap-0 p-[18px]">
                     <p class="price-value">{{ formatSaleValue(record) }}</p>
                     <h3 class="mt-2 text-lg font-semibold text-[var(--tq-ink)]">
                       {{ record.description }}
@@ -168,44 +200,70 @@
                     <p class="mt-3 text-sm font-medium text-[var(--tq-muted)]">
                       {{ formatSaleDate(record) }}
                     </p>
+                    <div class="card-actions mt-[18px]">
+                      <app-favorite-toggle
+                        [record]="record"
+                        [favorite]="isFavorite(record)"
+                        (toggled)="toggleFavorite($event)"
+                      />
+                      <button
+                        type="button"
+                        class="detail-button btn btn-outline btn-primary min-h-11"
+                        (click)="openRecordDetail(record)"
+                      >
+                        Ver detalhes
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M5 12h14" />
+                          <path d="m13 6 6 6-6 6" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-
-                  <button type="button" class="detail-button" (click)="openRecordDetail(record)">
-                    Ver detalhes
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M5 12h14" />
-                      <path d="m13 6 6 6-6 6" />
-                    </svg>
-                  </button>
                 </article>
               }
             </div>
 
-            @if (loadingMore()) {
-              <p class="mt-4 text-center text-sm font-medium text-[var(--tq-muted)]" role="status">
-                Carregando mais registros...
-              </p>
-            } @else if (!hasMoreRecords()) {
+            @if (hasMoreRecords()) {
+              <div class="mt-5 flex justify-center">
+                <button
+                  type="button"
+                  class="load-more-button btn btn-outline btn-primary min-h-11"
+                  [disabled]="loadingMore()"
+                  [attr.aria-busy]="loadingMore()"
+                  (click)="loadNextPage()"
+                >
+                  @if (loadingMore()) {
+                    <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+                    Carregando mais registros...
+                  } @else {
+                    Carregar mais
+                  }
+                </button>
+              </div>
+              <div #loadMoreTrigger class="load-more-trigger" aria-hidden="true"></div>
+            } @else {
               <p class="mt-4 text-center text-sm font-medium text-[var(--tq-muted)]">
                 Todos os registros carregados.
               </p>
             }
           } @else {
-            <p
-              class="mt-5 rounded-md border border-[var(--tq-border)] bg-[var(--tq-card)] px-4 py-5 text-sm font-medium text-[var(--tq-muted)]"
-            >
+            <p class="mt-5 flex items-center gap-3 text-sm font-medium text-[var(--tq-muted)]">
               Busque um produto para ver os registros no município e período selecionados.
             </p>
           }
-          <div #loadMoreTrigger class="load-more-trigger" aria-hidden="true"></div>
         </div>
       </section>
     </section>
   </main>
 
   @if (selectedRecord(); as record) {
-    <div class="modal-backdrop" role="presentation">
-      <section class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+    <dialog
+      #detailDialog
+      class="modal"
+      aria-labelledby="detail-title"
+      (close)="closeRecordDetail()"
+    >
+      <section class="detail-modal modal-box max-w-5xl">
         <div class="detail-modal-header">
           <div>
             <p class="eyebrow">Detalhe da venda</p>
@@ -213,18 +271,24 @@
               {{ record.description }}
             </h2>
           </div>
-          <button
-            #detailCloseButton
-            type="button"
-            class="close-button"
-            aria-label="Fechar detalhes"
-            (click)="closeRecordDetail()"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
-          </button>
+          <div class="flex gap-2">
+            <app-favorite-toggle
+              [record]="record"
+              [favorite]="isFavorite(record)"
+              (toggled)="toggleFavorite($event)"
+            />
+            <button
+              type="button"
+              class="close-button btn btn-square btn-ghost min-h-11"
+              aria-label="Fechar detalhes"
+              (click)="dismissRecordDetail()"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div class="detail-grid">
@@ -271,18 +335,31 @@
           ></div>
         </div>
       </section>
-    </div>
+      <form method="dialog" class="modal-backdrop">
+        <button aria-label="Fechar detalhes">Fechar detalhes</button>
+      </form>
+    </dialog>
   }
 
   @if (toast()) {
-    <div
-      class="toast"
-      [class.toast-error]="toast()?.type === 'error'"
-      [attr.role]="toast()?.type === 'error' ? 'alert' : 'status'"
-    >
-      {{ toast()?.text }}
+    <div class="toast toast-end z-70">
+      <p class="alert alert-error max-w-sm font-semibold" role="alert">{{ toast() }}</p>
     </div>
   }
 
-  <app-footer />
+  @if (pricesLoading()) {
+    <div
+      class="fixed inset-0 z-[1000] grid cursor-wait place-items-center bg-base-100/80 backdrop-blur-sm"
+      role="status"
+      aria-live="polite"
+      aria-label="Buscando preços"
+    >
+      <div class="flex flex-col items-center gap-4 text-center">
+        <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
+        <p class="font-semibold text-base-content">Buscando preços...</p>
+      </div>
+    </div>
+  }
+
+  <app-footer [attr.inert]="pricesLoading() ? '' : null" />
 </div>

@@ -1,39 +1,67 @@
-<header class="sticky top-0 z-20 border-b border-[var(--tq-border)] bg-[color-mix(in_srgb,var(--tq-canvas)_88%,transparent)] backdrop-blur-md">
-  <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
+<header
+  class="navbar sticky top-0 z-20 min-h-0 border-b border-[var(--tq-border)] bg-[color-mix(in_srgb,var(--tq-canvas)_88%,transparent)] px-0 py-0 backdrop-blur-md"
+>
+  <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3">
     <a
       href="/"
-      class="inline-flex min-h-11 items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6c47ff]"
+      class="btn btn-ghost min-h-11 gap-3 px-0 hover:bg-transparent"
       aria-label="TaQuanto, voltar ao início"
     >
-      <span class="flex h-9 w-9 items-center justify-center rounded-md bg-[#6c47ff] font-semibold text-white">TQ</span>
+      <span
+        class="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-xl font-bold text-white"
+        >TQ</span
+      >
       <span class="font-semibold text-[var(--tq-ink)]">TaQuanto</span>
     </a>
 
     <div class="flex items-center gap-2">
-      <nav class="hidden sm:block" aria-label="Navegação principal">
-        <ul class="flex items-center gap-1">
-          @for (item of navigation; track item.href) {
-            <li>
-              <a
-                [href]="item.href"
-                class="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-[var(--tq-muted)] transition hover:bg-[var(--tq-surface)] hover:text-[var(--tq-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6c47ff]"
-              >
-                {{ item.label }}
-              </a>
-            </li>
-          }
-        </ul>
-      </nav>
+      <details class="dropdown dropdown-end">
+        <summary
+          class="btn btn-square btn-ghost min-h-11 list-none text-[var(--tq-ink)]"
+          aria-label="Abrir menu de navegação"
+        >
+          <svg
+            class="h-5 w-5 fill-none stroke-current stroke-2"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M4 6h16" />
+            <path d="M4 12h16" />
+            <path d="M4 18h16" />
+          </svg>
+        </summary>
+        <nav
+          class="dropdown-content z-30 mt-2 w-56 rounded-box border border-[var(--tq-border)] bg-base-100 p-2 shadow-xl"
+          aria-label="Navegação principal"
+        >
+          <ul>
+            @for (item of navigation; track item.href) {
+              <li>
+                <a
+                  [href]="item.href"
+                  class="btn btn-ghost w-full justify-start text-[var(--tq-ink)]"
+                >
+                  {{ item.label }}
+                </a>
+              </li>
+            }
+          </ul>
+        </nav>
+      </details>
 
       <button
         type="button"
-        class="inline-flex h-11 w-11 items-center justify-center rounded-md border border-[var(--tq-border)] bg-[var(--tq-canvas)] text-[var(--tq-ink)] transition hover:bg-[var(--tq-surface)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6c47ff]"
+        class="btn btn-square btn-ghost h-11 min-h-11 w-11 border-0 shadow-none text-[var(--tq-ink)]"
         [attr.aria-label]="themeToggleLabel()"
         [attr.title]="themeToggleLabel()"
         (click)="toggleTheme()"
       >
         @if (isDark()) {
-          <svg class="h-5 w-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24" aria-hidden="true">
+          <svg
+            class="h-5 w-5 fill-none stroke-current stroke-2"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <circle cx="12" cy="12" r="4" />
             <path d="M12 2v2" />
             <path d="M12 20v2" />
@@ -45,7 +73,11 @@
             <path d="m19.07 4.93-1.41 1.41" />
           </svg>
         } @else {
-          <svg class="h-5 w-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24" aria-hidden="true">
+          <svg
+            class="h-5 w-5 fill-none stroke-current stroke-2"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
             <path d="M12 3a6 6 0 0 0 9 7.5A9 9 0 1 1 12 3Z" />
           </svg>
         }

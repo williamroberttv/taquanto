@@ -48,6 +48,5 @@ export class ThemeService {
     const root = this.document.documentElement;
 
     root.setAttribute('data-theme', theme);
-    root.setAttribute('style', 'color-scheme: ' + theme);
   }
 }

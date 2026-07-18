@@ -1,5 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import {
+  afterRenderEffect,
   afterNextRender,
   Component,
   DestroyRef,
@@ -14,16 +15,18 @@ import { ActivatedRoute, Router } from '@angular/router';
 import type * as Leaflet from 'leaflet';
 import { firstValueFrom } from 'rxjs';
 import { Footer } from '../../components/footer/footer';
+import { FavoriteToggle } from '../../components/favorite-toggle/favorite-toggle';
 import { Header } from '../../components/header/header';
 import { MunicipalityMap } from '../../components/municipality-map/municipality-map';
+import {
+  formatMoney,
+  formatSaleDate,
+  formatSaleValue,
+  locationLine,
+  recordCoordinates,
+} from '../../price-record';
+import { Favorites } from '../../services/favorites';
 import { Pagination, PriceRecord, TaquantoApi } from '../../services/taquanto-api';
-
-type ToastType = 'error' | 'warning';
-
-interface ToastMessage {
-  type: ToastType;
-  text: string;
-}
 
 interface RecentSearch {
   query: string;
@@ -32,22 +35,19 @@ interface RecentSearch {
 
 @Component({
   selector: 'app-search',
-  imports: [Header, Footer, MunicipalityMap],
-  host: {
-    '(document:keydown.escape)': 'closeRecordDetail()',
-  },
+  imports: [Header, Footer, MunicipalityMap, FavoriteToggle],
   templateUrl: './search.html',
   styleUrl: './search.scss',
 })
 export class SearchPage {
   private readonly api = inject(TaquantoApi);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly favorites = inject(Favorites);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly detailMapContainer = viewChild<ElementRef<HTMLElement>>('detailMapContainer');
-  private readonly detailCloseButton =
-    viewChild<ElementRef<HTMLButtonElement>>('detailCloseButton');
+  private readonly detailDialog = viewChild<ElementRef<HTMLDialogElement>>('detailDialog');
   private readonly loadMoreTrigger = viewChild<ElementRef<HTMLElement>>('loadMoreTrigger');
 
   private readonly defaultMunicipality = '2704302';
@@ -58,24 +58,23 @@ export class SearchPage {
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
   private leaflet?: typeof Leaflet;
   private detailMap?: Leaflet.Map;
-  private detailMarker?: Leaflet.Marker;
+  private detailMarker?: Leaflet.CircleMarker;
   private loadMoreObserver?: IntersectionObserver;
-  private previouslyFocusedElement?: HTMLElement;
+  private observedLoadMoreTrigger?: HTMLElement;
+  private observedLoadMorePage?: number;
   private loadedPriceKey: string | null = null;
   private currentPriceQuery = '';
-  private pendingInitialQuery: string | null = null;
 
   protected readonly query = signal('');
-  protected readonly activeQuery = signal('');
   protected readonly municipality = signal(this.defaultMunicipality);
-  protected readonly days = signal(7);
+  protected readonly days = signal(1);
   protected readonly filtersReady = signal(false);
   protected readonly records = signal<PriceRecord[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
   protected readonly pricesLoading = signal(false);
   protected readonly loadingMore = signal(false);
   protected readonly inlineMessage = signal<string | null>(null);
-  protected readonly toast = signal<ToastMessage | null>(null);
+  protected readonly toast = signal<string | null>(null);
   protected readonly selectedRecord = signal<PriceRecord | null>(null);
   protected readonly recentSearches = signal<RecentSearch[]>([]);
 
@@ -84,6 +83,10 @@ export class SearchPage {
   protected readonly totalRecords = computed(
     () => this.pagination()?.total_records ?? this.records().length,
   );
+  protected readonly formatMoney = formatMoney;
+  protected readonly formatSaleDate = formatSaleDate;
+  protected readonly formatSaleValue = formatSaleValue;
+  protected readonly locationLine = locationLine;
 
   constructor() {
     afterNextRender(() => {
@@ -101,13 +104,15 @@ export class SearchPage {
         this.days.set(initialDays);
       }
 
-      this.initializeInfiniteScroll();
       this.recentSearches.set(this.loadRecentSearches());
       const initialQuery = queryParams.get('q')?.trim();
       if (initialQuery) {
         this.query.set(initialQuery);
-        this.pendingInitialQuery = initialQuery;
       }
+    });
+
+    afterRenderEffect({
+      read: () => this.initializeInfiniteScroll(),
     });
 
     this.destroyRef.onDestroy(() => {
@@ -129,11 +134,7 @@ export class SearchPage {
 
   protected repeatSearch(search: RecentSearch): void {
     this.query.set(search.query);
-    if (!this.filtersReady()) {
-      this.pendingInitialQuery = search.query;
-      return;
-    }
-    void this.runSearch(search.query, true);
+    this.inlineMessage.set(null);
   }
 
   protected updateQuery(event: Event): void {
@@ -161,16 +162,9 @@ export class SearchPage {
     const changed = code !== this.municipality();
     if (changed) {
       this.municipality.set(code);
-    }
-    this.filtersReady.set(true);
-
-    const pendingQuery = this.pendingInitialQuery;
-    this.pendingInitialQuery = null;
-    if (pendingQuery) {
-      void this.runSearch(pendingQuery, changed);
-    } else if (changed) {
       this.updateUrl();
     }
+    this.filtersReady.set(true);
   }
 
   protected async loadNextPage(): Promise<void> {
@@ -189,13 +183,25 @@ export class SearchPage {
   protected openRecordDetail(record: PriceRecord): void {
     this.selectedRecord.set(record);
     if (isPlatformBrowser(this.platformId)) {
-      this.previouslyFocusedElement =
-        document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
       requestAnimationFrame(() => {
-        this.detailCloseButton()?.nativeElement.focus();
+        this.detailDialog()?.nativeElement.showModal?.();
         void this.initializeDetailMap();
       });
     }
+  }
+
+  protected isFavorite(record: PriceRecord): boolean {
+    return this.favorites.has(record);
+  }
+
+  protected toggleFavorite(record: PriceRecord): void {
+    if (!this.favorites.toggle(record)) {
+      this.showToast('Não foi possível atualizar os favoritos.');
+    }
+  }
+
+  protected dismissRecordDetail(): void {
+    this.detailDialog()?.nativeElement.close?.();
   }
 
   protected closeRecordDetail(): void {
@@ -208,46 +214,10 @@ export class SearchPage {
     this.detailMap?.remove();
     this.detailMarker = undefined;
     this.detailMap = undefined;
-    this.previouslyFocusedElement?.focus();
-    this.previouslyFocusedElement = undefined;
-  }
-
-  protected formatMoney(cents: number): string {
-    return new Intl.NumberFormat('pt-BR', { currency: 'BRL', style: 'currency' }).format(
-      cents / 100,
-    );
-  }
-
-  protected formatSaleValue(record: PriceRecord): string {
-    return `${this.formatMoney(record.sale_value_cents)}${record.unit ? ` / ${record.unit}` : ''}`;
-  }
-
-  protected formatSaleDate(record: PriceRecord): string {
-    const date = new Date(record.sold_at);
-    if (Number.isNaN(date.getTime())) {
-      return 'Data da venda não informada';
-    }
-    const formatted = new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    })
-      .format(date)
-      .replace(', ', ' às ');
-    return `Venda em ${formatted}`;
   }
 
   protected hasDifferentDeclaredValue(record: PriceRecord): boolean {
     return record.declared_value_cents !== record.sale_value_cents;
-  }
-
-  protected locationLine(record: PriceRecord): string {
-    const parts = [record.location.district, record.location.city, record.location.zip_code].filter(
-      Boolean,
-    );
-    return parts.length ? parts.join(' · ') : 'Localização textual não informada';
   }
 
   protected hasCoordinates(record: PriceRecord): boolean {
@@ -285,23 +255,23 @@ export class SearchPage {
   }
 
   private filtersChanged(): void {
+    this.priceRequestId += 1;
     this.loadedPriceKey = null;
+    this.records.set([]);
+    this.pagination.set(null);
+    this.inlineMessage.set(null);
+    this.pricesLoading.set(false);
+    this.loadingMore.set(false);
     this.updateUrl();
-    const query = this.activeQuery();
-    if (query) {
-      void this.loadPrices(query);
-    }
   }
 
   private async runSearch(query: string, updateUrl: boolean): Promise<void> {
     if (!this.isGTIN(query) && (query.length < 3 || query.length > 50)) {
       this.inlineMessage.set('Digite uma descrição de 3 a 50 caracteres ou um GTIN válido.');
-      this.showToast('warning', 'Digite uma descrição de 3 a 50 caracteres ou um GTIN válido.');
       return;
     }
 
     this.query.set(query);
-    this.activeQuery.set(query);
     this.inlineMessage.set(null);
     this.records.set([]);
     this.pagination.set(null);
@@ -360,13 +330,10 @@ export class SearchPage {
       this.inlineMessage.set(
         this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
       );
-      if (this.records().length === 0) {
-        this.showToast('warning', 'Nenhum registro encontrado para esses filtros.');
-      }
     } catch {
       if (requestId === this.priceRequestId) {
-        this.inlineMessage.set('Não foi possível buscar preços agora.');
-        this.showToast('error', 'Não foi possível buscar preços agora.');
+        this.inlineMessage.set(null);
+        this.showToast('Não foi possível concluir a busca. Tente novamente em instantes.');
       }
     } finally {
       if (requestId === this.priceRequestId) {
@@ -379,7 +346,7 @@ export class SearchPage {
   private updateUrl(): void {
     void this.router.navigate([], {
       queryParams: {
-        q: this.activeQuery() || null,
+        q: this.query().trim() || null,
         municipality: this.municipality(),
         days: this.days(),
       },
@@ -414,15 +381,13 @@ export class SearchPage {
 
     if (coordinates) {
       this.detailMarker = leaflet
-        .marker(coordinates, {
-          icon: leaflet.divIcon({
-            className: 'search-sale-marker',
-            html: '<span></span>',
-            iconAnchor: [14, 28],
-            iconSize: [28, 28],
-            popupAnchor: [0, -26],
-          }),
-          title: record.store.name + ' - ' + this.formatSaleValue(record),
+        .circleMarker(coordinates, {
+          className: 'search-sale-marker',
+          color: 'var(--tq-card)',
+          fillColor: 'var(--color-primary)',
+          fillOpacity: 1,
+          radius: 10,
+          weight: 3,
         })
         .bindPopup(
           '<strong>' +
@@ -433,17 +398,37 @@ export class SearchPage {
             this.escapeHtml(record.store.name),
         )
         .addTo(this.detailMap);
+      const markerElement = this.detailMarker.getElement();
+      markerElement?.setAttribute('role', 'button');
+      markerElement?.setAttribute(
+        'aria-label',
+        record.store.name + ' - ' + this.formatSaleValue(record),
+      );
+      markerElement?.addEventListener('keydown', (event) => {
+        const keyboardEvent = event as KeyboardEvent;
+        if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+          event.preventDefault();
+          this.detailMarker?.openPopup();
+        }
+      });
     }
     requestAnimationFrame(() => this.detailMap?.invalidateSize());
   }
 
   private initializeInfiniteScroll(): void {
     const target = this.loadMoreTrigger()?.nativeElement;
-    if (!target || this.loadMoreObserver || typeof IntersectionObserver === 'undefined') {
+    const page = this.pagination()?.page;
+    if (target === this.observedLoadMoreTrigger && page === this.observedLoadMorePage) {
       return;
     }
 
-    this.loadMoreObserver = new IntersectionObserver(
+    this.loadMoreObserver?.disconnect();
+    this.observedLoadMoreTrigger = target;
+    this.observedLoadMorePage = page;
+    if (!target || typeof IntersectionObserver === 'undefined') {
+      return;
+    }
+    this.loadMoreObserver ??= new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
           void this.loadNextPage();
@@ -455,16 +440,7 @@ export class SearchPage {
   }
 
   private coordinates(record: PriceRecord): Leaflet.LatLngExpression | null {
-    const { latitude, longitude } = record.location;
-    if (
-      latitude === null ||
-      longitude === null ||
-      !Number.isFinite(latitude) ||
-      !Number.isFinite(longitude)
-    ) {
-      return null;
-    }
-    return [latitude, longitude];
+    return recordCoordinates(record);
   }
 
   private priceKey(query: string): string {
@@ -479,11 +455,11 @@ export class SearchPage {
     return /^\d{7}$/.test(code ?? '');
   }
 
-  private showToast(type: ToastType, text: string): void {
+  private showToast(text: string): void {
     if (this.toastTimer) {
       clearTimeout(this.toastTimer);
     }
-    this.toast.set({ type, text });
+    this.toast.set(text);
     this.toastTimer = setTimeout(() => this.toast.set(null), 4500);
   }
 

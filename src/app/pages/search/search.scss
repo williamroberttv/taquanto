@@ -5,14 +5,18 @@
 .search-shell {
   background:
     linear-gradient(180deg, var(--tq-s88), var(--tq-c96) 260px, var(--tq-card)),
-    radial-gradient(circle at 78% 6%, rgb(108 71 255 / 10%), transparent 28%);
+    radial-gradient(
+      circle at 78% 6%,
+      color-mix(in srgb, var(--color-primary) 10%, transparent),
+      transparent 28%
+    );
 }
 
 .eyebrow {
-  color: #6c47ff;
+  color: var(--color-primary);
   font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -24,7 +28,7 @@
   color: var(--tq-muted);
   font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -38,19 +42,8 @@
 .recent-search-chip {
   display: inline-grid;
   max-width: min(240px, 100%);
-  border: 1px solid var(--tq-border);
-  border-radius: 8px;
-  background: var(--tq-card);
-  color: var(--tq-ink);
   padding: 8px 10px;
   text-align: left;
-
-  &:hover,
-  &:focus-visible {
-    border-color: #6c47ff;
-    box-shadow: 0 8px 22px rgb(108 71 255 / 14%);
-    outline: none;
-  }
 }
 
 .recent-search-query,
@@ -72,8 +65,7 @@
   font-weight: 700;
 }
 
-.search-input-wrap,
-.info-wrap {
+.search-input-wrap {
   position: relative;
 }
 
@@ -87,90 +79,21 @@
   stroke-width: 2;
 }
 
-.button-icon {
+.button-icon,
+.detail-button svg {
   width: 18px;
   height: 18px;
-  margin-right: 8px;
 }
 
 .search-icon {
   position: absolute;
   top: 50%;
   left: 14px;
+  z-index: 1;
   width: 20px;
   height: 20px;
-  color: #6c47ff;
+  color: var(--color-primary);
   transform: translateY(-50%);
-}
-
-.info-wrap {
-  display: inline-flex;
-  flex: 0 0 auto;
-
-  &:hover .info-popover,
-  &:focus-within .info-popover {
-    display: block;
-  }
-}
-
-.info-button,
-.detail-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--tq-border);
-  background: var(--tq-surface);
-  color: #6c47ff;
-
-  &:hover,
-  &:focus-visible {
-    border-color: #6c47ff;
-    color: #fff;
-    outline: none;
-  }
-}
-
-.info-button {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 auto;
-  border-width: 2px;
-  border-radius: 999px;
-  background: var(--tq-card);
-  font-size: 0.9rem;
-  font-weight: 800;
-  line-height: 1;
-
-  &:hover,
-  &:focus-visible {
-    background: #6c47ff;
-  }
-}
-
-.info-popover {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 8px);
-  z-index: 5;
-  display: none;
-  width: min(320px, calc(100vw - 40px));
-  border: 1px solid var(--tq-border);
-  border-radius: 8px;
-  background: var(--tq-card);
-  box-shadow: 0 14px 42px var(--tq-elevated-shadow);
-  color: var(--tq-muted);
-  font-size: 0.78rem;
-  font-weight: 600;
-  line-height: 1.45;
-  padding: 9px 10px;
-}
-
-.location-filter {
-  border: 1px solid var(--tq-border);
-  border-radius: 0.75rem;
-  background: var(--tq-surface);
-  box-shadow: 0 12px 34px rgb(39 21 109 / 8%);
-  overflow: hidden;
 }
 
 .location-filter-heading {
@@ -182,30 +105,6 @@
   padding: 1.25rem;
 }
 
-.period-filter label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: var(--tq-ink);
-  font-size: 0.875rem;
-  font-weight: 700;
-}
-
-.period-filter select {
-  min-height: 3rem;
-  width: 100%;
-  border: 1px solid var(--tq-border);
-  border-radius: 0.5rem;
-  background: var(--tq-card);
-  color: var(--tq-ink);
-  padding: 0.75rem;
-  font: inherit;
-
-  &:focus-visible {
-    outline: 2px solid #6c47ff;
-    outline-offset: 2px;
-  }
-}
-
 .period-filter p {
   margin: 0.625rem 0 0;
   color: var(--tq-muted);
@@ -213,47 +112,15 @@
   line-height: 1.5;
 }
 
-.price-card {
-  display: grid;
-  min-height: 100%;
-  align-content: space-between;
-  gap: 18px;
-  border: 1px solid var(--tq-border);
-  border-radius: 8px;
-  background: var(--tq-card);
-  padding: 18px;
-  box-shadow: 0 6px 22px var(--tq-shadow);
-}
-
-.price-card-main {
-  min-width: 0;
-}
-
 .price-value {
-  color: #6c47ff;
+  color: var(--color-primary);
   font-size: 1.55rem;
   font-weight: 800;
   line-height: 1.1;
 }
 
 .detail-button {
-  min-height: 42px;
   width: fit-content;
-  gap: 8px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 800;
-  padding: 0 14px;
-
-  &:hover,
-  &:focus-visible {
-    background: #6c47ff;
-  }
-
-  svg {
-    width: 18px;
-    height: 18px;
-  }
 }
 
 .load-more-trigger {
