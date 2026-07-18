@@ -1,5 +1,13 @@
-import { isPlatformBrowser } from '@angular/common';
-import { afterNextRender, Component, DestroyRef, ElementRef, PLATFORM_ID, inject, viewChild } from '@angular/core';
+import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
+import {
+  afterNextRender,
+  Component,
+  DestroyRef,
+  ElementRef,
+  PLATFORM_ID,
+  inject,
+  viewChild,
+} from '@angular/core';
 import type * as Leaflet from 'leaflet';
 import { Footer } from '../../components/footer/footer';
 import { Header } from '../../components/header/header';
@@ -20,7 +28,7 @@ interface SalePreview {
 
 @Component({
   selector: 'app-home',
-  imports: [Header, Footer],
+  imports: [Header, Footer, NgOptimizedImage],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
@@ -33,15 +41,15 @@ export class Home {
   protected readonly steps: Step[] = [
     {
       title: 'Procure o produto',
-      description: 'Digite o nome do item ou use o código de barras quando tiver a embalagem por perto.',
+      description: 'Digite uma descrição ou o GTIN da embalagem e escolha município e período.',
     },
     {
-      title: 'Compare preços reais',
-      description: 'Veja quanto outras pessoas pagaram recentemente e onde esses valores apareceram.',
+      title: 'Compare registros oficiais',
+      description: 'Veja valor, estabelecimento, data e localização informados pela fonte pública.',
     },
     {
-      title: 'Escolha melhor onde comprar',
-      description: 'Encontre uma referência antes de sair de casa e evite pagar mais caro por falta de informação.',
+      title: 'Guarde para consultar depois',
+      description: 'Favorite o retrato da venda neste dispositivo e use os dados como referência.',
     },
   ];
 

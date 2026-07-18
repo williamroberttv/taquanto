@@ -1,0 +1,41 @@
+<div class="municipality-layout">
+  <div class="map-panel">
+    <div
+      #mapContainer
+      class="municipality-map"
+      role="group"
+      aria-label="Mapa dos municípios de Alagoas. Selecione uma cidade pelo mapa ou pelo campo ao lado."
+      [attr.aria-busy]="municipalities().length === 0 && !loadError()"
+    ></div>
+    <p class="map-caption">Passe o cursor ou use Tab para identificar cada município.</p>
+  </div>
+
+  <div class="filter-panel">
+    <div class="fieldset">
+      <label class="fieldset-legend" for="municipality-select">Município</label>
+      <select
+        id="municipality-select"
+        class="select w-full"
+        [value]="resolvedSelectedCode()"
+        (change)="selectFromControl($event)"
+      >
+        @for (municipality of municipalities(); track municipality.code) {
+          <option
+            [value]="municipality.code"
+            [selected]="municipality.code === resolvedSelectedCode()"
+          >
+            {{ municipality.name }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <ng-content />
+
+    @if (loadError()) {
+      <p class="map-error text-error" role="alert">
+        Não foi possível carregar o mapa. Recarregue a página para tentar novamente.
+      </p>
+    }
+  </div>
+</div>

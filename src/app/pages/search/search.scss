@@ -1,0 +1,128 @@
+:host {
+  display: block;
+}
+
+.search-shell {
+  background:
+    linear-gradient(180deg, var(--tq-s88), var(--tq-c96) 260px, var(--tq-card)),
+    radial-gradient(
+      circle at 78% 6%,
+      color-mix(in srgb, var(--color-primary) 10%, transparent),
+      transparent 28%
+    );
+}
+
+.eyebrow {
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.recent-searches {
+  margin-top: 24px;
+}
+
+.recent-searches-title {
+  color: var(--tq-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.recent-search-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.recent-search-chip {
+  display: inline-grid;
+  max-width: min(240px, 100%);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.recent-search-query,
+.recent-search-time {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-search-query {
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.recent-search-time {
+  margin-top: 2px;
+  color: var(--tq-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.search-input-wrap {
+  position: relative;
+}
+
+.button-icon,
+.search-icon,
+.detail-button svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.button-icon,
+.detail-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
+  transform: translateY(-50%);
+}
+
+.location-filter-heading {
+  border-bottom: 1px solid var(--tq-border);
+  padding: 1.25rem;
+}
+
+.location-filter app-municipality-map {
+  padding: 1.25rem;
+}
+
+.period-filter p {
+  margin: 0.625rem 0 0;
+  color: var(--tq-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.price-value {
+  color: var(--color-primary);
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.detail-button {
+  width: fit-content;
+}
+
+.load-more-trigger {
+  height: 1px;
+}

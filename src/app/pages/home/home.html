@@ -1,63 +1,102 @@
-<div id="topo" class="min-h-dvh bg-white font-['Inter'] text-[#131316]">
+<div id="topo" class="min-h-dvh bg-[var(--tq-canvas)] font-['Inter'] text-[var(--tq-ink)]">
   <app-header />
 
   <main>
-    <section class="hero px-5 pb-12 pt-12 sm:pb-16 sm:pt-16 lg:pb-20" aria-labelledby="hero-title">
-      <div class="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+    <section class="hero px-5 py-12 sm:py-16 lg:py-20" aria-labelledby="hero-title">
+      <div class="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_0.9fr]">
         <div class="max-w-2xl">
-          <p class="eyebrow">Compare preços em Alagoas</p>
-          <h1 id="hero-title" class="mt-4 max-w-3xl text-5xl font-bold leading-[1.05] text-[#131316] sm:text-6xl">
-            Encontre melhores preços antes de comprar.
+          <p class="eyebrow">Preços públicos em Alagoas</p>
+          <h1
+            id="hero-title"
+            class="mt-4 text-5xl font-bold leading-[1.02] tracking-[-0.035em] sm:text-6xl"
+          >
+            Descubra quanto produtos custaram perto de você.
           </h1>
-          <p class="mt-6 max-w-xl text-lg leading-8 text-[#747686]">
-            Pesquise um produto, compare valores encontrados em compras reais e descubra onde pode valer mais a pena comprar.
+          <p class="mt-6 max-w-xl text-lg leading-8 text-[var(--tq-muted)]">
+            O TaQuanto organiza registros reais de vendas emitidos em NFC-e para você comparar
+            valor, estabelecimento, data e município em uma consulta simples.
           </p>
 
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a
-              href="#pesquisa"
-              class="inline-flex min-h-12 items-center justify-center rounded-md bg-[#6c47ff] px-5 text-sm font-semibold text-white transition hover:bg-[#5a35ee] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6c47ff]"
-            >
+            <a href="/buscar" class="btn btn-primary min-h-12">
+              Começar uma consulta
               <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m5 12 5 5L20 7" />
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
               </svg>
-              Buscar melhores preços
             </a>
-            <a
-              href="#como-funciona"
-              class="inline-flex min-h-12 items-center justify-center rounded-md border border-[#e0e0e5] bg-white px-5 text-sm font-semibold text-[#131316] transition hover:bg-[#f7f7f8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6c47ff]"
-            >
-              <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 5v14" />
-                <path d="m19 12-7 7-7-7" />
-              </svg>
-              Como funciona
-            </a>
+            <a href="/favoritos" class="btn btn-outline min-h-12">Ver favoritos</a>
           </div>
 
-          <p class="mt-5 max-w-lg text-sm leading-6 text-[#747686]">
-            Os valores ajudam como referência de economia. O preço pode mudar no estabelecimento.
+          <p class="mt-5 max-w-lg text-sm leading-6 text-[var(--tq-muted)]">
+            Sem cadastro. Os valores são históricos e podem mudar no estabelecimento.
           </p>
         </div>
 
-        <div class="hero-preview" aria-label="Prévia visual da busca de preços">
-          <div class="search-card" id="pesquisa">
-            <p class="text-sm font-semibold text-[#747686]">Buscar produto</p>
-            <div class="mt-3 flex items-center gap-3 rounded-md border border-[#e0e0e5] bg-white px-4 py-3 shadow-sm">
+        <figure class="brand-banner">
+          <img
+            ngSrc="/images/elephant-3.png"
+            width="1254"
+            height="1254"
+            sizes="(max-width: 1023px) 100vw, 42vw"
+            priority
+            alt="Mascote do TaQuanto com calculadora e etiquetas de preço. Compare, economize, escolha melhor."
+          />
+        </figure>
+      </div>
+    </section>
+
+    <section
+      id="dados"
+      class="experience-section border-y border-[var(--tq-border)] px-5 py-12 sm:py-16"
+      aria-labelledby="experience-title"
+    >
+      <div class="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.72fr_1.28fr]">
+        <div>
+          <p class="eyebrow">Economiza Alagoas / SEFAZ-AL</p>
+          <h2 id="experience-title" class="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
+            Registros oficiais, organizados para comparar.
+          </h2>
+          <p class="mt-4 leading-7 text-[var(--tq-muted)]">
+            Escolha um município e um período recente. A busca reúne os registros retornados pela
+            fonte pública sem chamar preço histórico de promoção ou oferta garantida.
+          </p>
+          <dl class="fact-list mt-7">
+            <div>
+              <dt>Consulta</dt>
+              <dd>Por nome ou código de barras</dd>
+            </div>
+            <div>
+              <dt>Contexto</dt>
+              <dd>Município, período e estabelecimento</dd>
+            </div>
+            <div>
+              <dt>Acesso</dt>
+              <dd>Público e sem cadastro</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="experience-preview" aria-label="Prévia visual de uma consulta de preços">
+          <div class="search-card card card-border bg-base-100/95 shadow-xl" id="pesquisa">
+            <p class="text-sm font-semibold text-[var(--tq-muted)]">Buscar produto</p>
+            <div class="input mt-3 flex h-12 w-full items-center gap-3 bg-base-100">
               <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="11" cy="11" r="7" />
                 <path d="m16 16 4 4" />
               </svg>
-              <span class="text-[#131316]">café 250g</span>
+              <span class="text-[var(--tq-ink)]">café 250g</span>
             </div>
-            <div class="mt-4 space-y-3">
+            <div class="list mt-4">
               @for (sale of salesPreview; track sale.product) {
-                <article class="result-row">
+                <article class="result-row list-row">
                   <div>
-                    <h2 class="text-sm font-semibold text-[#131316]">{{ sale.product }}</h2>
-                    <p class="mt-1 text-xs text-[#747686]">{{ sale.place }} · {{ sale.area }} · {{ sale.time }}</p>
+                    <h3 class="text-sm font-semibold text-[var(--tq-ink)]">{{ sale.product }}</h3>
+                    <p class="mt-1 text-xs text-[var(--tq-muted)]">
+                      {{ sale.place }} · {{ sale.area }} · {{ sale.time }}
+                    </p>
                   </div>
-                  <p class="text-base font-bold text-[#6c47ff]">{{ sale.price }}</p>
+                  <p class="text-base font-bold text-primary">{{ sale.price }}</p>
                 </article>
               }
             </div>
@@ -67,18 +106,13 @@
             <div
               #mapContainer
               class="map-container"
-              role="img"
+              role="region"
               aria-label="Mapa de Maceió com uma prévia de estabelecimentos que tiveram vendas registradas."
             ></div>
             <div class="map-fallback" aria-hidden="true">
-              <span class="map-road map-road-main"></span>
-              <span class="map-road map-road-side"></span>
-              <span class="map-pin map-pin-one"></span>
-              <span class="map-pin map-pin-two"></span>
-              <span class="map-pin map-pin-three"></span>
               <div class="map-fallback-card">
-                <p>Prévia no mapa</p>
-                <strong>Preços por região</strong>
+                <span>Prévia no mapa</span>
+                <strong>Registros por região</strong>
               </div>
             </div>
           </div>
@@ -86,87 +120,68 @@
       </div>
     </section>
 
-    <section id="como-funciona" class="border-y border-[#e0e0e5] bg-[#f7f7f8] px-5 py-12 sm:py-16" aria-labelledby="steps-title">
-      <div class="mx-auto max-w-6xl">
-        <div class="max-w-2xl">
-          <p class="eyebrow">Economia sem adivinhação</p>
-          <h2 id="steps-title" class="mt-3 text-3xl font-bold text-[#131316] sm:text-4xl">
-            Veja preço, lugar e região em uma consulta simples.
-          </h2>
+    <section
+      id="como-funciona"
+      class="guide-section px-5 py-12 sm:py-16"
+      aria-labelledby="steps-title"
+    >
+      <div
+        class="guide-banner mx-auto grid max-w-6xl gap-8 overflow-hidden lg:grid-cols-[0.78fr_1.22fr]"
+      >
+        <div class="guide-art bg-[#32177d]">
+          <img
+            ngSrc="/images/elephant-2.png"
+            width="2528"
+            height="1686"
+            sizes="(max-width: 1023px) 100vw, 38vw"
+            class="mix-blend-luminosity"
+            alt="Mascote do TaQuanto segurando uma calculadora e uma etiqueta de preço."
+          />
         </div>
-
-        <div class="mt-8 grid gap-4 md:grid-cols-3">
-          @for (step of steps; track step.title) {
-            <article class="rounded-md border border-[#e0e0e5] bg-white p-6 shadow-sm">
-              <div class="step-icon" aria-hidden="true">
-                @switch ($index) {
-                  @case (0) {
-                    <svg viewBox="0 0 24 24">
-                      <path d="M4 7h16" />
-                      <path d="M7 12h10" />
-                      <path d="M10 17h4" />
-                    </svg>
-                  }
-                  @case (1) {
-                    <svg viewBox="0 0 24 24">
-                      <path d="M4 18V7" />
-                      <path d="M9 18V4" />
-                      <path d="M14 18v-8" />
-                      <path d="M19 18V6" />
-                    </svg>
-                  }
-                  @default {
-                    <svg viewBox="0 0 24 24">
-                      <path d="M12 21s7-5.2 7-11a7 7 0 0 0-14 0c0 5.8 7 11 7 11Z" />
-                      <circle cx="12" cy="10" r="2" />
-                    </svg>
-                  }
-                }
-              </div>
-              <h3 class="mt-5 text-lg font-semibold text-[#131316]">{{ step.title }}</h3>
-              <p class="mt-3 leading-7 text-[#747686]">{{ step.description }}</p>
-            </article>
-          }
+        <div class="guide-copy">
+          <p class="guide-eyebrow">Do produto ao contexto</p>
+          <h2 id="steps-title" class="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
+            Três passos para entender um preço registrado.
+          </h2>
+          <div class="mt-7 grid gap-3">
+            @for (step of steps; track step.title) {
+              <article class="guide-step">
+                <span aria-hidden="true">{{ $index + 1 }}</span>
+                <div>
+                  <h3 class="font-bold">{{ step.title }}</h3>
+                  <p class="mt-1 text-sm leading-6">{{ step.description }}</p>
+                </div>
+              </article>
+            }
+          </div>
         </div>
       </div>
     </section>
 
-    <section id="dados" class="px-5 py-12 sm:py-16" aria-labelledby="data-title">
-      <div class="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
-        <div>
-          <p class="eyebrow">Por que usar</p>
-          <h2 id="data-title" class="mt-3 text-3xl font-bold text-[#131316] sm:text-4xl">
-            Menos tempo pesquisando, mais chance de economizar.
+    <section class="px-5 pb-12 sm:pb-16" aria-labelledby="favorites-banner-title">
+      <div
+        class="favorites-banner mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-[0.7fr_1.3fr]"
+      >
+        <img
+          ngSrc="/images/elephant-1.png"
+          width="1536"
+          height="1024"
+          sizes="(max-width: 1023px) 100vw, 36vw"
+          alt="Selo do mascote TaQuanto com calculadora e etiquetas de preço."
+        />
+        <div class="p-6 sm:p-10">
+          <p class="eyebrow">Favoritos no seu dispositivo</p>
+          <h2 id="favorites-banner-title" class="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
+            Guarde a venda, não uma promessa de preço.
           </h2>
-          <p class="mt-4 leading-7 text-[#747686]">
-            O TaQuanto organiza informações de compras já registradas para ajudar você a comparar valores sem abrir várias páginas ou depender de chute.
+          <p class="mt-4 max-w-2xl leading-7 text-[var(--tq-muted)]">
+            Salve o retrato completo de um registro — valor, estabelecimento, data e localização —
+            para consultar depois neste navegador.
           </p>
-        </div>
-
-        <div class="rounded-md border border-[#e0e0e5] bg-white p-6 shadow-sm">
-          <dl class="grid gap-5 sm:grid-cols-3">
-            <div>
-              <dt class="inline-flex items-center gap-2 text-xs font-semibold uppercase text-[#747686]">
-                <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h10" /></svg>
-                Preços
-              </dt>
-              <dd class="mt-2 font-semibold text-[#131316]">Compras reais</dd>
-            </div>
-            <div>
-              <dt class="inline-flex items-center gap-2 text-xs font-semibold uppercase text-[#747686]">
-                <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></svg>
-                Pesquisa
-              </dt>
-              <dd class="mt-2 font-semibold text-[#131316]">Sem cadastro</dd>
-            </div>
-            <div>
-              <dt class="inline-flex items-center gap-2 text-xs font-semibold uppercase text-[#747686]">
-                <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-4.6 6-10a6 6 0 0 0-12 0c0 5.4 6 10 6 10Z" /><circle cx="12" cy="11" r="2" /></svg>
-                Mapa
-              </dt>
-              <dd class="mt-2 font-semibold text-[#131316]">Perto de você</dd>
-            </div>
-          </dl>
+          <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+            <a href="/buscar" class="btn btn-primary min-h-12">Encontrar registros</a>
+            <a href="/favoritos" class="btn btn-ghost min-h-12">Abrir favoritos</a>
+          </div>
         </div>
       </div>
     </section>

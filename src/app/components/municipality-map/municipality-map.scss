@@ -1,0 +1,80 @@
+:host {
+  display: block;
+}
+
+.municipality-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.map-panel {
+  min-width: 0;
+}
+
+.municipality-map {
+  min-height: 25rem;
+  border: 1px solid var(--tq-border);
+  border-radius: 0.75rem;
+  background: var(--tq-card);
+}
+
+.map-caption {
+  margin: 0.625rem 0 0;
+  color: var(--tq-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.filter-panel {
+  display: grid;
+  align-content: start;
+  gap: 1.25rem;
+}
+
+.map-error {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+:host ::ng-deep .municipality-map .leaflet-interactive {
+  cursor: pointer;
+}
+
+:host ::ng-deep .municipality-map .leaflet-interactive:focus {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+:host ::ng-deep .municipality-map .municipality-name {
+  border: 0;
+  border-radius: 0.35rem;
+  background: var(--color-primary);
+  box-shadow: none;
+  color: var(--color-primary-content);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.35rem 0.45rem;
+}
+
+:host ::ng-deep .municipality-map .municipality-name::before {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .municipality-layout {
+    grid-template-columns: minmax(0, 1.55fr) minmax(16rem, 0.75fr);
+    align-items: start;
+  }
+}
+
+@media (max-width: 767px) {
+  .filter-panel {
+    grid-row: 1;
+  }
+
+  .municipality-map {
+    min-height: 21rem;
+  }
+}

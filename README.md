@@ -7,18 +7,18 @@ This repository must not call SEFAZ directly and must not expose SEFAZ credentia
 ## Current State
 
 - Angular 22 frontend with SSR/prerender configured.
-- Public landing page at `/`.
-- Static preview content only; real search is not connected yet.
+- Public landing page at `/`, prerendered at build time.
+- Client-rendered public product search at `/buscar`, connected to the TaQuanto API.
 - Leaflet is dynamically imported after browser render for the landing map preview.
-- Tailwind CSS is available through `src/styles.css`.
+- Tailwind CSS and daisyUI are configured through `src/styles.css` with custom TaQuanto light and dark themes.
 - Unit tests run through Angular's unit-test builder with Vitest installed.
 - Production Docker image builds the Angular app and runs the SSR server on port `4000`.
 
-Not implemented yet: TaQuanto API integration, product search route, authentication, saved searches, alerts, consumer pages, and personalized history.
+Not implemented yet: authentication, saved searches, alerts, consumer pages, and personalized history.
 
 ## Architecture Rules
 
-- Public pages use SSR/prerender for fast first load and shareable/indexable content.
+- Only the public landing page is prerendered for a fast, indexable first load; search and future application routes render as SPA views.
 - Authenticated pages should behave as SPA views after login is available.
 - The frontend talks to API TaQuanto, never directly to Economiza Alagoas/SEFAZ-AL.
 - Basic product search must stay public; login is only for future personal features.
