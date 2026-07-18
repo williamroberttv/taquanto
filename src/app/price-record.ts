@@ -48,15 +48,6 @@ export function recordCoordinates(record: PriceRecord): [number, number] | null 
   return [latitude, longitude];
 }
 
-export function recordMapUrl(record: PriceRecord): string | null {
-  const coordinates = recordCoordinates(record);
-  if (!coordinates) {
-    return null;
-  }
-  const [latitude, longitude] = coordinates;
-  return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`;
-}
-
 function normalizeCoordinate(value: number | string | null): number | null {
   if (value === null || (typeof value === 'string' && value.trim() === '')) {
     return null;
