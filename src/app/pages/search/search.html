@@ -69,11 +69,11 @@
             @for (search of recentSearches(); track search.query) {
               <button
                 type="button"
-                class="recent-search-chip group badge badge-outline badge-primary h-auto min-h-11 cursor-pointer transition-colors hover:bg-primary hover:text-primary-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                class="recent-search-chip group badge badge-outline badge-primary h-auto min-h-11 cursor-pointer transition-colors hover:bg-primary hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 (click)="repeatSearch(search)"
               >
                 <span class="recent-search-query">{{ search.query }}</span>
-                <span class="recent-search-time group-hover:text-primary-content">{{
+                <span class="recent-search-time group-hover:text-white">{{
                   formatRecentSearchTime(search)
                 }}</span>
               </button>
