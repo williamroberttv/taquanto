@@ -99,7 +99,7 @@ export class Home {
       return;
     }
 
-    const leaflet = await import('leaflet');
+    const leaflet = (await import('leaflet')).default;
     const markerIcon = leaflet.divIcon({
       className: 'sale-marker',
       html: '<span></span>',

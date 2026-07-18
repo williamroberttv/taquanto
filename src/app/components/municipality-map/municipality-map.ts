@@ -91,7 +91,7 @@ export class MunicipalityMap {
       return;
     }
 
-    this.leaflet = await import('leaflet');
+    this.leaflet = (await import('leaflet')).default;
     this.map = this.leaflet.map(container, {
       attributionControl: false,
       scrollWheelZoom: false,
