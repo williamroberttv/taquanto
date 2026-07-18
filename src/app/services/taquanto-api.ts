@@ -62,7 +62,7 @@ export class TaquantoApi {
 
   prices(query: string, pageParams: PricePageParams) {
     return this.http
-      .get<SearchResponse>(`${this.baseUrl}/prices`, {
+      .get<SearchResponse>(`${this.baseUrl}/v1/prices`, {
         params: {
           days: String(pageParams.days),
           limit: String(pageParams.limit),
