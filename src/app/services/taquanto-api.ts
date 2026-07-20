@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
-import { timeout } from 'rxjs';
+import { map, timeout } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface SearchResponse {
@@ -54,6 +54,14 @@ export interface PricePageParams {
   page: number;
 }
 
+export type CacheStatus = 'HIT' | 'STALE' | 'MISS';
+
+export interface PriceSearchResponse {
+  data: SearchResponse;
+  cacheStatus: CacheStatus | null;
+  ageSeconds: number | null;
+}
+
 @Service()
 export class TaquantoApi {
   private readonly http = inject(HttpClient);
@@ -63,6 +71,7 @@ export class TaquantoApi {
   prices(query: string, pageParams: PricePageParams) {
     return this.http
       .get<SearchResponse>(`${this.baseUrl}/v1/prices`, {
+        observe: 'response',
         params: {
           days: String(pageParams.days),
           limit: String(pageParams.limit),
@@ -71,6 +80,24 @@ export class TaquantoApi {
           query,
         },
       })
-      .pipe(timeout(this.priceTimeoutMs));
+      .pipe(
+        timeout(this.priceTimeoutMs),
+        map((response): PriceSearchResponse => {
+          if (!response.body) {
+            throw new Error('Empty prices response');
+          }
+
+          const cacheStatus = response.headers.get('X-Cache');
+          const age = response.headers.get('Age');
+          return {
+            data: response.body,
+            cacheStatus:
+              cacheStatus === 'HIT' || cacheStatus === 'STALE' || cacheStatus === 'MISS'
+                ? cacheStatus
+                : null,
+            ageSeconds: age !== null && /^\d+$/.test(age) ? Number(age) : null,
+          };
+        }),
+      );
   }
 }

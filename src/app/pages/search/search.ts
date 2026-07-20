@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import type * as Leaflet from 'leaflet';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import { Footer } from '../../components/footer/footer';
 import { FavoriteToggle } from '../../components/favorite-toggle/favorite-toggle';
 import { Header } from '../../components/header/header';
@@ -26,7 +26,12 @@ import {
   recordCoordinates,
 } from '../../price-record';
 import { Favorites } from '../../services/favorites';
-import { Pagination, PriceRecord, TaquantoApi } from '../../services/taquanto-api';
+import {
+  Pagination,
+  PriceRecord,
+  PriceSearchResponse,
+  TaquantoApi,
+} from '../../services/taquanto-api';
 
 interface RecentSearch {
   query: string;
@@ -54,7 +59,13 @@ export class SearchPage {
   private readonly recentSearchesKey = 'taquanto:recent-searches';
   private readonly pageSize = 50;
   private readonly periodValues = [1, 3, 7, 10];
+  private readonly revalidationIntervalMs = 5000;
+  private readonly revalidationMaxAttempts = 25;
   private priceRequestId = 0;
+  private revalidationActive = false;
+  private revalidationAttempts = 0;
+  private revalidationDeadline = 0;
+  private revalidationTimer: ReturnType<typeof setTimeout> | null = null;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
   private leaflet?: typeof Leaflet;
   private detailMap?: Leaflet.Map;
@@ -74,6 +85,7 @@ export class SearchPage {
   protected readonly pricesLoading = signal(false);
   protected readonly loadingMore = signal(false);
   protected readonly inlineMessage = signal<string | null>(null);
+  protected readonly cacheMessage = signal<string | null>(null);
   protected readonly toast = signal<string | null>(null);
   protected readonly selectedRecord = signal<PriceRecord | null>(null);
   protected readonly recentSearches = signal<RecentSearch[]>([]);
@@ -119,6 +131,8 @@ export class SearchPage {
       if (this.toastTimer) {
         clearTimeout(this.toastTimer);
       }
+      this.priceRequestId += 1;
+      this.cancelRevalidation();
       this.loadMoreObserver?.disconnect();
       this.detailMap?.remove();
     });
@@ -255,6 +269,7 @@ export class SearchPage {
   }
 
   private filtersChanged(): void {
+    this.cancelRevalidation();
     this.priceRequestId += 1;
     this.loadedPriceKey = null;
     this.records.set([]);
@@ -272,6 +287,7 @@ export class SearchPage {
     }
 
     this.query.set(query);
+    this.cancelRevalidation();
     this.inlineMessage.set(null);
     this.records.set([]);
     this.pagination.set(null);
@@ -324,12 +340,17 @@ export class SearchPage {
         return;
       }
 
-      this.records.set(append ? [...this.records(), ...response.results] : response.results);
-      this.pagination.set(response.pagination);
+      this.records.set(
+        append ? [...this.records(), ...response.data.results] : response.data.results,
+      );
+      this.pagination.set(response.data.pagination);
       this.loadedPriceKey = this.priceKey(query);
       this.inlineMessage.set(
         this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
       );
+      if (response.cacheStatus === 'STALE') {
+        this.startRevalidation(requestId);
+      }
     } catch {
       if (requestId === this.priceRequestId) {
         this.inlineMessage.set(null);
@@ -341,6 +362,105 @@ export class SearchPage {
         this.loadingMore.set(false);
       }
     }
+  }
+
+  private startRevalidation(requestId: number): void {
+    if (this.revalidationActive || requestId !== this.priceRequestId) {
+      return;
+    }
+    this.revalidationActive = true;
+    this.revalidationAttempts = 0;
+    this.revalidationDeadline =
+      Date.now() + this.revalidationIntervalMs * this.revalidationMaxAttempts;
+    this.cacheMessage.set('Exibindo dados em cache enquanto atualizamos.');
+    this.scheduleRevalidation(requestId);
+  }
+
+  private scheduleRevalidation(requestId: number): void {
+    if (requestId !== this.priceRequestId) {
+      return;
+    }
+    const remainingMs = this.revalidationDeadline - Date.now();
+    if (this.revalidationAttempts >= this.revalidationMaxAttempts || remainingMs <= 0) {
+      this.finishRevalidation('Não foi possível atualizar agora; exibindo dados em cache.');
+      return;
+    }
+    this.revalidationTimer = setTimeout(
+      () => {
+        this.revalidationTimer = null;
+        void this.revalidateLoadedPages(requestId);
+      },
+      Math.min(this.revalidationIntervalMs, remainingMs),
+    );
+  }
+
+  private async revalidateLoadedPages(requestId: number): Promise<void> {
+    const loadedPages = this.pagination()?.page ?? 0;
+    if (!loadedPages || requestId !== this.priceRequestId) {
+      return;
+    }
+    const remainingMs = this.revalidationDeadline - Date.now();
+    if (remainingMs <= 0) {
+      this.finishRevalidation('Não foi possível atualizar agora; exibindo dados em cache.');
+      return;
+    }
+
+    this.revalidationAttempts += 1;
+    try {
+      const responses = await Promise.all(
+        Array.from({ length: loadedPages }, (_, index) =>
+          firstValueFrom(
+            this.api
+              .prices(this.currentPriceQuery, {
+                days: this.days(),
+                limit: this.pageSize,
+                municipality: this.municipality(),
+                page: index + 1,
+              })
+              .pipe(timeout(remainingMs)),
+          ),
+        ),
+      );
+      if (requestId !== this.priceRequestId) {
+        return;
+      }
+      if (this.pagination()?.page !== loadedPages || this.hasStalePage(responses)) {
+        this.scheduleRevalidation(requestId);
+        return;
+      }
+
+      this.records.set(responses.flatMap((response) => response.data.results));
+      this.pagination.set(responses.at(-1)!.data.pagination);
+      this.inlineMessage.set(
+        this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
+      );
+      this.finishRevalidation('Resultados atualizados.');
+    } catch {
+      this.scheduleRevalidation(requestId);
+    }
+  }
+
+  private hasStalePage(responses: PriceSearchResponse[]): boolean {
+    return responses.some((response) => response.cacheStatus === 'STALE');
+  }
+
+  private cancelRevalidation(): void {
+    if (this.revalidationTimer) {
+      clearTimeout(this.revalidationTimer);
+      this.revalidationTimer = null;
+    }
+    this.revalidationActive = false;
+    this.revalidationAttempts = 0;
+    this.revalidationDeadline = 0;
+    this.cacheMessage.set(null);
+  }
+
+  private finishRevalidation(message: string): void {
+    this.revalidationActive = false;
+    this.revalidationTimer = null;
+    this.revalidationAttempts = 0;
+    this.revalidationDeadline = 0;
+    this.cacheMessage.set(message);
   }
 
   private updateUrl(): void {
