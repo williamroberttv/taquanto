@@ -4,9 +4,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 import {
+  CacheStatus,
   PricePageParams,
   PriceRecord,
-  SearchResponse,
+  PriceSearchResponse,
   TaquantoApi,
 } from '../../services/taquanto-api';
 import { SearchPage } from './search';
@@ -72,8 +73,11 @@ class TaquantoApiStub {
   fail = false;
   results: PriceRecord[] = [];
   pageResults = new Map<number, PriceRecord[]>();
+  pageResultVersions = new Map<number, PriceRecord[][]>();
+  cacheStatuses = new Map<number, CacheStatus[]>();
+  cacheStatus: CacheStatus = 'MISS';
   totalPages = 1;
-  pendingResponse: Subject<SearchResponse> | null = null;
+  pendingResponse: Subject<PriceSearchResponse> | null = null;
 
   prices(query: string, params: PricePageParams) {
     this.priceCalls.push({ query, params });
@@ -83,23 +87,30 @@ class TaquantoApiStub {
     if (this.fail) {
       return throwError(() => new Error('API unavailable'));
     }
-    const results = this.pageResults.get(params.page) ?? this.results;
+    const results =
+      this.pageResultVersions.get(params.page)?.shift() ??
+      this.pageResults.get(params.page) ??
+      this.results;
     const totalRecords = this.pageResults.size
       ? [...this.pageResults.values()].reduce((total, page) => total + page.length, 0)
       : results.length;
-    return of<SearchResponse>({
-      query,
-      source: 'test',
-      results,
-      pagination: {
-        page: params.page,
-        page_size: params.limit,
-        page_records: results.length,
-        total_records: totalRecords,
-        total_pages: this.totalPages,
-        first_page: params.page === 1,
-        last_page: params.page >= this.totalPages,
+    return of<PriceSearchResponse>({
+      data: {
+        query,
+        source: 'test',
+        results,
+        pagination: {
+          page: params.page,
+          page_size: params.limit,
+          page_records: results.length,
+          total_records: totalRecords,
+          total_pages: this.totalPages,
+          first_page: params.page === 1,
+          last_page: params.page >= this.totalPages,
+        },
       },
+      cacheStatus: this.cacheStatuses.get(params.page)?.shift() ?? this.cacheStatus,
+      ageSeconds: 0,
     });
   }
 }
@@ -361,7 +372,7 @@ describe('SearchPage', () => {
   });
 
   it('blocks interaction while the API search is pending', async () => {
-    const pendingResponse = new Subject<SearchResponse>();
+    const pendingResponse = new Subject<PriceSearchResponse>();
     api.pendingResponse = pendingResponse;
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
@@ -375,18 +386,22 @@ describe('SearchPage', () => {
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(true);
 
     pendingResponse.next({
-      query: 'arroz',
-      source: 'test',
-      results: [],
-      pagination: {
-        page: 1,
-        page_size: 50,
-        page_records: 0,
-        total_records: 0,
-        total_pages: 1,
-        first_page: true,
-        last_page: true,
+      data: {
+        query: 'arroz',
+        source: 'test',
+        results: [],
+        pagination: {
+          page: 1,
+          page_size: 50,
+          page_records: 0,
+          total_records: 0,
+          total_pages: 1,
+          first_page: true,
+          last_page: true,
+        },
       },
+      cacheStatus: 'MISS',
+      ageSeconds: 0,
     });
     pendingResponse.complete();
     await vi.waitFor(() => {
@@ -394,6 +409,93 @@ describe('SearchPage', () => {
       expect(element.querySelector('[aria-label="Buscando preços"]')).toBeNull();
     });
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
+  });
+
+  it('revalidates every loaded stale page without blocking cached results', async () => {
+    vi.useFakeTimers();
+    api.totalPages = 2;
+    api.pageResults.set(1, [priceRecord]);
+    api.pageResults.set(2, [{ ...priceRecord, gtin: '2' }]);
+    api.pageResultVersions.set(1, [
+      [{ ...priceRecord, description: 'Arroz em cache' }],
+      [{ ...priceRecord, description: 'Arroz atualizado' }],
+    ]);
+    api.pageResultVersions.set(2, [
+      [{ ...priceRecord, description: 'Feijão em cache', gtin: '2' }],
+      [{ ...priceRecord, description: 'Feijão atualizado', gtin: '2' }],
+    ]);
+    api.cacheStatuses.set(1, ['STALE', 'HIT']);
+    api.cacheStatuses.set(2, ['STALE', 'HIT']);
+    const element = fixture.nativeElement as HTMLElement;
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+
+    input.value = 'arroz';
+    input.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(element.textContent).toContain('Arroz em cache');
+    expect(element.textContent).toContain('Exibindo dados em cache enquanto atualizamos.');
+    expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
+
+    element.querySelector<HTMLButtonElement>('.load-more-button')!.click();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(element.textContent).toContain('Feijão em cache');
+
+    await vi.advanceTimersByTimeAsync(5000);
+    await vi.advanceTimersToNextFrame();
+    vi.useRealTimers();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(api.priceCalls.slice(-2).map((call) => call.params.page)).toEqual([1, 2]);
+    expect(element.textContent).toContain('Arroz atualizado');
+    expect(element.textContent).toContain('Feijão atualizado');
+    expect(element.textContent).not.toContain('Arroz em cache');
+    expect(element.textContent).not.toContain('Feijão em cache');
+    expect(element.textContent).toContain('Resultados atualizados.');
+  });
+
+  it('cancels stale revalidation when filters change', async () => {
+    vi.useFakeTimers();
+    api.results = [priceRecord];
+    api.cacheStatuses.set(1, ['STALE']);
+    const element = fixture.nativeElement as HTMLElement;
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+
+    input.value = 'arroz';
+    input.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
+    await vi.advanceTimersByTimeAsync(0);
+
+    const period = element.querySelector<HTMLSelectElement>('#search-period')!;
+    period.value = '3';
+    period.dispatchEvent(new Event('change'));
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(api.priceCalls).toHaveLength(1);
+    expect(element.textContent).not.toContain('Exibindo dados em cache enquanto atualizamos.');
+  });
+
+  it('keeps stale results after the revalidation limit', async () => {
+    vi.useFakeTimers();
+    api.results = [priceRecord];
+    api.cacheStatus = 'STALE';
+    const element = fixture.nativeElement as HTMLElement;
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+
+    input.value = 'arroz';
+    input.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
+    await vi.advanceTimersByTimeAsync(0);
+
+    await vi.advanceTimersByTimeAsync(125000);
+    await vi.advanceTimersToNextFrame();
+
+    expect(api.priceCalls).toHaveLength(25);
+    expect(element.textContent).toContain('Arroz branco 1kg');
+    expect(element.textContent).toContain(
+      'Não foi possível atualizar agora; exibindo dados em cache.',
+    );
   });
 
   it('shows validation warnings and API failure guidance', async () => {
@@ -423,6 +525,7 @@ describe('SearchPage', () => {
 
   afterEach(() => {
     http.verify();
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     localStorage.clear();

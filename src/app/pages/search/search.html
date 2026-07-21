@@ -169,6 +169,16 @@
             }
           </div>
 
+          @if (cacheMessage()) {
+            <p
+              class="mt-3 text-sm font-medium text-[var(--tq-muted)]"
+              role="status"
+              aria-live="polite"
+            >
+              {{ cacheMessage() }}
+            </p>
+          }
+
           @if (pricesLoading()) {
             <p
               class="mt-5 flex items-center gap-3 text-sm font-medium text-[var(--tq-muted)]"
