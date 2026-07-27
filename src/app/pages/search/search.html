@@ -40,7 +40,7 @@
         </div>
 
         <app-municipality-map
-          [selectedCode]="municipality()"
+          [selectedCode]="municipality().code"
           (municipalityChange)="selectMunicipality($event)"
           (municipalityReady)="municipalityMapReady($event)"
         >
@@ -52,10 +52,9 @@
               [value]="days()"
               (change)="selectPeriod($event)"
             >
-              <option value="1">Últimas 24 horas (mais rápido)</option>
-              <option value="3">Últimos 3 dias</option>
-              <option value="7">1 semana</option>
-              <option value="10">Últimos 10 dias</option>
+              @for (period of periods; track period.days) {
+                <option [value]="period.days">{{ period.label }}{{ period.hint }}</option>
+              }
             </select>
             <p>O Economiza Alagoas aceita consultas entre 1 e 10 dias.</p>
           </div>
@@ -64,18 +63,25 @@
 
       @if (recentSearches().length > 0) {
         <section class="recent-searches" aria-labelledby="recent-searches-title">
-          <h2 id="recent-searches-title" class="recent-searches-title">Últimas pesquisas</h2>
+          <h2 id="recent-searches-title" class="recent-searches-title">
+            <svg class="recent-search-title-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m16 16 4 4" />
+            </svg>
+            <span>Suas últimas pesquisas</span>
+          </h2>
           <div class="recent-search-list">
-            @for (search of recentSearches(); track search.query) {
+            @for (search of recentSearches(); track search) {
               <button
                 type="button"
-                class="recent-search-chip group badge badge-outline badge-primary h-auto min-h-11 cursor-pointer transition-colors hover:bg-primary hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                class="recent-search-chip badge badge-outline badge-primary min-h-11 cursor-pointer transition-colors hover:bg-primary hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 (click)="repeatSearch(search)"
               >
                 <span class="recent-search-query">{{ search.query }}</span>
-                <span class="recent-search-time group-hover:text-white">{{
-                  formatRecentSearchTime(search)
-                }}</span>
+                <span class="recent-search-meta">
+                  {{ search.municipality.name }} · {{ formatRecentSearchPeriod(search.days) }}
+                </span>
+                <span class="recent-search-time">{{ formatRecentSearchTime(search) }}</span>
               </button>
             }
           </div>

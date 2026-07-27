@@ -346,29 +346,59 @@ describe('SearchPage', () => {
     expect(element.querySelector('.leaflet-popup')).not.toBeNull();
   });
 
-  it('saves recent searches and repeats them from the chip', async () => {
+  it('saves and repeats a complete recent search from its card', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-07-16T01:00:00Z').getTime());
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
+    const period = element.querySelector<HTMLSelectElement>('#search-period')!;
+    const municipality = element.querySelector<HTMLSelectElement>('#municipality-select')!;
+
+    period.value = '3';
+    period.dispatchEvent(new Event('change'));
+    municipality.value = '2700300';
+    municipality.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
 
     input.value = 'arroz';
     input.dispatchEvent(new Event('input'));
     element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
     await fixture.whenStable();
 
-    const chip = element.querySelector<HTMLButtonElement>('.recent-search-chip');
-    expect(chip?.textContent).toContain('arroz');
-    expect(chip?.textContent).toContain('agora');
-    expect(JSON.parse(localStorage.getItem('taquanto:recent-searches') ?? '[]')).toHaveLength(1);
+    const card = element.querySelector<HTMLButtonElement>('.recent-search-chip');
+    const recentSearchesTitle = element.querySelector('.recent-searches-title');
+    expect(recentSearchesTitle?.textContent).toContain('Suas últimas pesquisas');
+    expect(recentSearchesTitle?.querySelector('svg')).not.toBeNull();
+    expect(card?.textContent).toContain('arroz');
+    expect(card?.textContent).toContain('Arapiraca · Últimos 3 dias');
+    expect(card?.textContent).toContain('agora');
+    expect(JSON.parse(localStorage.getItem('taquanto:recent-searches') ?? '[]')).toEqual([
+      {
+        query: 'arroz',
+        municipality: { code: '2700300', name: 'Arapiraca' },
+        days: 3,
+        searchedAt: new Date('2026-07-16T01:00:00Z').getTime(),
+      },
+    ]);
 
     input.value = '';
     input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
+    period.value = '1';
+    period.dispatchEvent(new Event('change'));
+    municipality.value = '2704302';
+    municipality.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+
     element.querySelector<HTMLButtonElement>('.recent-search-chip')!.click();
     await fixture.whenStable();
-    fixture.detectChanges();
+
     expect(input.value).toBe('arroz');
-    expect(api.priceCalls).toHaveLength(1);
+    expect(period.value).toBe('3');
+    expect(municipality.value).toBe('2700300');
+    expect(api.priceCalls).toHaveLength(2);
+    expect(api.priceCalls[1]).toEqual({
+      query: 'arroz',
+      params: { municipality: '2700300', days: 3, limit: 50, page: 1 },
+    });
   });
 
   it('blocks interaction while the API search is pending', async () => {
@@ -379,7 +409,11 @@ describe('SearchPage', () => {
 
     input.value = 'arroz';
     input.dispatchEvent(new Event('input'));
-    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
+    const form = element.querySelector<HTMLFormElement>('form')!;
+    form.dispatchEvent(new SubmitEvent('submit'));
+    form.dispatchEvent(new SubmitEvent('submit'));
+
+    expect(api.priceCalls).toHaveLength(1);
     fixture.detectChanges();
 
     expect(element.querySelector('[aria-label="Buscando preços"]')).not.toBeNull();

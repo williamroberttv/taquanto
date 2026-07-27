@@ -25,7 +25,10 @@
 }
 
 .recent-searches-title {
-  color: var(--tq-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-primary);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -34,6 +37,7 @@
 
 .recent-search-list {
   display: flex;
+  align-items: stretch;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
@@ -41,12 +45,17 @@
 
 .recent-search-chip {
   display: inline-grid;
-  max-width: min(240px, 100%);
+  flex: 0 0 240px;
+  width: 240px;
+  height: 104px;
+  max-width: 100%;
+  align-content: center;
   padding: 8px 10px;
   text-align: left;
 }
 
 .recent-search-query,
+.recent-search-meta,
 .recent-search-time {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -58,6 +67,7 @@
   font-weight: 800;
 }
 
+.recent-search-meta,
 .recent-search-time {
   margin-top: 2px;
   color: var(--tq-muted);
@@ -65,11 +75,22 @@
   font-weight: 700;
 }
 
+.recent-search-meta {
+  margin-top: 6px;
+  font-size: 0.78rem;
+}
+
+.recent-search-chip:hover .recent-search-meta,
+.recent-search-chip:hover .recent-search-time {
+  color: white;
+}
+
 .search-input-wrap {
   position: relative;
 }
 
 .button-icon,
+.recent-search-title-icon,
 .search-icon,
 .detail-button svg {
   fill: none;
@@ -83,6 +104,12 @@
 .detail-button svg {
   width: 18px;
   height: 18px;
+}
+
+.recent-search-title-icon {
+  width: 17px;
+  height: 17px;
+  flex: none;
 }
 
 .search-icon {
@@ -125,4 +152,11 @@
 
 .load-more-trigger {
   height: 1px;
+}
+
+@media (max-width: 640px) {
+  .recent-search-chip {
+    flex-basis: 100%;
+    width: 100%;
+  }
 }
