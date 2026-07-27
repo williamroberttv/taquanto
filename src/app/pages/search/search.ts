@@ -1,6 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
 import {
-  afterRenderEffect,
   afterNextRender,
   Component,
   DestroyRef,
@@ -58,7 +57,6 @@ export class SearchPage {
   private readonly router = inject(Router);
   private readonly detailMapContainer = viewChild<ElementRef<HTMLElement>>('detailMapContainer');
   private readonly detailDialog = viewChild<ElementRef<HTMLDialogElement>>('detailDialog');
-  private readonly loadMoreTrigger = viewChild<ElementRef<HTMLElement>>('loadMoreTrigger');
 
   private readonly defaultMunicipality: MunicipalitySelection = {
     code: '2704302',
@@ -77,9 +75,6 @@ export class SearchPage {
   private leaflet?: typeof Leaflet;
   private detailMap?: Leaflet.Map;
   private detailMarker?: Leaflet.CircleMarker;
-  private loadMoreObserver?: IntersectionObserver;
-  private observedLoadMoreTrigger?: HTMLElement;
-  private observedLoadMorePage?: number;
   private loadedPriceKey: string | null = null;
   private activeSearchKey: string | null = null;
   private currentPriceQuery = '';
@@ -97,18 +92,30 @@ export class SearchPage {
   protected readonly records = signal<PriceRecord[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
   protected readonly pricesLoading = signal(false);
-  protected readonly loadingMore = signal(false);
   protected readonly inlineMessage = signal<string | null>(null);
   protected readonly cacheMessage = signal<string | null>(null);
   protected readonly toast = signal<string | null>(null);
   protected readonly selectedRecord = signal<PriceRecord | null>(null);
   protected readonly recentSearches = signal<RecentSearch[]>([]);
+  protected readonly skeletons = [1, 2, 3, 4];
 
   protected readonly hasResults = computed(() => this.records().length > 0);
-  protected readonly hasMoreRecords = computed(() => this.pagination()?.last_page === false);
   protected readonly totalRecords = computed(
     () => this.pagination()?.total_records ?? this.records().length,
   );
+  protected readonly pageNumbers = computed(() => {
+    const pagination = this.pagination();
+    if (!pagination) {
+      return [];
+    }
+
+    const count = Math.min(pagination.total_pages, 3);
+    const start = Math.min(
+      Math.max(1, pagination.page - 1),
+      Math.max(1, pagination.total_pages - count + 1),
+    );
+    return Array.from({ length: count }, (_, index) => start + index);
+  });
   protected readonly formatMoney = formatMoney;
   protected readonly formatSaleDate = formatSaleDate;
   protected readonly formatSaleValue = formatSaleValue;
@@ -137,17 +144,12 @@ export class SearchPage {
       }
     });
 
-    afterRenderEffect({
-      read: () => this.initializeInfiniteScroll(),
-    });
-
     this.destroyRef.onDestroy(() => {
       if (this.toastTimer) {
         clearTimeout(this.toastTimer);
       }
       this.priceRequestId += 1;
       this.cancelRevalidation();
-      this.loadMoreObserver?.disconnect();
       this.detailMap?.remove();
     });
   }
@@ -202,17 +204,19 @@ export class SearchPage {
     this.filtersReady.set(true);
   }
 
-  protected async loadNextPage(): Promise<void> {
+  protected async loadPage(page: number): Promise<void> {
     const pagination = this.pagination();
-    if (!pagination || this.pricesLoading() || this.loadingMore() || !this.hasMoreRecords()) {
+    if (
+      !pagination ||
+      this.pricesLoading() ||
+      page === pagination.page ||
+      page < 1 ||
+      page > pagination.total_pages
+    ) {
       return;
     }
-    await this.requestPricePage(
-      this.currentPriceQuery,
-      pagination.page + 1,
-      this.priceRequestId,
-      true,
-    );
+    this.cancelRevalidation();
+    await this.requestPricePage(this.currentPriceQuery, page, this.priceRequestId);
   }
 
   protected openRecordDetail(record: PriceRecord): void {
@@ -301,7 +305,6 @@ export class SearchPage {
     this.pagination.set(null);
     this.inlineMessage.set(null);
     this.pricesLoading.set(false);
-    this.loadingMore.set(false);
     this.updateUrl();
   }
 
@@ -348,20 +351,11 @@ export class SearchPage {
     this.currentPriceQuery = query;
     this.pagination.set(null);
     this.records.set([]);
-    await this.requestPricePage(query, 1, requestId, false);
+    await this.requestPricePage(query, 1, requestId);
   }
 
-  private async requestPricePage(
-    query: string,
-    page: number,
-    requestId: number,
-    append: boolean,
-  ): Promise<void> {
-    if (append) {
-      this.loadingMore.set(true);
-    } else {
-      this.pricesLoading.set(true);
-    }
+  private async requestPricePage(query: string, page: number, requestId: number): Promise<void> {
+    this.pricesLoading.set(true);
 
     try {
       const response = await firstValueFrom(
@@ -376,9 +370,7 @@ export class SearchPage {
         return;
       }
 
-      this.records.set(
-        append ? [...this.records(), ...response.data.results] : response.data.results,
-      );
+      this.records.set(response.data.results);
       this.pagination.set(response.data.pagination);
       this.loadedPriceKey = this.priceKey(query);
       this.inlineMessage.set(
@@ -395,7 +387,6 @@ export class SearchPage {
     } finally {
       if (requestId === this.priceRequestId) {
         this.pricesLoading.set(false);
-        this.loadingMore.set(false);
       }
     }
   }
@@ -424,15 +415,15 @@ export class SearchPage {
     this.revalidationTimer = setTimeout(
       () => {
         this.revalidationTimer = null;
-        void this.revalidateLoadedPages(requestId);
+        void this.revalidateCurrentPage(requestId);
       },
       Math.min(this.revalidationIntervalMs, remainingMs),
     );
   }
 
-  private async revalidateLoadedPages(requestId: number): Promise<void> {
-    const loadedPages = this.pagination()?.page ?? 0;
-    if (!loadedPages || requestId !== this.priceRequestId) {
+  private async revalidateCurrentPage(requestId: number): Promise<void> {
+    const page = this.pagination()?.page;
+    if (!page || requestId !== this.priceRequestId) {
       return;
     }
     const remainingMs = this.revalidationDeadline - Date.now();
@@ -443,30 +434,26 @@ export class SearchPage {
 
     this.revalidationAttempts += 1;
     try {
-      const responses = await Promise.all(
-        Array.from({ length: loadedPages }, (_, index) =>
-          firstValueFrom(
-            this.api
-              .prices(this.currentPriceQuery, {
-                days: this.days(),
-                limit: this.pageSize,
-                municipality: this.municipality().code,
-                page: index + 1,
-              })
-              .pipe(timeout(remainingMs)),
-          ),
-        ),
+      const response = await firstValueFrom(
+        this.api
+          .prices(this.currentPriceQuery, {
+            days: this.days(),
+            limit: this.pageSize,
+            municipality: this.municipality().code,
+            page,
+          })
+          .pipe(timeout(remainingMs)),
       );
       if (requestId !== this.priceRequestId) {
         return;
       }
-      if (this.pagination()?.page !== loadedPages || this.hasStalePage(responses)) {
+      if (this.pagination()?.page !== page || this.hasStalePage([response])) {
         this.scheduleRevalidation(requestId);
         return;
       }
 
-      this.records.set(responses.flatMap((response) => response.data.results));
-      this.pagination.set(responses.at(-1)!.data.pagination);
+      this.records.set(response.data.results);
+      this.pagination.set(response.data.pagination);
       this.inlineMessage.set(
         this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
       );
@@ -569,30 +556,6 @@ export class SearchPage {
       });
     }
     requestAnimationFrame(() => this.detailMap?.invalidateSize());
-  }
-
-  private initializeInfiniteScroll(): void {
-    const target = this.loadMoreTrigger()?.nativeElement;
-    const page = this.pagination()?.page;
-    if (target === this.observedLoadMoreTrigger && page === this.observedLoadMorePage) {
-      return;
-    }
-
-    this.loadMoreObserver?.disconnect();
-    this.observedLoadMoreTrigger = target;
-    this.observedLoadMorePage = page;
-    if (!target || typeof IntersectionObserver === 'undefined') {
-      return;
-    }
-    this.loadMoreObserver ??= new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          void this.loadNextPage();
-        }
-      },
-      { rootMargin: '420px' },
-    );
-    this.loadMoreObserver.observe(target);
   }
 
   private coordinates(record: PriceRecord): Leaflet.LatLngExpression | null {

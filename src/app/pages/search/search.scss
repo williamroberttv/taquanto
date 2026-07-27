@@ -82,7 +82,7 @@
 
 .recent-search-chip:hover .recent-search-meta,
 .recent-search-chip:hover .recent-search-time {
-  color: white;
+  color: var(--tq-muted);
 }
 
 .search-input-wrap {
@@ -148,10 +148,6 @@
 
 .detail-button {
   width: fit-content;
-}
-
-.load-more-trigger {
-  height: 1px;
 }
 
 @media (max-width: 640px) {

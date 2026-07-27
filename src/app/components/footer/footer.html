@@ -1,10 +1,16 @@
-<footer class="footer border-t border-[var(--tq-border)] bg-base-100" aria-label="Rodapé">
-  <div
-    class="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 px-5 py-6 text-center text-sm leading-6 text-[var(--tq-muted)] sm:flex-row sm:justify-between sm:text-left"
-  >
-    <p class="font-medium text-[var(--tq-ink)]">Ta<span class="text-primary">Quanto</span></p>
+<footer
+  class="footer footer-horizontal mx-auto w-full max-w-none items-center bg-base-200 px-5 py-8 text-sm leading-6 text-[var(--tq-muted)]"
+  aria-label="Rodapé"
+>
+  <div class="mx-auto grid w-full max-w-6xl gap-5 text-center sm:grid-cols-3 sm:text-left">
+    <aside>
+      <p class="font-semibold text-[var(--tq-ink)]">
+        Ta<span class="text-primary">Quanto</span>
+      </p>
+      <p>Preços públicos de Alagoas, com contexto.</p>
+    </aside>
     <p>© 2026 Ta<span class="text-primary">Quanto</span>. All rights reserved.</p>
-    <p>
+    <nav class="sm:justify-self-end" aria-label="Créditos">
       Desenvolvido por
       <a
         href="https://www.linkedin.com/in/williamtavares/"
@@ -14,6 +20,6 @@
         class="font-semibold text-[var(--tq-ink)] underline underline-offset-4"
         >William Tavares</a
       >
-    </p>
+    </nav>
   </div>
 </footer>

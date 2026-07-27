@@ -1,4 +1,3 @@
-import { NgOptimizedImage } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { ThemeService } from '../../services/theme';
 
@@ -9,7 +8,6 @@ interface NavigationItem {
 
 @Component({
   selector: 'app-header',
-  imports: [NgOptimizedImage],
   host: {
     class: 'block',
   },
