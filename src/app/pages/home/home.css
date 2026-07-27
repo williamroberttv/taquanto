@@ -37,14 +37,12 @@
 .brand-banner {
   overflow: hidden;
   margin: 0;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 32%, var(--tq-border));
-  border-radius: 28px;
   background: #29136d;
   box-shadow: 0 28px 70px color-mix(in srgb, var(--color-primary) 26%, transparent);
 }
 
 .brand-banner img,
-.favorites-banner img {
+.favorites-image img {
   display: block;
   width: 100%;
   height: auto;
@@ -199,7 +197,6 @@
 
 .favorites-banner {
   overflow: hidden;
-  border: 1px solid var(--tq-border);
   border-radius: 28px;
   background:
     radial-gradient(
@@ -210,7 +207,12 @@
     var(--tq-surface);
 }
 
-.favorites-banner img {
+.favorites-image {
+  height: 100%;
+  margin: 0;
+}
+
+.favorites-image img {
   height: 100%;
   min-height: 300px;
   object-fit: cover;
@@ -250,7 +252,7 @@
     height: 380px;
   }
 
-  .favorites-banner img {
+  .favorites-image img {
     max-height: 360px;
     min-height: 0;
     object-position: center;

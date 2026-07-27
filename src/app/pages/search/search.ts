@@ -1,6 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
 import {
-  afterRenderEffect,
   afterNextRender,
   Component,
   DestroyRef,
@@ -17,7 +16,10 @@ import { firstValueFrom, timeout } from 'rxjs';
 import { Footer } from '../../components/footer/footer';
 import { FavoriteToggle } from '../../components/favorite-toggle/favorite-toggle';
 import { Header } from '../../components/header/header';
-import { MunicipalityMap } from '../../components/municipality-map/municipality-map';
+import {
+  MunicipalityMap,
+  type MunicipalitySelection,
+} from '../../components/municipality-map/municipality-map';
 import {
   formatMoney,
   formatSaleDate,
@@ -35,6 +37,8 @@ import {
 
 interface RecentSearch {
   query: string;
+  municipality: MunicipalitySelection;
+  days: number;
   searchedAt: number;
 }
 
@@ -53,12 +57,13 @@ export class SearchPage {
   private readonly router = inject(Router);
   private readonly detailMapContainer = viewChild<ElementRef<HTMLElement>>('detailMapContainer');
   private readonly detailDialog = viewChild<ElementRef<HTMLDialogElement>>('detailDialog');
-  private readonly loadMoreTrigger = viewChild<ElementRef<HTMLElement>>('loadMoreTrigger');
 
-  private readonly defaultMunicipality = '2704302';
+  private readonly defaultMunicipality: MunicipalitySelection = {
+    code: '2704302',
+    name: 'Maceió',
+  };
   private readonly recentSearchesKey = 'taquanto:recent-searches';
   private readonly pageSize = 50;
-  private readonly periodValues = [1, 3, 7, 10];
   private readonly revalidationIntervalMs = 5000;
   private readonly revalidationMaxAttempts = 25;
   private priceRequestId = 0;
@@ -70,31 +75,47 @@ export class SearchPage {
   private leaflet?: typeof Leaflet;
   private detailMap?: Leaflet.Map;
   private detailMarker?: Leaflet.CircleMarker;
-  private loadMoreObserver?: IntersectionObserver;
-  private observedLoadMoreTrigger?: HTMLElement;
-  private observedLoadMorePage?: number;
   private loadedPriceKey: string | null = null;
+  private activeSearchKey: string | null = null;
   private currentPriceQuery = '';
 
   protected readonly query = signal('');
   protected readonly municipality = signal(this.defaultMunicipality);
+  protected readonly periods = [
+    { days: 1, label: 'Últimas 24 horas', hint: ' (mais rápido)' },
+    { days: 3, label: 'Últimos 3 dias', hint: '' },
+    { days: 7, label: '1 semana', hint: '' },
+    { days: 10, label: 'Últimos 10 dias', hint: '' },
+  ] as const;
   protected readonly days = signal(1);
   protected readonly filtersReady = signal(false);
   protected readonly records = signal<PriceRecord[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
   protected readonly pricesLoading = signal(false);
-  protected readonly loadingMore = signal(false);
   protected readonly inlineMessage = signal<string | null>(null);
   protected readonly cacheMessage = signal<string | null>(null);
   protected readonly toast = signal<string | null>(null);
   protected readonly selectedRecord = signal<PriceRecord | null>(null);
   protected readonly recentSearches = signal<RecentSearch[]>([]);
+  protected readonly skeletons = [1, 2, 3, 4];
 
   protected readonly hasResults = computed(() => this.records().length > 0);
-  protected readonly hasMoreRecords = computed(() => this.pagination()?.last_page === false);
   protected readonly totalRecords = computed(
     () => this.pagination()?.total_records ?? this.records().length,
   );
+  protected readonly pageNumbers = computed(() => {
+    const pagination = this.pagination();
+    if (!pagination) {
+      return [];
+    }
+
+    const count = Math.min(pagination.total_pages, 3);
+    const start = Math.min(
+      Math.max(1, pagination.page - 1),
+      Math.max(1, pagination.total_pages - count + 1),
+    );
+    return Array.from({ length: count }, (_, index) => start + index);
+  });
   protected readonly formatMoney = formatMoney;
   protected readonly formatSaleDate = formatSaleDate;
   protected readonly formatSaleValue = formatSaleValue;
@@ -110,9 +131,9 @@ export class SearchPage {
       const initialMunicipality = queryParams.get('municipality');
       const initialDays = Number(queryParams.get('days'));
       if (this.isMunicipalityCode(initialMunicipality)) {
-        this.municipality.set(initialMunicipality);
+        this.municipality.set({ code: initialMunicipality, name: '' });
       }
-      if (this.periodValues.includes(initialDays)) {
+      if (this.isPeriod(initialDays)) {
         this.days.set(initialDays);
       }
 
@@ -123,17 +144,12 @@ export class SearchPage {
       }
     });
 
-    afterRenderEffect({
-      read: () => this.initializeInfiniteScroll(),
-    });
-
     this.destroyRef.onDestroy(() => {
       if (this.toastTimer) {
         clearTimeout(this.toastTimer);
       }
       this.priceRequestId += 1;
       this.cancelRevalidation();
-      this.loadMoreObserver?.disconnect();
       this.detailMap?.remove();
     });
   }
@@ -148,50 +164,59 @@ export class SearchPage {
 
   protected repeatSearch(search: RecentSearch): void {
     this.query.set(search.query);
+    this.municipality.set(search.municipality);
+    this.days.set(search.days);
     this.inlineMessage.set(null);
+    void this.runSearch(search.query, true);
   }
 
   protected updateQuery(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value);
   }
 
-  protected selectMunicipality(code: string): void {
-    if (!this.isMunicipalityCode(code) || code === this.municipality()) {
+  protected selectMunicipality(selection: MunicipalitySelection): void {
+    if (!this.isMunicipalityCode(selection.code)) {
       return;
     }
-    this.municipality.set(code);
+    const changed = selection.code !== this.municipality().code;
+    this.municipality.set(selection);
+    if (!changed) {
+      return;
+    }
     this.filtersChanged();
   }
 
   protected selectPeriod(event: Event): void {
     const days = Number((event.target as HTMLSelectElement).value);
-    if (!this.periodValues.includes(days) || days === this.days()) {
+    if (!this.isPeriod(days) || days === this.days()) {
       return;
     }
     this.days.set(days);
     this.filtersChanged();
   }
 
-  protected municipalityMapReady(code: string): void {
-    const changed = code !== this.municipality();
+  protected municipalityMapReady(selection: MunicipalitySelection): void {
+    const changed = selection.code !== this.municipality().code;
+    this.municipality.set(selection);
     if (changed) {
-      this.municipality.set(code);
       this.updateUrl();
     }
     this.filtersReady.set(true);
   }
 
-  protected async loadNextPage(): Promise<void> {
+  protected async loadPage(page: number): Promise<void> {
     const pagination = this.pagination();
-    if (!pagination || this.pricesLoading() || this.loadingMore() || !this.hasMoreRecords()) {
+    if (
+      !pagination ||
+      this.pricesLoading() ||
+      page === pagination.page ||
+      page < 1 ||
+      page > pagination.total_pages
+    ) {
       return;
     }
-    await this.requestPricePage(
-      this.currentPriceQuery,
-      pagination.page + 1,
-      this.priceRequestId,
-      true,
-    );
+    this.cancelRevalidation();
+    await this.requestPricePage(this.currentPriceQuery, page, this.priceRequestId);
   }
 
   protected openRecordDetail(record: PriceRecord): void {
@@ -268,6 +293,10 @@ export class SearchPage {
     return 'há ' + days + ' dias · ' + dateTime;
   }
 
+  protected formatRecentSearchPeriod(days: number): string {
+    return this.periods.find((period) => period.days === days)?.label ?? '';
+  }
+
   private filtersChanged(): void {
     this.cancelRevalidation();
     this.priceRequestId += 1;
@@ -276,7 +305,6 @@ export class SearchPage {
     this.pagination.set(null);
     this.inlineMessage.set(null);
     this.pricesLoading.set(false);
-    this.loadingMore.set(false);
     this.updateUrl();
   }
 
@@ -285,6 +313,11 @@ export class SearchPage {
       this.inlineMessage.set('Digite uma descrição de 3 a 50 caracteres ou um GTIN válido.');
       return;
     }
+    const searchKey = this.priceKey(query);
+    if (searchKey === this.activeSearchKey) {
+      return;
+    }
+    this.activeSearchKey = searchKey;
 
     this.query.set(query);
     this.cancelRevalidation();
@@ -298,7 +331,13 @@ export class SearchPage {
     if (updateUrl) {
       this.updateUrl();
     }
-    await this.loadPrices(query);
+    try {
+      await this.loadPrices(query);
+    } finally {
+      if (this.activeSearchKey === searchKey) {
+        this.activeSearchKey = null;
+      }
+    }
   }
 
   private async loadPrices(query: string): Promise<void> {
@@ -312,27 +351,18 @@ export class SearchPage {
     this.currentPriceQuery = query;
     this.pagination.set(null);
     this.records.set([]);
-    await this.requestPricePage(query, 1, requestId, false);
+    await this.requestPricePage(query, 1, requestId);
   }
 
-  private async requestPricePage(
-    query: string,
-    page: number,
-    requestId: number,
-    append: boolean,
-  ): Promise<void> {
-    if (append) {
-      this.loadingMore.set(true);
-    } else {
-      this.pricesLoading.set(true);
-    }
+  private async requestPricePage(query: string, page: number, requestId: number): Promise<void> {
+    this.pricesLoading.set(true);
 
     try {
       const response = await firstValueFrom(
         this.api.prices(query, {
           days: this.days(),
           limit: this.pageSize,
-          municipality: this.municipality(),
+          municipality: this.municipality().code,
           page,
         }),
       );
@@ -340,9 +370,7 @@ export class SearchPage {
         return;
       }
 
-      this.records.set(
-        append ? [...this.records(), ...response.data.results] : response.data.results,
-      );
+      this.records.set(response.data.results);
       this.pagination.set(response.data.pagination);
       this.loadedPriceKey = this.priceKey(query);
       this.inlineMessage.set(
@@ -359,7 +387,6 @@ export class SearchPage {
     } finally {
       if (requestId === this.priceRequestId) {
         this.pricesLoading.set(false);
-        this.loadingMore.set(false);
       }
     }
   }
@@ -388,15 +415,15 @@ export class SearchPage {
     this.revalidationTimer = setTimeout(
       () => {
         this.revalidationTimer = null;
-        void this.revalidateLoadedPages(requestId);
+        void this.revalidateCurrentPage(requestId);
       },
       Math.min(this.revalidationIntervalMs, remainingMs),
     );
   }
 
-  private async revalidateLoadedPages(requestId: number): Promise<void> {
-    const loadedPages = this.pagination()?.page ?? 0;
-    if (!loadedPages || requestId !== this.priceRequestId) {
+  private async revalidateCurrentPage(requestId: number): Promise<void> {
+    const page = this.pagination()?.page;
+    if (!page || requestId !== this.priceRequestId) {
       return;
     }
     const remainingMs = this.revalidationDeadline - Date.now();
@@ -407,30 +434,26 @@ export class SearchPage {
 
     this.revalidationAttempts += 1;
     try {
-      const responses = await Promise.all(
-        Array.from({ length: loadedPages }, (_, index) =>
-          firstValueFrom(
-            this.api
-              .prices(this.currentPriceQuery, {
-                days: this.days(),
-                limit: this.pageSize,
-                municipality: this.municipality(),
-                page: index + 1,
-              })
-              .pipe(timeout(remainingMs)),
-          ),
-        ),
+      const response = await firstValueFrom(
+        this.api
+          .prices(this.currentPriceQuery, {
+            days: this.days(),
+            limit: this.pageSize,
+            municipality: this.municipality().code,
+            page,
+          })
+          .pipe(timeout(remainingMs)),
       );
       if (requestId !== this.priceRequestId) {
         return;
       }
-      if (this.pagination()?.page !== loadedPages || this.hasStalePage(responses)) {
+      if (this.pagination()?.page !== page || this.hasStalePage([response])) {
         this.scheduleRevalidation(requestId);
         return;
       }
 
-      this.records.set(responses.flatMap((response) => response.data.results));
-      this.pagination.set(responses.at(-1)!.data.pagination);
+      this.records.set(response.data.results);
+      this.pagination.set(response.data.pagination);
       this.inlineMessage.set(
         this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
       );
@@ -467,7 +490,7 @@ export class SearchPage {
     void this.router.navigate([], {
       queryParams: {
         q: this.query().trim() || null,
-        municipality: this.municipality(),
+        municipality: this.municipality().code,
         days: this.days(),
       },
       relativeTo: this.route,
@@ -535,44 +558,24 @@ export class SearchPage {
     requestAnimationFrame(() => this.detailMap?.invalidateSize());
   }
 
-  private initializeInfiniteScroll(): void {
-    const target = this.loadMoreTrigger()?.nativeElement;
-    const page = this.pagination()?.page;
-    if (target === this.observedLoadMoreTrigger && page === this.observedLoadMorePage) {
-      return;
-    }
-
-    this.loadMoreObserver?.disconnect();
-    this.observedLoadMoreTrigger = target;
-    this.observedLoadMorePage = page;
-    if (!target || typeof IntersectionObserver === 'undefined') {
-      return;
-    }
-    this.loadMoreObserver ??= new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          void this.loadNextPage();
-        }
-      },
-      { rootMargin: '420px' },
-    );
-    this.loadMoreObserver.observe(target);
-  }
-
   private coordinates(record: PriceRecord): Leaflet.LatLngExpression | null {
     return recordCoordinates(record);
   }
 
   private priceKey(query: string): string {
-    return `${query}:${this.municipality()}:${this.days()}`;
+    return `${query}:${this.municipality().code}:${this.days()}`;
   }
 
   private isGTIN(query: string): boolean {
     return /^(?:\d{8}|\d{12}|\d{13}|\d{14})$/.test(query);
   }
 
-  private isMunicipalityCode(code: string | null): code is string {
-    return /^\d{7}$/.test(code ?? '');
+  private isMunicipalityCode(code: unknown): code is string {
+    return typeof code === 'string' && /^\d{7}$/.test(code);
+  }
+
+  private isPeriod(days: number): boolean {
+    return this.periods.some((period) => period.days === days);
   }
 
   private showToast(text: string): void {
@@ -595,7 +598,17 @@ export class SearchPage {
             return false;
           }
           const search = item as Record<string, unknown>;
-          return typeof search['query'] === 'string' && typeof search['searchedAt'] === 'number';
+          const municipality = search['municipality'];
+          return (
+            typeof search['query'] === 'string' &&
+            typeof search['searchedAt'] === 'number' &&
+            typeof search['days'] === 'number' &&
+            this.isPeriod(search['days']) &&
+            !!municipality &&
+            typeof municipality === 'object' &&
+            this.isMunicipalityCode((municipality as Record<string, unknown>)['code']) &&
+            typeof (municipality as Record<string, unknown>)['name'] === 'string'
+          );
         })
         .slice(0, 10);
     } catch {
@@ -604,10 +617,16 @@ export class SearchPage {
   }
 
   private saveRecentSearch(query: string): void {
-    const search: RecentSearch = { query, searchedAt: Date.now() };
+    const search: RecentSearch = {
+      query,
+      municipality: this.municipality(),
+      days: this.days(),
+      searchedAt: Date.now(),
+    };
+    const searchKey = this.recentSearchKey(search);
     const searches = [
       search,
-      ...this.recentSearches().filter((item) => item.query.toLowerCase() !== query.toLowerCase()),
+      ...this.recentSearches().filter((item) => this.recentSearchKey(item) !== searchKey),
     ].slice(0, 10);
     this.recentSearches.set(searches);
 
@@ -616,6 +635,10 @@ export class SearchPage {
     } catch {
       // localStorage can be unavailable in private or restricted browser contexts.
     }
+  }
+
+  private recentSearchKey(search: RecentSearch): string {
+    return `${search.query.toLowerCase()}:${search.municipality.code}:${search.days}`;
   }
 
   private escapeHtml(value: string): string {

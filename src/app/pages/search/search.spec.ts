@@ -121,38 +121,9 @@ describe('SearchPage', () => {
   let http: HttpTestingController;
   let router: { navigate: ReturnType<typeof vi.fn> };
   let routeParams: Record<string, string>;
-  let autoIntersect: boolean;
 
   beforeEach(async () => {
     localStorage.clear();
-    autoIntersect = false;
-    vi.stubGlobal(
-      'IntersectionObserver',
-      class {
-        readonly root = null;
-        readonly rootMargin = '';
-        readonly thresholds = [];
-
-        constructor(private readonly callback: IntersectionObserverCallback) {}
-
-        disconnect = vi.fn();
-
-        observe(target: Element): void {
-          if (autoIntersect) {
-            this.callback(
-              [{ isIntersecting: true, target } as IntersectionObserverEntry],
-              this as unknown as IntersectionObserver,
-            );
-          }
-        }
-
-        takeRecords(): IntersectionObserverEntry[] {
-          return [];
-        }
-
-        unobserve = vi.fn();
-      },
-    );
     api = new TaquantoApiStub();
     router = { navigate: vi.fn(() => Promise.resolve(true)) };
     routeParams = {};
@@ -289,7 +260,7 @@ describe('SearchPage', () => {
     ).toBe('true');
   });
 
-  it('loads the next page when results create an intersecting scroll trigger', async () => {
+  it('loads a page selected in the numbered pagination', async () => {
     api.totalPages = 3;
     api.pageResults.set(1, [priceRecord]);
     api.pageResults.set(2, [
@@ -298,22 +269,28 @@ describe('SearchPage', () => {
     api.pageResults.set(3, [
       { ...priceRecord, description: 'Macarrão 500g', gtin: '7891234567892' },
     ]);
-    autoIntersect = true;
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
 
     input.value = 'arroz';
     input.dispatchEvent(new Event('input'));
     element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
+    await fixture.whenStable();
 
-    await vi.waitFor(async () => {
-      await fixture.whenStable();
-      expect(api.priceCalls.at(-1)?.params.page).toBe(3);
-    });
-    expect(element.textContent).toContain('Arroz branco 1kg');
+    expect(element.querySelector('[aria-current="page"]')?.textContent).toContain('1');
+    element.querySelector<HTMLButtonElement>('[aria-label="Página 2"]')!.click();
+    await fixture.whenStable();
+
+    expect(api.priceCalls.at(-1)?.params.page).toBe(2);
     expect(element.textContent).toContain('Feijão carioca 1kg');
+    expect(element.textContent).not.toContain('Arroz branco 1kg');
+
+    element.querySelector<HTMLButtonElement>('[aria-label="Página 3"]')!.click();
+    await fixture.whenStable();
+
+    expect(api.priceCalls.at(-1)?.params.page).toBe(3);
+    expect(element.querySelector('[aria-current="page"]')?.textContent).toContain('3');
     expect(element.textContent).toContain('Macarrão 500g');
-    expect(element.textContent).toContain('Todos os registros carregados.');
   });
 
   it('shows the precise marker when API coordinates are numeric strings', async () => {
@@ -346,32 +323,67 @@ describe('SearchPage', () => {
     expect(element.querySelector('.leaflet-popup')).not.toBeNull();
   });
 
-  it('saves recent searches and repeats them from the chip', async () => {
+  it('saves and repeats a complete recent search from its card', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-07-16T01:00:00Z').getTime());
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
+    const period = element.querySelector<HTMLSelectElement>('#search-period')!;
+    const municipality = element.querySelector<HTMLSelectElement>('#municipality-select')!;
+
+    period.value = '3';
+    period.dispatchEvent(new Event('change'));
+    municipality.value = '2700300';
+    municipality.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
 
     input.value = 'arroz';
     input.dispatchEvent(new Event('input'));
     element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
     await fixture.whenStable();
 
-    const chip = element.querySelector<HTMLButtonElement>('.recent-search-chip');
-    expect(chip?.textContent).toContain('arroz');
-    expect(chip?.textContent).toContain('agora');
-    expect(JSON.parse(localStorage.getItem('taquanto:recent-searches') ?? '[]')).toHaveLength(1);
+    const card = element.querySelector<HTMLButtonElement>('.recent-search-chip');
+    const recentSearchesTitle = element.querySelector('.recent-searches-title');
+    const recentSearches = element.querySelector('.recent-searches')!;
+    const locationFilter = element.querySelector('.location-filter')!;
+    expect(
+      recentSearches.compareDocumentPosition(locationFilter) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(recentSearchesTitle?.textContent).toContain('Suas últimas pesquisas');
+    expect(recentSearchesTitle?.querySelector('svg')).not.toBeNull();
+    expect(card?.textContent).toContain('arroz');
+    expect(card?.textContent).toContain('Arapiraca · Últimos 3 dias');
+    expect(card?.textContent).toContain('agora');
+    expect(JSON.parse(localStorage.getItem('taquanto:recent-searches') ?? '[]')).toEqual([
+      {
+        query: 'arroz',
+        municipality: { code: '2700300', name: 'Arapiraca' },
+        days: 3,
+        searchedAt: new Date('2026-07-16T01:00:00Z').getTime(),
+      },
+    ]);
 
     input.value = '';
     input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
+    period.value = '1';
+    period.dispatchEvent(new Event('change'));
+    municipality.value = '2704302';
+    municipality.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+
     element.querySelector<HTMLButtonElement>('.recent-search-chip')!.click();
     await fixture.whenStable();
-    fixture.detectChanges();
+
     expect(input.value).toBe('arroz');
-    expect(api.priceCalls).toHaveLength(1);
+    expect(period.value).toBe('3');
+    expect(municipality.value).toBe('2700300');
+    expect(api.priceCalls).toHaveLength(2);
+    expect(api.priceCalls[1]).toEqual({
+      query: 'arroz',
+      params: { municipality: '2700300', days: 3, limit: 50, page: 1 },
+    });
   });
 
-  it('blocks interaction while the API search is pending', async () => {
+  it('shows skeletons and only disables search while the API request is pending', async () => {
     const pendingResponse = new Subject<PriceSearchResponse>();
     api.pendingResponse = pendingResponse;
     const element = fixture.nativeElement as HTMLElement;
@@ -379,11 +391,14 @@ describe('SearchPage', () => {
 
     input.value = 'arroz';
     input.dispatchEvent(new Event('input'));
-    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
-    fixture.detectChanges();
+    const form = element.querySelector<HTMLFormElement>('form')!;
+    form.dispatchEvent(new SubmitEvent('submit'));
+    form.dispatchEvent(new SubmitEvent('submit'));
 
-    expect(element.querySelector('[aria-label="Buscando preços"]')).not.toBeNull();
-    expect(element.querySelector('main')?.hasAttribute('inert')).toBe(true);
+    expect(api.priceCalls).toHaveLength(1);
+    await vi.waitFor(() => expect(element.querySelectorAll('.skeleton')).toHaveLength(20));
+    expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(true);
+    expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
 
     pendingResponse.next({
       data: {
@@ -404,28 +419,21 @@ describe('SearchPage', () => {
       ageSeconds: 0,
     });
     pendingResponse.complete();
-    await vi.waitFor(() => {
-      fixture.detectChanges();
-      expect(element.querySelector('[aria-label="Buscando preços"]')).toBeNull();
+    await vi.waitFor(async () => {
+      await fixture.whenStable();
+      expect(element.querySelector('.skeleton')).toBeNull();
     });
+    expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
   });
 
-  it('revalidates every loaded stale page without blocking cached results', async () => {
+  it('revalidates the current stale page without blocking cached results', async () => {
     vi.useFakeTimers();
-    api.totalPages = 2;
-    api.pageResults.set(1, [priceRecord]);
-    api.pageResults.set(2, [{ ...priceRecord, gtin: '2' }]);
     api.pageResultVersions.set(1, [
       [{ ...priceRecord, description: 'Arroz em cache' }],
       [{ ...priceRecord, description: 'Arroz atualizado' }],
     ]);
-    api.pageResultVersions.set(2, [
-      [{ ...priceRecord, description: 'Feijão em cache', gtin: '2' }],
-      [{ ...priceRecord, description: 'Feijão atualizado', gtin: '2' }],
-    ]);
     api.cacheStatuses.set(1, ['STALE', 'HIT']);
-    api.cacheStatuses.set(2, ['STALE', 'HIT']);
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
 
@@ -438,20 +446,14 @@ describe('SearchPage', () => {
     expect(element.textContent).toContain('Exibindo dados em cache enquanto atualizamos.');
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
 
-    element.querySelector<HTMLButtonElement>('.load-more-button')!.click();
-    await vi.advanceTimersByTimeAsync(0);
-    expect(element.textContent).toContain('Feijão em cache');
-
     await vi.advanceTimersByTimeAsync(5000);
     await vi.advanceTimersToNextFrame();
     vi.useRealTimers();
     await new Promise((resolve) => setTimeout(resolve));
 
-    expect(api.priceCalls.slice(-2).map((call) => call.params.page)).toEqual([1, 2]);
+    expect(api.priceCalls.at(-1)?.params.page).toBe(1);
     expect(element.textContent).toContain('Arroz atualizado');
-    expect(element.textContent).toContain('Feijão atualizado');
     expect(element.textContent).not.toContain('Arroz em cache');
-    expect(element.textContent).not.toContain('Feijão em cache');
     expect(element.textContent).toContain('Resultados atualizados.');
   });
 

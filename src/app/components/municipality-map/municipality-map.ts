@@ -2,6 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import {
   afterNextRender,
+  afterRenderEffect,
   Component,
   DestroyRef,
   ElementRef,
@@ -16,13 +17,13 @@ import {
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type * as Leaflet from 'leaflet';
 
-interface MunicipalityProperties {
+export interface MunicipalitySelection {
   code: string;
   name: string;
 }
 
-type MunicipalityCollection = FeatureCollection<Geometry, MunicipalityProperties>;
-type MunicipalityFeature = Feature<Geometry, MunicipalityProperties>;
+type MunicipalityCollection = FeatureCollection<Geometry, MunicipalitySelection>;
+type MunicipalityFeature = Feature<Geometry, MunicipalitySelection>;
 type MunicipalityPath = Leaflet.Path & { feature?: MunicipalityFeature };
 
 @Component({
@@ -31,33 +32,40 @@ type MunicipalityPath = Leaflet.Path & { feature?: MunicipalityFeature };
   styleUrl: './municipality-map.scss',
 })
 export class MunicipalityMap {
-  private readonly defaultMunicipality = '2704302';
+  private readonly defaultMunicipality: MunicipalitySelection = {
+    code: '2704302',
+    name: 'Maceió',
+  };
   private readonly destroyRef = inject(DestroyRef);
   private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly mapContainer = viewChild<ElementRef<HTMLElement>>('mapContainer');
 
   readonly selectedCode = input('2704302');
-  readonly municipalityChange = output<string>();
-  readonly municipalityReady = output<string>();
+  readonly municipalityChange = output<MunicipalitySelection>();
+  readonly municipalityReady = output<MunicipalitySelection>();
 
-  protected readonly municipalities = signal<MunicipalityProperties[]>([]);
+  protected readonly municipalities = signal<MunicipalitySelection[]>([]);
   protected readonly loadError = signal(false);
   protected readonly resolvedSelectedCode = computed(() =>
     this.municipalities().some(({ code }) => code === this.selectedCode())
       ? this.selectedCode()
-      : this.defaultMunicipality,
+      : this.defaultMunicipality.code,
   );
 
   private leaflet?: typeof Leaflet;
   private map?: Leaflet.Map;
-  private municipalityLayer?: Leaflet.GeoJSON<MunicipalityProperties>;
+  private municipalityLayer?: Leaflet.GeoJSON<MunicipalitySelection>;
 
   constructor() {
     afterNextRender(() => {
       if (isPlatformBrowser(this.platformId)) {
         this.loadMunicipalities();
       }
+    });
+
+    afterRenderEffect({
+      write: () => this.updateLayerState(this.resolvedSelectedCode()),
     });
 
     this.destroyRef.onDestroy(() => this.map?.remove());
@@ -129,19 +137,28 @@ export class MunicipalityMap {
   }
 
   private selectMunicipality(code: string): void {
-    if (!code) {
+    const selection = this.selectionFor(code);
+    if (!selection) {
       return;
     }
     this.updateLayerState(code);
-    this.municipalityChange.emit(code);
+    this.municipalityChange.emit(selection);
   }
 
   private announceReady(): void {
     const resolvedCode = this.resolvedSelectedCode();
-    this.municipalityReady.emit(resolvedCode);
+    const selection = this.selectionFor(resolvedCode) ?? this.defaultMunicipality;
+    this.municipalityReady.emit(selection);
     if (resolvedCode !== this.selectedCode()) {
-      this.municipalityChange.emit(resolvedCode);
+      this.municipalityChange.emit(selection);
     }
+  }
+
+  private selectionFor(code: string): MunicipalitySelection | undefined {
+    return (
+      this.municipalities().find((municipality) => municipality.code === code) ??
+      (code === this.defaultMunicipality.code ? this.defaultMunicipality : undefined)
+    );
   }
 
   private updateLayerState(selectedCode: string): void {

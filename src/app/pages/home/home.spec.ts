@@ -25,12 +25,17 @@ describe('Home', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const text = compiled.textContent ?? '';
 
-    expect(text).toContain('Descubra quanto produtos custaram em Alagoas.');
+    expect(text).toContain('Descubra quanto custa');
+    expect(compiled.querySelector('.text-rotate')?.textContent).toContain('o café');
+    expect(compiled.querySelector('.text-rotate')?.textContent).toContain('a gasolina');
+    expect(compiled.querySelector('.text-rotate')?.textContent).toContain('o etanol');
     expect(text).toContain('Registros oficiais, organizados para comparar.');
     expect(text).toContain('Guarde a venda, não uma promessa de preço.');
     expect(text).toContain('Buscar produto');
     expect(text).toContain('Prévia no mapa');
     expect(compiled.querySelector('summary[aria-label="Abrir menu de navegação"]')).not.toBeNull();
+    expect(compiled.querySelector('.theme-controller')).not.toBeNull();
+    expect(compiled.querySelectorAll('.mask-squircle')).toHaveLength(3);
     expect(compiled.querySelector('a[href="/favoritos"]')?.textContent).toContain('Favoritos');
     expect(
       [...compiled.querySelectorAll<HTMLImageElement>('img')].map((image) => image.src),

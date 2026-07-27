@@ -60,9 +60,11 @@ describe('MunicipalityMap', () => {
     await fixture.whenStable();
   });
 
-  it('offers every loaded municipality and emits the selected IBGE code', async () => {
-    const selected: string[] = [];
-    fixture.componentInstance.municipalityChange.subscribe((code) => selected.push(code));
+  it('offers every loaded municipality and emits the selection', async () => {
+    const selected: { code: string; name: string }[] = [];
+    fixture.componentInstance.municipalityChange.subscribe((selection) =>
+      selected.push(selection),
+    );
     const element = fixture.nativeElement as HTMLElement;
     const select = element.querySelector<HTMLSelectElement>('#municipality-select')!;
 
@@ -73,7 +75,7 @@ describe('MunicipalityMap', () => {
     select.dispatchEvent(new Event('change'));
     await fixture.whenStable();
 
-    expect(selected).toEqual(['2700300']);
+    expect(selected).toEqual([{ code: '2700300', name: 'Arapiraca' }]);
   });
 
   it('renders an accessible Leaflet map', () => {
@@ -86,12 +88,31 @@ describe('MunicipalityMap', () => {
     expect(maceio?.getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('updates the highlighted municipality when the selected code changes', async () => {
+    fixture.componentRef.setInput('selectedCode', '2700300');
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(
+      element
+        .querySelector<SVGElement>('[aria-label="Selecionar Arapiraca"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(
+      element
+        .querySelector<SVGElement>('[aria-label="Selecionar Maceió"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('false');
+  });
+
   it('falls back to Maceió when the selected code is not in Alagoas', async () => {
     fixture.destroy();
     fixture = TestBed.createComponent(MunicipalityMap);
     fixture.componentRef.setInput('selectedCode', '9999999');
-    const selected: string[] = [];
-    fixture.componentInstance.municipalityChange.subscribe((code) => selected.push(code));
+    const selected: { code: string; name: string }[] = [];
+    fixture.componentInstance.municipalityChange.subscribe((selection) =>
+      selected.push(selection),
+    );
     await fixture.whenStable();
 
     http.expectOne('/assets/alagoas-municipios.geojson').flush({
@@ -116,7 +137,7 @@ describe('MunicipalityMap', () => {
     });
     await fixture.whenStable();
 
-    expect(selected).toEqual(['2704302']);
+    expect(selected).toEqual([{ code: '2704302', name: 'Maceió' }]);
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector<HTMLSelectElement>('#municipality-select')?.value).toBe('2704302');
   });
@@ -124,8 +145,8 @@ describe('MunicipalityMap', () => {
   it('shows an alert when the municipality data cannot be loaded', async () => {
     fixture.destroy();
     fixture = TestBed.createComponent(MunicipalityMap);
-    const ready: string[] = [];
-    fixture.componentInstance.municipalityReady.subscribe((code) => ready.push(code));
+    const ready: { code: string; name: string }[] = [];
+    fixture.componentInstance.municipalityReady.subscribe((selection) => ready.push(selection));
     await fixture.whenStable();
 
     http.expectOne('/assets/alagoas-municipios.geojson').flush(null, {
@@ -139,7 +160,7 @@ describe('MunicipalityMap', () => {
       'Não foi possível carregar o mapa.',
     );
     expect(element.querySelector('.municipality-map')?.getAttribute('aria-busy')).toBe('false');
-    expect(ready).toEqual(['2704302']);
+    expect(ready).toEqual([{ code: '2704302', name: 'Maceió' }]);
   });
 
   afterEach(() => http.verify());
