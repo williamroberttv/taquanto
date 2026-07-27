@@ -366,6 +366,11 @@ describe('SearchPage', () => {
 
     const card = element.querySelector<HTMLButtonElement>('.recent-search-chip');
     const recentSearchesTitle = element.querySelector('.recent-searches-title');
+    const recentSearches = element.querySelector('.recent-searches')!;
+    const locationFilter = element.querySelector('.location-filter')!;
+    expect(
+      recentSearches.compareDocumentPosition(locationFilter) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(recentSearchesTitle?.textContent).toContain('Suas últimas pesquisas');
     expect(recentSearchesTitle?.querySelector('svg')).not.toBeNull();
     expect(card?.textContent).toContain('arroz');
