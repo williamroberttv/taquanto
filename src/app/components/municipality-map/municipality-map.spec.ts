@@ -3,6 +3,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MunicipalityMap } from './municipality-map';
 
+vi.mock('leaflet', async (importOriginal) => {
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  return importOriginal();
+});
+
 describe('MunicipalityMap', () => {
   let fixture: ComponentFixture<MunicipalityMap>;
   let http: HttpTestingController;
@@ -58,6 +63,11 @@ describe('MunicipalityMap', () => {
       ],
     });
     await fixture.whenStable();
+    await vi.waitFor(() =>
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector('[aria-label="Selecionar Maceió"]'),
+      ).not.toBeNull(),
+    );
   });
 
   it('offers every loaded municipality and emits the selection', async () => {

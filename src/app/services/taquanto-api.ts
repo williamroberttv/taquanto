@@ -57,8 +57,8 @@ export interface PricePageParams {
 export type CacheStatus = 'HIT' | 'STALE' | 'MISS';
 
 export interface PriceSearchResponse {
-  data: SearchResponse;
-  cacheStatus: CacheStatus | null;
+  data: SearchResponse | null;
+  cacheStatus: CacheStatus;
   ageSeconds: number | null;
 }
 
@@ -66,7 +66,7 @@ export interface PriceSearchResponse {
 export class TaquantoApi {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiBaseUrl.replace(/\/$/, '');
-  private readonly priceTimeoutMs = 120000;
+  private readonly priceTimeoutMs = 5000;
 
   prices(query: string, pageParams: PricePageParams) {
     return this.http
@@ -83,20 +83,28 @@ export class TaquantoApi {
       .pipe(
         timeout(this.priceTimeoutMs),
         map((response): PriceSearchResponse => {
-          if (!response.body) {
-            throw new Error('Empty prices response');
-          }
-
           const cacheStatus = response.headers.get('X-Cache');
           const age = response.headers.get('Age');
-          return {
-            data: response.body,
-            cacheStatus:
-              cacheStatus === 'HIT' || cacheStatus === 'STALE' || cacheStatus === 'MISS'
-                ? cacheStatus
-                : null,
-            ageSeconds: age !== null && /^\d+$/.test(age) ? Number(age) : null,
-          };
+          const retryAfter = response.headers.get('Retry-After');
+          const ageSeconds = age !== null && /^\d+$/.test(age) ? Number(age) : null;
+
+          if (
+            response.status === 202 &&
+            cacheStatus === 'MISS' &&
+            retryAfter === '5' &&
+            !response.body
+          ) {
+            return { data: null, cacheStatus, ageSeconds };
+          }
+          if (
+            response.status === 200 &&
+            (cacheStatus === 'HIT' || cacheStatus === 'STALE') &&
+            response.body
+          ) {
+            return { data: response.body, cacheStatus, ageSeconds };
+          }
+
+          throw new Error('Invalid prices cache response');
         }),
       );
   }

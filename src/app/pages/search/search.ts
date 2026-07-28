@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import type * as Leaflet from 'leaflet';
-import { firstValueFrom, timeout } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { Footer } from '../../components/footer/footer';
 import { FavoriteToggle } from '../../components/favorite-toggle/favorite-toggle';
 import { Header } from '../../components/header/header';
@@ -28,12 +28,8 @@ import {
   recordCoordinates,
 } from '../../price-record';
 import { Favorites } from '../../services/favorites';
-import {
-  Pagination,
-  PriceRecord,
-  PriceSearchResponse,
-  TaquantoApi,
-} from '../../services/taquanto-api';
+import { PricePolling } from '../../services/price-polling';
+import { Pagination, PriceRecord, PriceSearchResponse } from '../../services/taquanto-api';
 
 interface RecentSearch {
   query: string;
@@ -49,12 +45,12 @@ interface RecentSearch {
   styleUrl: './search.scss',
 })
 export class SearchPage {
-  private readonly api = inject(TaquantoApi);
   private readonly destroyRef = inject(DestroyRef);
   private readonly favorites = inject(Favorites);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly pricePolling = inject(PricePolling);
   private readonly detailMapContainer = viewChild<ElementRef<HTMLElement>>('detailMapContainer');
   private readonly detailDialog = viewChild<ElementRef<HTMLDialogElement>>('detailDialog');
 
@@ -64,13 +60,7 @@ export class SearchPage {
   };
   private readonly recentSearchesKey = 'taquanto:recent-searches';
   private readonly pageSize = 50;
-  private readonly revalidationIntervalMs = 5000;
-  private readonly revalidationMaxAttempts = 25;
-  private priceRequestId = 0;
-  private revalidationActive = false;
-  private revalidationAttempts = 0;
-  private revalidationDeadline = 0;
-  private revalidationTimer: ReturnType<typeof setTimeout> | null = null;
+  private pricePollingSubscription: Subscription | null = null;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
   private leaflet?: typeof Leaflet;
   private detailMap?: Leaflet.Map;
@@ -148,8 +138,7 @@ export class SearchPage {
       if (this.toastTimer) {
         clearTimeout(this.toastTimer);
       }
-      this.priceRequestId += 1;
-      this.cancelRevalidation();
+      this.cancelPricePolling();
       this.detailMap?.remove();
     });
   }
@@ -171,7 +160,12 @@ export class SearchPage {
   }
 
   protected updateQuery(event: Event): void {
-    this.query.set((event.target as HTMLInputElement).value);
+    const query = (event.target as HTMLInputElement).value;
+    if (query !== this.query() && (this.pricePollingSubscription || this.pricesLoading())) {
+      this.cancelPricePolling();
+      this.loadedPriceKey = null;
+    }
+    this.query.set(query);
   }
 
   protected selectMunicipality(selection: MunicipalitySelection): void {
@@ -204,7 +198,7 @@ export class SearchPage {
     this.filtersReady.set(true);
   }
 
-  protected async loadPage(page: number): Promise<void> {
+  protected loadPage(page: number): void {
     const pagination = this.pagination();
     if (
       !pagination ||
@@ -215,8 +209,8 @@ export class SearchPage {
     ) {
       return;
     }
-    this.cancelRevalidation();
-    await this.requestPricePage(this.currentPriceQuery, page, this.priceRequestId);
+    this.cancelPricePolling();
+    this.requestPricePage(this.currentPriceQuery, page);
   }
 
   protected openRecordDetail(record: PriceRecord): void {
@@ -298,8 +292,7 @@ export class SearchPage {
   }
 
   private filtersChanged(): void {
-    this.cancelRevalidation();
-    this.priceRequestId += 1;
+    this.cancelPricePolling();
     this.loadedPriceKey = null;
     this.records.set([]);
     this.pagination.set(null);
@@ -308,182 +301,123 @@ export class SearchPage {
     this.updateUrl();
   }
 
-  private async runSearch(query: string, updateUrl: boolean): Promise<void> {
+  private runSearch(query: string, updateUrl: boolean): void {
     if (!this.isGTIN(query) && (query.length < 3 || query.length > 50)) {
       this.inlineMessage.set('Digite uma descrição de 3 a 50 caracteres ou um GTIN válido.');
       return;
     }
     const searchKey = this.priceKey(query);
-    if (searchKey === this.activeSearchKey) {
+    if (searchKey === this.activeSearchKey || searchKey === this.loadedPriceKey) {
       return;
     }
-    this.activeSearchKey = searchKey;
 
+    this.cancelPricePolling();
+    this.activeSearchKey = searchKey;
     this.query.set(query);
-    this.cancelRevalidation();
     this.inlineMessage.set(null);
     this.records.set([]);
     this.pagination.set(null);
     this.loadedPriceKey = null;
-    this.priceRequestId += 1;
     this.saveRecentSearch(query);
 
     if (updateUrl) {
       this.updateUrl();
     }
-    try {
-      await this.loadPrices(query);
-    } finally {
-      if (this.activeSearchKey === searchKey) {
-        this.activeSearchKey = null;
-      }
-    }
+    this.loadPrices(query);
   }
 
-  private async loadPrices(query: string): Promise<void> {
+  private loadPrices(query: string): void {
     const key = this.priceKey(query);
     if (this.loadedPriceKey === key) {
       return;
     }
 
-    const requestId = this.priceRequestId + 1;
-    this.priceRequestId = requestId;
     this.currentPriceQuery = query;
     this.pagination.set(null);
     this.records.set([]);
-    await this.requestPricePage(query, 1, requestId);
+    this.requestPricePage(query, 1);
   }
 
-  private async requestPricePage(query: string, page: number, requestId: number): Promise<void> {
+  private requestPricePage(query: string, page: number): void {
     this.pricesLoading.set(true);
-
-    try {
-      const response = await firstValueFrom(
-        this.api.prices(query, {
-          days: this.days(),
-          limit: this.pageSize,
-          municipality: this.municipality().code,
-          page,
-        }),
-      );
-      if (requestId !== this.priceRequestId) {
-        return;
-      }
-
-      this.records.set(response.data.results);
-      this.pagination.set(response.data.pagination);
-      this.loadedPriceKey = this.priceKey(query);
-      this.inlineMessage.set(
-        this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
-      );
-      if (response.cacheStatus === 'STALE') {
-        this.startRevalidation(requestId);
-      }
-    } catch {
-      if (requestId === this.priceRequestId) {
-        this.inlineMessage.set(null);
-        this.showToast('Não foi possível concluir a busca. Tente novamente em instantes.');
-      }
-    } finally {
-      if (requestId === this.priceRequestId) {
-        this.pricesLoading.set(false);
-      }
-    }
+    const searchKey = this.priceKey(query);
+    const subscription = this.pricePolling
+      .poll(query, {
+        days: this.days(),
+        limit: this.pageSize,
+        municipality: this.municipality().code,
+        page,
+      })
+      .subscribe({
+        next: (event) => {
+          if (event.kind === 'exhausted') {
+            if (!this.pagination()) {
+              this.loadedPriceKey = null;
+            }
+            this.cacheMessage.set(this.revalidationFailureMessage());
+            this.pricesLoading.set(false);
+            return;
+          }
+          const { response } = event;
+          if (response.data) {
+            this.loadedPriceKey = searchKey;
+            this.applyPriceData(response);
+            this.pricesLoading.set(false);
+          }
+          if (response.cacheStatus === 'HIT') {
+            this.cacheMessage.set(event.revalidation ? 'Resultados atualizados.' : null);
+            this.pricesLoading.set(false);
+          } else {
+            this.cacheMessage.set(
+              this.pagination()
+                ? 'Exibindo dados em cache enquanto atualizamos.'
+                : 'Buscando dados atualizados.',
+            );
+          }
+        },
+        error: () => {
+          this.activeSearchKey = null;
+          this.pricePollingSubscription = null;
+          this.pricesLoading.set(false);
+          if (this.pagination()) {
+            this.cacheMessage.set(this.revalidationFailureMessage());
+          } else {
+            this.cacheMessage.set(null);
+            this.inlineMessage.set(null);
+            this.showToast('Não foi possível concluir a busca. Tente novamente em instantes.');
+          }
+        },
+        complete: () => {
+          this.activeSearchKey = null;
+          this.pricePollingSubscription = null;
+        },
+      });
+    this.pricePollingSubscription = subscription.closed ? null : subscription;
   }
 
-  private startRevalidation(requestId: number): void {
-    if (this.revalidationActive || requestId !== this.priceRequestId) {
+  private applyPriceData(response: PriceSearchResponse): void {
+    if (!response.data) {
       return;
     }
-    this.revalidationActive = true;
-    this.revalidationAttempts = 0;
-    this.revalidationDeadline =
-      Date.now() + this.revalidationIntervalMs * this.revalidationMaxAttempts;
-    this.cacheMessage.set('Exibindo dados em cache enquanto atualizamos.');
-    this.scheduleRevalidation(requestId);
-  }
-
-  private scheduleRevalidation(requestId: number): void {
-    if (requestId !== this.priceRequestId) {
-      return;
-    }
-    const remainingMs = this.revalidationDeadline - Date.now();
-    if (this.revalidationAttempts >= this.revalidationMaxAttempts || remainingMs <= 0) {
-      this.finishRevalidation('Não foi possível atualizar agora; exibindo dados em cache.');
-      return;
-    }
-    this.revalidationTimer = setTimeout(
-      () => {
-        this.revalidationTimer = null;
-        void this.revalidateCurrentPage(requestId);
-      },
-      Math.min(this.revalidationIntervalMs, remainingMs),
+    this.records.set(response.data.results);
+    this.pagination.set(response.data.pagination);
+    this.inlineMessage.set(
+      this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
     );
   }
 
-  private async revalidateCurrentPage(requestId: number): Promise<void> {
-    const page = this.pagination()?.page;
-    if (!page || requestId !== this.priceRequestId) {
-      return;
-    }
-    const remainingMs = this.revalidationDeadline - Date.now();
-    if (remainingMs <= 0) {
-      this.finishRevalidation('Não foi possível atualizar agora; exibindo dados em cache.');
-      return;
-    }
-
-    this.revalidationAttempts += 1;
-    try {
-      const response = await firstValueFrom(
-        this.api
-          .prices(this.currentPriceQuery, {
-            days: this.days(),
-            limit: this.pageSize,
-            municipality: this.municipality().code,
-            page,
-          })
-          .pipe(timeout(remainingMs)),
-      );
-      if (requestId !== this.priceRequestId) {
-        return;
-      }
-      if (this.pagination()?.page !== page || this.hasStalePage([response])) {
-        this.scheduleRevalidation(requestId);
-        return;
-      }
-
-      this.records.set(response.data.results);
-      this.pagination.set(response.data.pagination);
-      this.inlineMessage.set(
-        this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
-      );
-      this.finishRevalidation('Resultados atualizados.');
-    } catch {
-      this.scheduleRevalidation(requestId);
-    }
+  private revalidationFailureMessage(): string {
+    return this.pagination()
+      ? 'Não foi possível atualizar agora; exibindo dados em cache.'
+      : 'Não foi possível obter dados atualizados. Tente buscar novamente.';
   }
 
-  private hasStalePage(responses: PriceSearchResponse[]): boolean {
-    return responses.some((response) => response.cacheStatus === 'STALE');
-  }
-
-  private cancelRevalidation(): void {
-    if (this.revalidationTimer) {
-      clearTimeout(this.revalidationTimer);
-      this.revalidationTimer = null;
-    }
-    this.revalidationActive = false;
-    this.revalidationAttempts = 0;
-    this.revalidationDeadline = 0;
+  private cancelPricePolling(): void {
+    this.pricePollingSubscription?.unsubscribe();
+    this.pricePollingSubscription = null;
+    this.activeSearchKey = null;
     this.cacheMessage.set(null);
-  }
-
-  private finishRevalidation(message: string): void {
-    this.revalidationActive = false;
-    this.revalidationTimer = null;
-    this.revalidationAttempts = 0;
-    this.revalidationDeadline = 0;
-    this.cacheMessage.set(message);
+    this.pricesLoading.set(false);
   }
 
   private updateUrl(): void {
