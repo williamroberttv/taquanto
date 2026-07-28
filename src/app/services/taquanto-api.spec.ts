@@ -56,12 +56,12 @@ describe('TaquantoApi', () => {
       },
     );
 
-    expect(response?.data.pagination.total_records).toBe(51);
+    expect(response?.data?.pagination.total_records).toBe(51);
     expect(response?.cacheStatus).toBe('STALE');
     expect(response?.ageSeconds).toBe(3600);
   });
 
-  it('tolerates absent cache headers', () => {
+  it('maps an accepted cache miss without a search body', () => {
     let response: PriceSearchResponse | undefined;
 
     api
@@ -69,6 +69,29 @@ describe('TaquantoApi', () => {
       .subscribe((value) => {
         response = value;
       });
+
+    const request = http.expectOne((req) => req.url === 'http://localhost:8080/v1/prices');
+    request.flush(null, {
+      headers: { 'Retry-After': '5', 'X-Cache': 'MISS' },
+      status: 202,
+      statusText: 'Accepted',
+    });
+
+    expect(response).toEqual({
+      data: null,
+      cacheStatus: 'MISS',
+      ageSeconds: null,
+    });
+  });
+
+  it('rejects a response without cache metadata', () => {
+    let failure: unknown;
+
+    api.prices('arroz', { municipality: '2700300', days: 3, limit: 50, page: 1 }).subscribe({
+      error: (error: unknown) => {
+        failure = error;
+      },
+    });
 
     const request = http.expectOne((req) => req.url === 'http://localhost:8080/v1/prices');
     request.flush({
@@ -86,7 +109,6 @@ describe('TaquantoApi', () => {
       },
     });
 
-    expect(response?.cacheStatus).toBeNull();
-    expect(response?.ageSeconds).toBeNull();
+    expect(failure).toEqual(new Error('Invalid prices cache response'));
   });
 });

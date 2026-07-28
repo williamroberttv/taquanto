@@ -117,11 +117,7 @@
             placeholder="Ex.: arroz, café 250g ou GTIN"
           />
         </div>
-        <button
-          type="submit"
-          class="btn btn-primary min-h-12"
-          [disabled]="!filtersReady() || pricesLoading()"
-        >
+        <button type="submit" class="btn btn-primary min-h-12" [disabled]="!filtersReady()">
           <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
             <path d="m16 16 4 4" />
@@ -136,11 +132,7 @@
         </p>
       }
 
-      <section
-        class="mt-8"
-        aria-label="Resultados de preços"
-        [attr.aria-busy]="pricesLoading()"
-      >
+      <section class="mt-8" aria-label="Resultados de preços" [attr.aria-busy]="pricesLoading()">
         <div class="results-list">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>

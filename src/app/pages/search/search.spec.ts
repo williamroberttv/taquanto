@@ -75,7 +75,7 @@ class TaquantoApiStub {
   pageResults = new Map<number, PriceRecord[]>();
   pageResultVersions = new Map<number, PriceRecord[][]>();
   cacheStatuses = new Map<number, CacheStatus[]>();
-  cacheStatus: CacheStatus = 'MISS';
+  cacheStatus: CacheStatus = 'HIT';
   totalPages = 1;
   pendingResponse: Subject<PriceSearchResponse> | null = null;
 
@@ -91,25 +91,29 @@ class TaquantoApiStub {
       this.pageResultVersions.get(params.page)?.shift() ??
       this.pageResults.get(params.page) ??
       this.results;
+    const cacheStatus = this.cacheStatuses.get(params.page)?.shift() ?? this.cacheStatus;
     const totalRecords = this.pageResults.size
       ? [...this.pageResults.values()].reduce((total, page) => total + page.length, 0)
       : results.length;
     return of<PriceSearchResponse>({
-      data: {
-        query,
-        source: 'test',
-        results,
-        pagination: {
-          page: params.page,
-          page_size: params.limit,
-          page_records: results.length,
-          total_records: totalRecords,
-          total_pages: this.totalPages,
-          first_page: params.page === 1,
-          last_page: params.page >= this.totalPages,
-        },
-      },
-      cacheStatus: this.cacheStatuses.get(params.page)?.shift() ?? this.cacheStatus,
+      data:
+        cacheStatus === 'MISS'
+          ? null
+          : {
+              query,
+              source: 'test',
+              results,
+              pagination: {
+                page: params.page,
+                page_size: params.limit,
+                page_records: results.length,
+                total_records: totalRecords,
+                total_pages: this.totalPages,
+                first_page: params.page === 1,
+                last_page: params.page >= this.totalPages,
+              },
+            },
+      cacheStatus,
       ageSeconds: 0,
     });
   }
@@ -383,7 +387,7 @@ describe('SearchPage', () => {
     });
   });
 
-  it('shows skeletons and only disables search while the API request is pending', async () => {
+  it('shows skeletons without blocking a replacement search', async () => {
     const pendingResponse = new Subject<PriceSearchResponse>();
     api.pendingResponse = pendingResponse;
     const element = fixture.nativeElement as HTMLElement;
@@ -397,7 +401,7 @@ describe('SearchPage', () => {
 
     expect(api.priceCalls).toHaveLength(1);
     await vi.waitFor(() => expect(element.querySelectorAll('.skeleton')).toHaveLength(20));
-    expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(true);
+    expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
 
     pendingResponse.next({
@@ -415,7 +419,7 @@ describe('SearchPage', () => {
           last_page: true,
         },
       },
-      cacheStatus: 'MISS',
+      cacheStatus: 'HIT',
       ageSeconds: 0,
     });
     pendingResponse.complete();
@@ -425,6 +429,53 @@ describe('SearchPage', () => {
     });
     expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
+  });
+
+  it('aborts a pending request when the query changes', async () => {
+    const pendingResponse = new Subject<PriceSearchResponse>();
+    api.pendingResponse = pendingResponse;
+    const element = fixture.nativeElement as HTMLElement;
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+
+    input.value = 'arroz';
+    input.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
+
+    await vi.waitFor(() => expect(pendingResponse.observed).toBe(true));
+    input.value = 'feijao';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    expect(pendingResponse.observed).toBe(false);
+    expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
+  });
+
+  it('polls a cache miss every five seconds until fresh data arrives', async () => {
+    vi.useFakeTimers();
+    api.pageResultVersions.set(1, [[], [priceRecord]]);
+    api.cacheStatuses.set(1, ['MISS', 'HIT']);
+    const element = fixture.nativeElement as HTMLElement;
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+
+    input.value = 'arroz';
+    input.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(api.priceCalls).toHaveLength(1);
+    expect(element.textContent).toContain('Buscando dados atualizados.');
+    expect(element.querySelector('.skeleton')).not.toBeNull();
+    expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(5000);
+    await vi.advanceTimersToNextFrame();
+    vi.useRealTimers();
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(api.priceCalls).toHaveLength(2);
+    expect(element.textContent).toContain('Arroz branco 1kg');
+    expect(element.textContent).toContain('Resultados atualizados.');
+    expect(element.querySelector('.skeleton')).toBeNull();
   });
 
   it('revalidates the current stale page without blocking cached results', async () => {
