@@ -29,11 +29,19 @@ describe('Home', () => {
     expect(compiled.querySelector('.text-rotate')?.textContent).toContain('o café');
     expect(compiled.querySelector('.text-rotate')?.textContent).toContain('a gasolina');
     expect(compiled.querySelector('.text-rotate')?.textContent).toContain('o etanol');
-    expect(text).toContain('Registros oficiais, organizados para comparar.');
+    expect(text).toContain('Registros oficiais e organizados para comparação');
     expect(text).toContain('Guarde a venda, não uma promessa de preço.');
     expect(text).toContain('Buscar produto');
     expect(text).toContain('Prévia no mapa');
-    expect(compiled.querySelector('summary[aria-label="Abrir menu de navegação"]')).not.toBeNull();
+    expect(
+      compiled.querySelector('summary[aria-label="Abrir menu de navegação"]')?.parentElement
+        ?.classList,
+    ).toContain('md:hidden');
+    expect(
+      [...compiled.querySelectorAll<HTMLElement>('header nav.hidden a')].map((link) =>
+        link.textContent?.trim(),
+      ),
+    ).toEqual(['Buscar', 'Como funciona', 'Favoritos']);
     expect(compiled.querySelector('.theme-controller')).not.toBeNull();
     expect(compiled.querySelectorAll('.mask-squircle')).toHaveLength(3);
     expect(compiled.querySelector('a[href="/favoritos"]')?.textContent).toContain('Favoritos');

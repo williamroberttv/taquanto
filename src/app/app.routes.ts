@@ -5,16 +5,16 @@ export const routes: Routes = [
   {
     path: '',
     component: Home,
-    title: 'Preços em Alagoas | TaQuanto',
+    title: 'Preços em Alagoas | TáQuanto',
   },
   {
     path: 'buscar',
     loadComponent: () => import('./pages/search/search').then((m) => m.SearchPage),
-    title: 'Buscar preços em Alagoas | TaQuanto',
+    title: 'Buscar preços em Alagoas | TáQuanto',
   },
   {
     path: 'favoritos',
     loadComponent: () => import('./pages/favorites/favorites').then((m) => m.FavoritesPage),
-    title: 'Favoritos de Alagoas | TaQuanto',
+    title: 'Favoritos de Alagoas | TáQuanto',
   },
 ];

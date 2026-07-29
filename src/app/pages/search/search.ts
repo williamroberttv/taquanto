@@ -68,6 +68,7 @@ export class SearchPage {
   private loadedPriceKey: string | null = null;
   private activeSearchKey: string | null = null;
   private currentPriceQuery = '';
+  private queryFromUrl: string | null = null;
 
   protected readonly query = signal('');
   protected readonly municipality = signal(this.defaultMunicipality);
@@ -128,10 +129,11 @@ export class SearchPage {
       }
 
       this.recentSearches.set(this.loadRecentSearches());
-      const initialQuery = queryParams.get('q')?.trim();
-      if (initialQuery) {
-        this.query.set(initialQuery);
+      this.queryFromUrl = queryParams.get('q')?.trim() || null;
+      if (this.queryFromUrl) {
+        this.query.set(this.queryFromUrl);
       }
+      this.runUrlSearch();
     });
 
     this.destroyRef.onDestroy(() => {
@@ -196,6 +198,7 @@ export class SearchPage {
       this.updateUrl();
     }
     this.filtersReady.set(true);
+    this.runUrlSearch();
   }
 
   protected loadPage(page: number): void {
@@ -228,7 +231,13 @@ export class SearchPage {
   }
 
   protected toggleFavorite(record: PriceRecord): void {
-    if (!this.favorites.toggle(record)) {
+    if (
+      !this.favorites.toggle(record, {
+        query: this.currentPriceQuery,
+        municipality: this.municipality(),
+        days: this.days(),
+      })
+    ) {
       this.showToast('Não foi possível atualizar os favoritos.');
     }
   }
@@ -289,6 +298,15 @@ export class SearchPage {
 
   protected formatRecentSearchPeriod(days: number): string {
     return this.periods.find((period) => period.days === days)?.label ?? '';
+  }
+
+  private runUrlSearch(): void {
+    if (!this.filtersReady() || !this.queryFromUrl) {
+      return;
+    }
+    const query = this.queryFromUrl;
+    this.queryFromUrl = null;
+    this.runSearch(query, false);
   }
 
   private filtersChanged(): void {

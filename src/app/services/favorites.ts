@@ -3,6 +3,11 @@ import { PriceRecord } from './taquanto-api';
 
 export interface FavoriteSaleRecord {
   record: PriceRecord;
+  search?: {
+    query: string;
+    municipality: { code: string; name: string };
+    days: number;
+  };
   savedAt: number;
 }
 
@@ -18,14 +23,21 @@ export class Favorites {
     return this.savedRecords().some((favorite) => this.key(favorite.record) === key);
   }
 
-  toggle(record: PriceRecord): boolean {
+  toggle(record: PriceRecord, search?: FavoriteSaleRecord['search']): boolean {
     const key = this.key(record);
     const existingIndex = this.savedRecords().findIndex(
       (favorite) => this.key(favorite.record) === key,
     );
     const records =
       existingIndex === -1
-        ? [{ record: structuredClone(record), savedAt: Date.now() }, ...this.savedRecords()]
+        ? [
+            {
+              record: structuredClone(record),
+              search: search ? structuredClone(search) : undefined,
+              savedAt: Date.now(),
+            },
+            ...this.savedRecords(),
+          ]
         : this.savedRecords().filter((_, index) => index !== existingIndex);
 
     try {
@@ -75,6 +87,24 @@ export class Favorites {
     const record = favorite['record'];
     if (!record || typeof record !== 'object' || typeof favorite['savedAt'] !== 'number') {
       return false;
+    }
+    const search = favorite['search'];
+    if (search !== undefined) {
+      if (!search || typeof search !== 'object') {
+        return false;
+      }
+      const savedSearch = search as Record<string, unknown>;
+      const municipality = savedSearch['municipality'];
+      if (
+        typeof savedSearch['query'] !== 'string' ||
+        typeof savedSearch['days'] !== 'number' ||
+        !municipality ||
+        typeof municipality !== 'object' ||
+        typeof (municipality as Record<string, unknown>)['code'] !== 'string' ||
+        typeof (municipality as Record<string, unknown>)['name'] !== 'string'
+      ) {
+        return false;
+      }
     }
     const sale = record as Record<string, unknown>;
     const store = sale['store'];

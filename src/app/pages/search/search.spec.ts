@@ -201,7 +201,7 @@ describe('SearchPage', () => {
     });
   });
 
-  it('loads URL filters without calling the prices API', async () => {
+  it('loads URL filters and searches with them', async () => {
     fixture.destroy();
     routeParams = { q: 'arroz', municipality: '2700300', days: '3' };
 
@@ -214,7 +214,12 @@ describe('SearchPage', () => {
     expect(element.querySelector<HTMLInputElement>('#product-query')?.value).toBe('arroz');
     expect(element.querySelector<HTMLSelectElement>('#search-period')?.value).toBe('3');
     expect(element.querySelector<HTMLSelectElement>('#municipality-select')?.value).toBe('2700300');
-    expect(api.priceCalls).toHaveLength(0);
+    expect(api.priceCalls).toEqual([
+      {
+        query: 'arroz',
+        params: { municipality: '2700300', days: 3, limit: 50, page: 1 },
+      },
+    ]);
   });
 
   it('shows the normalized sale fields in record details', async () => {
@@ -254,6 +259,17 @@ describe('SearchPage', () => {
     cardToggle.click();
     await fixture.whenStable();
     expect(cardToggle.getAttribute('aria-pressed')).toBe('true');
+    expect(
+      (
+        JSON.parse(localStorage.getItem('taquanto:favorite-sales') ?? '[]') as {
+          search?: unknown;
+        }[]
+      )[0].search,
+    ).toEqual({
+      query: priceRecord.gtin,
+      municipality: { code: '2704302', name: 'Maceió' },
+      days: 1,
+    });
 
     element.querySelector<HTMLButtonElement>('.detail-button')!.click();
     await fixture.whenStable();
