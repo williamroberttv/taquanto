@@ -36,14 +36,20 @@ describe('Favorites', () => {
   it('restores favorite sale records with the most recently saved first', () => {
     vi.spyOn(Date, 'now').mockReturnValueOnce(100).mockReturnValueOnce(200);
     const favorites = new Favorites();
+    const search = {
+      query: 'feijão',
+      municipality: { code: '2704302', name: 'Maceió' },
+      days: 3,
+    };
 
     expect(favorites.toggle(firstRecord)).toBe(true);
-    expect(favorites.toggle(secondRecord)).toBe(true);
+    expect(favorites.toggle(secondRecord, search)).toBe(true);
 
     expect(new Favorites().records().map(({ record }) => record.description)).toEqual([
       'Feijão carioca 1kg',
       'Arroz branco 1kg',
     ]);
+    expect(new Favorites().records()[0].search).toEqual(search);
   });
 
   it('removes an identical sale record instead of creating a duplicate', () => {
