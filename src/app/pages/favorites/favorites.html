@@ -23,7 +23,9 @@
               <div class="flex items-start justify-between gap-4">
                 <div>
                   <p class="price-value">{{ formatSaleValue(favorite.record) }}</p>
-                  <h2 class="mt-2 text-2xl font-bold">{{ favorite.record.description }}</h2>
+                  <h2 class="mt-2 text-2xl font-bold">
+                    {{ formatTitle(favorite.record.description) }}
+                  </h2>
                 </div>
                 <app-favorite-toggle
                   class="shrink-0"
@@ -36,11 +38,11 @@
               <dl class="detail-grid">
                 <div>
                   <dt class="detail-label">Estabelecimento</dt>
-                  <dd class="detail-value">{{ favorite.record.store.name }}</dd>
+                  <dd class="detail-value">{{ formatTitle(favorite.record.store.name) }}</dd>
                 </div>
                 <div>
-                  <dt class="detail-label">Data da venda</dt>
-                  <dd class="detail-value">{{ formatSaleDate(favorite.record) }}</dd>
+                  <dt class="detail-label">Horário da venda</dt>
+                  <dd class="detail-value">{{ formatSaleTime(favorite.record) }}</dd>
                 </div>
                 <div>
                   <dt class="detail-label">GTIN</dt>
@@ -57,11 +59,12 @@
                 <div>
                   <dt class="detail-label">Localização</dt>
                   @if (favorite.record.location.address) {
-                    <dd class="detail-value">{{ favorite.record.location.address }}</dd>
+                    <dd class="detail-value">
+                      {{ formatAddress(favorite.record.location.address) }}
+                    </dd>
+                  } @else {
+                    <dd class="detail-value">Endereço não informado</dd>
                   }
-                  <dd class="mt-1 text-sm leading-6 text-[var(--tq-muted)]">
-                    {{ locationLine(favorite.record) }}
-                  </dd>
                 </div>
               </dl>
 
@@ -102,7 +105,7 @@
             <p class="eyebrow">Localização da venda em Alagoas</p>
             <h2 id="map-title" class="mt-2 text-2xl font-bold">{{ record.store.name }}</h2>
             <p class="mt-2 text-sm leading-6 text-[var(--tq-muted)]">
-              {{ record.location.address || locationLine(record) }}
+              {{ formatAddress(record.location.address || record.location.district) }}
             </p>
           </div>
           <button

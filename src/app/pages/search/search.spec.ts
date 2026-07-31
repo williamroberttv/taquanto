@@ -125,12 +125,36 @@ describe('SearchPage', () => {
   let http: HttpTestingController;
   let router: { navigate: ReturnType<typeof vi.fn> };
   let routeParams: Record<string, string>;
+  let setFiltersPosition: (visible: boolean, top?: number) => void;
 
   beforeEach(async () => {
     localStorage.clear();
     api = new TaquantoApiStub();
     router = { navigate: vi.fn(() => Promise.resolve(true)) };
     routeParams = {};
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          setFiltersPosition = (visible, top = visible ? 0 : -1) =>
+            callback(
+              [
+                {
+                  isIntersecting: visible,
+                  boundingClientRect: { top },
+                } as IntersectionObserverEntry,
+              ],
+              this as unknown as IntersectionObserver,
+            );
+        }
+
+        observe(): void {
+          setFiltersPosition(false);
+        }
+
+        disconnect = vi.fn();
+      },
+    );
 
     await TestBed.configureTestingModule({
       imports: [SearchPage],
@@ -232,7 +256,14 @@ describe('SearchPage', () => {
     element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
     await fixture.whenStable();
 
-    element.querySelector<HTMLButtonElement>('.detail-button')!.click();
+    const lowestPrice = element.querySelector<HTMLElement>('.lowest-price-tag');
+    const detailButton = element.querySelector<HTMLButtonElement>('.detail-button')!;
+    const address = element.querySelector<HTMLElement>('.card-location-slot .tooltip');
+    expect(lowestPrice?.dataset['tip']).toBe('Menor preço');
+    expect(address?.dataset['tip']).toBe('Rua Do Comércio, 10');
+    expect(detailButton.textContent?.trim()).toBe('Detalhes');
+
+    detailButton.click();
     await fixture.whenStable();
 
     const dialog = element.querySelector<HTMLDialogElement>('dialog');
@@ -240,7 +271,10 @@ describe('SearchPage', () => {
     expect(dialog?.textContent).toContain('Valor declarado');
     expect(dialog?.textContent).toContain('R$ 0,00');
     expect(dialog?.textContent).toContain('7891234567890');
-    expect(dialog?.textContent).toContain('Venda em');
+    expect(dialog?.textContent).toContain('Rua Do Comércio, 10');
+    expect(dialog?.textContent).not.toContain('CNPJ');
+    expect(dialog?.textContent).toContain('Horário da venda');
+    expect(dialog?.textContent).not.toContain('57000-000');
     expect(dialog?.textContent).toContain('Localização no mapa não informada pela fonte');
   });
 
@@ -256,6 +290,7 @@ describe('SearchPage', () => {
 
     const cardToggle = element.querySelector<HTMLButtonElement>('.favorite-toggle')!;
     expect(cardToggle.getAttribute('aria-pressed')).toBe('false');
+    expect(cardToggle.dataset['tip']).toBe('Adicionar aos favoritos');
     cardToggle.click();
     await fixture.whenStable();
     expect(cardToggle.getAttribute('aria-pressed')).toBe('true');
@@ -282,17 +317,32 @@ describe('SearchPage', () => {
 
   it('loads a page selected in the numbered pagination', async () => {
     api.totalPages = 3;
-    api.pageResults.set(1, [priceRecord]);
-    api.pageResults.set(2, [
-      { ...priceRecord, description: 'Feijão carioca 1kg', gtin: '7891234567891' },
-    ]);
-    api.pageResults.set(3, [
-      { ...priceRecord, description: 'Macarrão 500g', gtin: '7891234567892' },
-    ]);
+    api.pageResults.set(
+      1,
+      Array.from({ length: 50 }, () => priceRecord),
+    );
+    api.pageResults.set(
+      2,
+      Array.from({ length: 50 }, () => ({
+        ...priceRecord,
+        description: 'Feijão carioca 1kg',
+        gtin: '7891234567891',
+      })),
+    );
+    api.pageResults.set(
+      3,
+      Array.from({ length: 26 }, () => ({
+        ...priceRecord,
+        description: 'Macarrão 500g',
+        gtin: '7891234567892',
+      })),
+    );
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
     const scrollIntoView = vi.fn();
+    const scrollToFilters = vi.fn();
     element.querySelector<HTMLElement>('#search-results')!.scrollIntoView = scrollIntoView;
+    element.querySelector<HTMLElement>('#product-search')!.scrollIntoView = scrollToFilters;
 
     input.value = 'arroz';
     input.dispatchEvent(new Event('input'));
@@ -300,23 +350,39 @@ describe('SearchPage', () => {
     await fixture.whenStable();
 
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(element.textContent).toContain('1-50 de 126 registros');
     expect(element.querySelector('[aria-current="page"]')?.textContent).toContain('1');
-    expect(element.querySelector<HTMLAnchorElement>('.back-to-search')?.hash).toBe(
-      '#product-search',
-    );
+    element.querySelector<HTMLButtonElement>('.back-to-search')!.click();
+    await fixture.whenStable();
+
+    expect(scrollToFilters).toHaveBeenCalledTimes(1);
+    expect(element.querySelector('.back-to-search')).toBeNull();
+    setFiltersPosition(false);
+    await fixture.whenStable();
+    expect(element.querySelector('.back-to-search')).not.toBeNull();
+    setFiltersPosition(true);
+    await fixture.whenStable();
+    expect(element.querySelector('.back-to-search')).toBeNull();
+    setFiltersPosition(false, 1);
+    await fixture.whenStable();
+    expect(element.querySelector('.back-to-search')).toBeNull();
+    setFiltersPosition(false);
+    await fixture.whenStable();
     element.querySelector<HTMLButtonElement>('[aria-label="Página 2"]')!.click();
     await fixture.whenStable();
 
     expect(scrollIntoView).toHaveBeenCalledTimes(2);
     expect(api.priceCalls.at(-1)?.params.page).toBe(2);
-    expect(element.textContent).toContain('Feijão carioca 1kg');
-    expect(element.textContent).not.toContain('Arroz branco 1kg');
+    expect(element.textContent).toContain('51-100 de 126 registros');
+    expect(element.textContent).toContain('Feijão Carioca 1kg');
+    expect(element.textContent).not.toContain('Arroz Branco 1kg');
 
     element.querySelector<HTMLButtonElement>('[aria-label="Página 3"]')!.click();
     await fixture.whenStable();
 
     expect(scrollIntoView).toHaveBeenCalledTimes(3);
     expect(api.priceCalls.at(-1)?.params.page).toBe(3);
+    expect(element.textContent).toContain('101-126 de 126 registros');
     expect(element.querySelector('[aria-current="page"]')?.textContent).toContain('3');
     expect(element.textContent).toContain('Macarrão 500g');
   });
@@ -503,7 +569,7 @@ describe('SearchPage', () => {
     await new Promise((resolve) => setTimeout(resolve));
 
     expect(api.priceCalls).toHaveLength(2);
-    expect(element.textContent).toContain('Arroz branco 1kg');
+    expect(element.textContent).toContain('Arroz Branco 1kg');
     expect(element.textContent).toContain('Resultados atualizados.');
     expect(element.querySelector('.skeleton')).toBeNull();
   });
@@ -525,7 +591,7 @@ describe('SearchPage', () => {
     element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
     await vi.advanceTimersByTimeAsync(0);
 
-    expect(element.textContent).toContain('Arroz em cache');
+    expect(element.textContent).toContain('Arroz Em Cache');
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     expect(element.textContent).toContain('Exibindo dados em cache enquanto atualizamos.');
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
@@ -536,8 +602,8 @@ describe('SearchPage', () => {
     await new Promise((resolve) => setTimeout(resolve));
 
     expect(api.priceCalls.at(-1)?.params.page).toBe(1);
-    expect(element.textContent).toContain('Arroz atualizado');
-    expect(element.textContent).not.toContain('Arroz em cache');
+    expect(element.textContent).toContain('Arroz Atualizado');
+    expect(element.textContent).not.toContain('Arroz Em Cache');
     expect(element.textContent).toContain('Resultados atualizados.');
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
@@ -579,7 +645,7 @@ describe('SearchPage', () => {
     await vi.advanceTimersToNextFrame();
 
     expect(api.priceCalls).toHaveLength(25);
-    expect(element.textContent).toContain('Arroz branco 1kg');
+    expect(element.textContent).toContain('Arroz Branco 1kg');
     expect(element.textContent).toContain(
       'Não foi possível atualizar agora; exibindo dados em cache.',
     );

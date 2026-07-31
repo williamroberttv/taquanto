@@ -91,8 +91,7 @@
 
 .button-icon,
 .recent-search-title-icon,
-.search-icon,
-.detail-button svg {
+.search-icon {
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -100,8 +99,7 @@
   stroke-width: 2;
 }
 
-.button-icon,
-.detail-button svg {
+.button-icon {
   width: 18px;
   height: 18px;
 }
@@ -141,13 +139,110 @@
 
 .price-value {
   color: var(--color-primary);
-  font-size: 1.55rem;
+  font-size: 1.35rem;
   font-weight: 800;
   line-height: 1.1;
 }
 
-.detail-button {
-  width: fit-content;
+.price-card {
+  height: 17.5rem;
+  border: 1px solid var(--tq-border70);
+}
+
+.lowest-price-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--color-success);
+  color: var(--color-success-content);
+}
+
+.lowest-price-tag svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.card-price-slot {
+  height: 2.15rem;
+  flex: 0 0 2.15rem;
+  line-height: 1.1;
+  padding-right: 2.5rem;
+}
+
+.card-title-slot {
+  display: -webkit-box;
+  height: 2.75rem;
+  margin-top: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.card-store-slot {
+  height: 1.75rem;
+  margin-top: 0.3rem;
+}
+
+.card-store-name,
+.card-secondary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-store-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.card-secondary {
+  color: var(--tq-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-top: 0.1rem;
+}
+
+.card-location-slot {
+  height: 1.4rem;
+}
+
+.card-time-slot {
+  display: block;
+  height: 1.25rem;
+  margin-top: 0.1rem;
+}
+
+.detail-modal {
+  max-height: calc(100dvh - 3rem);
+  overflow: hidden;
+  padding: 1.25rem;
+}
+
+.detail-modal .detail-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.detail-modal .detail-map-wrap {
+  margin-top: 14px;
+}
+
+.detail-modal .detail-map {
+  height: min(30vh, 240px);
+  min-height: 180px;
 }
 
 .back-to-search svg {
@@ -180,5 +275,21 @@
   .recent-search-chip {
     flex-basis: 100%;
     width: 100%;
+  }
+
+  .detail-modal {
+    width: calc(100% - 1.5rem);
+    max-height: calc(100dvh - 1.5rem);
+    padding: 1rem;
+  }
+
+  .detail-modal .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .detail-modal .detail-map {
+    height: 22vh;
+    min-height: 130px;
   }
 }

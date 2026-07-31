@@ -21,10 +21,11 @@ import {
   type MunicipalitySelection,
 } from '../../components/municipality-map/municipality-map';
 import {
+  formatAddress,
   formatMoney,
-  formatSaleDate,
+  formatSaleTime,
   formatSaleValue,
-  locationLine,
+  formatTitle,
   recordCoordinates,
 } from '../../price-record';
 import { Favorites } from '../../services/favorites';
@@ -53,6 +54,7 @@ export class SearchPage {
   private readonly pricePolling = inject(PricePolling);
   private readonly detailMapContainer = viewChild<ElementRef<HTMLElement>>('detailMapContainer');
   private readonly detailDialog = viewChild<ElementRef<HTMLDialogElement>>('detailDialog');
+  private readonly filtersSection = viewChild<ElementRef<HTMLElement>>('filtersSection');
   private readonly resultsSection = viewChild<ElementRef<HTMLElement>>('resultsSection');
 
   private readonly defaultMunicipality: MunicipalitySelection = {
@@ -80,6 +82,7 @@ export class SearchPage {
     { days: 10, label: 'Últimos 10 dias', hint: '' },
   ] as const;
   protected readonly days = signal(1);
+  protected readonly filtersVisible = signal(true);
   protected readonly filtersReady = signal(false);
   protected readonly records = signal<PriceRecord[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
@@ -92,9 +95,15 @@ export class SearchPage {
   protected readonly skeletons = [1, 2, 3, 4];
 
   protected readonly hasResults = computed(() => this.records().length > 0);
-  protected readonly totalRecords = computed(
-    () => this.pagination()?.total_records ?? this.records().length,
-  );
+  protected readonly recordsSummary = computed(() => {
+    const pagination = this.pagination();
+    if (!pagination) {
+      return '';
+    }
+
+    const offset = (pagination.page - 1) * pagination.page_size;
+    return `${offset + 1}-${offset + pagination.page_records} de ${pagination.total_records} registros`;
+  });
   protected readonly pageNumbers = computed(() => {
     const pagination = this.pagination();
     if (!pagination) {
@@ -108,15 +117,27 @@ export class SearchPage {
     );
     return Array.from({ length: count }, (_, index) => start + index);
   });
+  protected readonly formatAddress = formatAddress;
   protected readonly formatMoney = formatMoney;
-  protected readonly formatSaleDate = formatSaleDate;
+  protected readonly formatSaleTime = formatSaleTime;
   protected readonly formatSaleValue = formatSaleValue;
-  protected readonly locationLine = locationLine;
+  protected readonly formatTitle = formatTitle;
 
   constructor() {
     afterNextRender(() => {
       if (!isPlatformBrowser(this.platformId)) {
         return;
+      }
+
+      const filtersSection = this.filtersSection()?.nativeElement;
+      if (filtersSection) {
+        const observer = new IntersectionObserver(
+          ([entry]) =>
+            this.filtersVisible.set(entry.isIntersecting || entry.boundingClientRect.top >= 0),
+          { threshold: 0.01 },
+        );
+        observer.observe(filtersSection);
+        this.destroyRef.onDestroy(() => observer.disconnect());
       }
 
       const queryParams = this.route.snapshot.queryParamMap;
@@ -215,6 +236,13 @@ export class SearchPage {
     }
     this.cancelPricePolling();
     this.requestPricePage(this.currentPriceQuery, page);
+  }
+
+  protected scrollToFilters(): void {
+    const filtersSection = this.filtersSection()?.nativeElement;
+    filtersSection?.scrollIntoView();
+    filtersSection?.focus({ preventScroll: true });
+    this.filtersVisible.set(true);
   }
 
   protected openRecordDetail(record: PriceRecord): void {

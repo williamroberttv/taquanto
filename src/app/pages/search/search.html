@@ -84,6 +84,7 @@
       </section>
 
       <form
+        #filtersSection
         id="product-search"
         tabindex="-1"
         class="card mt-8 grid scroll-mt-20 gap-3 bg-base-100 p-4 shadow-sm sm:grid-cols-[1fr_auto]"
@@ -179,7 +180,7 @@
             </div>
             @if (hasResults()) {
               <p class="text-sm font-medium text-[var(--tq-muted)]">
-                {{ records().length }} de {{ totalRecords() }} registros
+                {{ recordsSummary() }}
               </p>
             }
           </div>
@@ -198,43 +199,65 @@
             <p class="sr-only" role="status" aria-live="polite">
               Buscando preços. Buscas por descrição podem demorar.
             </p>
-            <div class="mt-5 grid gap-4 lg:grid-cols-2" aria-hidden="true">
+            <div
+              class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              aria-hidden="true"
+            >
               @for (skeleton of skeletons; track skeleton) {
                 <div class="card bg-base-100 shadow-sm">
-                  <div class="card-body gap-3 p-[18px]">
-                    <div class="skeleton h-7 w-28"></div>
-                    <div class="skeleton h-6 w-4/5"></div>
+                  <div class="card-body gap-2 p-4">
+                    <div class="skeleton h-6 w-24"></div>
+                    <div class="skeleton h-5 w-4/5"></div>
                     <div class="skeleton h-4 w-3/5"></div>
                     <div class="skeleton h-4 w-full"></div>
-                    <div class="skeleton mt-2 h-11 w-36"></div>
+                    <div class="skeleton mt-2 h-10 w-32"></div>
                   </div>
                 </div>
               }
             </div>
           } @else if (hasResults()) {
-            <div class="mt-5 grid gap-4 lg:grid-cols-2">
-              @for (record of records(); track $index) {
-                <article class="card bg-base-100 shadow-sm">
-                  <div class="card-body gap-0 p-[18px]">
-                    <p class="price-value">{{ formatSaleValue(record) }}</p>
-                    <h3 class="mt-2 text-lg font-semibold text-[var(--tq-ink)]">
-                      {{ record.description }}
+            <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              @for (record of records(); track $index; let first = $first) {
+                <article class="price-card card bg-base-100 shadow-sm">
+                  @if (first) {
+                    <span
+                      class="lowest-price-tag tooltip tooltip-left"
+                      data-tip="Menor preço"
+                      role="img"
+                      aria-label="Menor preço"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M20 13 13 20 4 11V4h7Z" />
+                        <circle cx="8.5" cy="8.5" r="1" />
+                      </svg>
+                    </span>
+                  }
+                  <div class="card-body h-full gap-0 p-5">
+                    <p class="card-price-slot price-value">{{ formatSaleValue(record) }}</p>
+                    <h3
+                      class="card-title-slot text-base font-semibold leading-snug text-[var(--tq-ink)]"
+                    >
+                      {{ formatTitle(record.description) }}
                     </h3>
-                    <p class="mt-2 text-sm font-semibold text-[var(--tq-ink)]">
-                      {{ record.store.name }}
-                    </p>
-                    @if (record.location.address) {
-                      <p class="mt-1 text-sm leading-6 text-[var(--tq-muted)]">
-                        {{ record.location.address }}
-                      </p>
-                    }
-                    <p class="mt-1 text-sm leading-6 text-[var(--tq-muted)]">
-                      {{ locationLine(record) }}
-                    </p>
-                    <p class="mt-3 text-sm font-medium text-[var(--tq-muted)]">
-                      {{ formatSaleDate(record) }}
-                    </p>
-                    <div class="card-actions mt-[18px]">
+                    <div class="card-store-slot">
+                      <p class="card-store-name">{{ formatTitle(record.store.name) }}</p>
+                    </div>
+                    <div class="card-location-slot">
+                      @if (record.location.address) {
+                        <p
+                          class="card-secondary tooltip tooltip-bottom"
+                          [attr.data-tip]="formatAddress(record.location.address)"
+                        >
+                          {{ formatAddress(record.location.address) }}
+                        </p>
+                      } @else {
+                        <p class="card-secondary">Endereço não informado</p>
+                      }
+                    </div>
+                    <time class="card-time-slot card-secondary" [attr.datetime]="record.sold_at">
+                      {{ formatSaleTime(record) }}
+                    </time>
+                    <div class="card-actions mt-auto justify-start gap-1 pt-1">
                       <app-favorite-toggle
                         [record]="record"
                         [favorite]="isFavorite(record)"
@@ -242,13 +265,20 @@
                       />
                       <button
                         type="button"
-                        class="detail-button btn btn-outline btn-primary min-h-11"
+                        class="detail-button btn btn-outline btn-primary h-10 min-h-10 px-3 text-sm"
                         (click)="openRecordDetail(record)"
                       >
-                        Ver detalhes
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M5 12h14" />
-                          <path d="m13 6 6 6-6 6" />
+                        Detalhes
+                        <svg
+                          class="h-4 w-4"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-width="2"
+                          aria-hidden="true"
+                        >
+                          <path d="M12 5v14M5 12h14" />
                         </svg>
                       </button>
                     </div>
@@ -306,18 +336,19 @@
     </section>
   </main>
 
-  @if (pagination()) {
+  @if (pagination() && !filtersVisible()) {
     <div class="fab">
-      <a
-        href="#product-search"
+      <button
+        type="button"
         class="back-to-search btn btn-circle btn-primary shadow-lg"
         aria-label="Voltar ao formulário de busca"
         title="Voltar ao formulário de busca"
+        (click)="scrollToFilters()"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m6 15 6-6 6 6" />
         </svg>
-      </a>
+      </button>
     </div>
   }
 
@@ -333,7 +364,7 @@
           <div>
             <p class="eyebrow">Detalhe da venda</p>
             <h2 id="detail-title" class="mt-2 text-2xl font-bold text-[var(--tq-ink)]">
-              {{ record.description }}
+              {{ formatTitle(record.description) }}
             </h2>
           </div>
           <div class="flex gap-2">
@@ -363,11 +394,13 @@
           </div>
           <div>
             <p class="detail-label">Estabelecimento</p>
-            <p class="detail-value">{{ record.store.name }}</p>
+            <p class="detail-value">{{ formatTitle(record.store.name) }}</p>
           </div>
           <div>
-            <p class="detail-label">Data da venda</p>
-            <p class="detail-value">{{ formatSaleDate(record) }}</p>
+            <p class="detail-label">Horário da venda</p>
+            <time class="detail-value block" [attr.datetime]="record.sold_at">
+              {{ formatSaleTime(record) }}
+            </time>
           </div>
           <div>
             <p class="detail-label">GTIN</p>
@@ -382,9 +415,10 @@
           <div class="detail-grid-wide">
             <p class="detail-label">Localização</p>
             @if (record.location.address) {
-              <p class="detail-value">{{ record.location.address }}</p>
+              <p class="detail-value">{{ formatAddress(record.location.address) }}</p>
+            } @else {
+              <p class="detail-value">Endereço não informado</p>
             }
-            <p class="text-sm leading-6 text-[var(--tq-muted)]">{{ locationLine(record) }}</p>
           </div>
         </div>
 
