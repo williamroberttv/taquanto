@@ -84,7 +84,9 @@
       </section>
 
       <form
-        class="card mt-8 grid gap-3 bg-base-100 p-4 shadow-sm sm:grid-cols-[1fr_auto]"
+        id="product-search"
+        tabindex="-1"
+        class="card mt-8 grid scroll-mt-20 gap-3 bg-base-100 p-4 shadow-sm sm:grid-cols-[1fr_auto]"
         aria-labelledby="product-search-title"
         (submit)="submitSearch($event)"
       >
@@ -132,7 +134,13 @@
         </p>
       }
 
-      <section class="mt-8" aria-label="Resultados de preços" [attr.aria-busy]="pricesLoading()">
+      <section
+        #resultsSection
+        id="search-results"
+        class="mt-8 scroll-mt-20"
+        aria-label="Resultados de preços"
+        [attr.aria-busy]="pricesLoading()"
+      >
         <div class="results-list">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -297,6 +305,21 @@
       </section>
     </section>
   </main>
+
+  @if (pagination()) {
+    <div class="fab">
+      <a
+        href="#product-search"
+        class="back-to-search btn btn-circle btn-primary shadow-lg"
+        aria-label="Voltar ao formulário de busca"
+        title="Voltar ao formulário de busca"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 15 6-6 6 6" />
+        </svg>
+      </a>
+    </div>
+  }
 
   @if (selectedRecord(); as record) {
     <dialog

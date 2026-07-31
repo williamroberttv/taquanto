@@ -53,6 +53,7 @@ export class SearchPage {
   private readonly pricePolling = inject(PricePolling);
   private readonly detailMapContainer = viewChild<ElementRef<HTMLElement>>('detailMapContainer');
   private readonly detailDialog = viewChild<ElementRef<HTMLDialogElement>>('detailDialog');
+  private readonly resultsSection = viewChild<ElementRef<HTMLElement>>('resultsSection');
 
   private readonly defaultMunicipality: MunicipalitySelection = {
     code: '2704302',
@@ -359,6 +360,7 @@ export class SearchPage {
   private requestPricePage(query: string, page: number): void {
     this.pricesLoading.set(true);
     const searchKey = this.priceKey(query);
+    let scrolledToResults = false;
     const subscription = this.pricePolling
       .poll(query, {
         days: this.days(),
@@ -380,6 +382,10 @@ export class SearchPage {
           if (response.data) {
             this.loadedPriceKey = searchKey;
             this.applyPriceData(response);
+            if (!scrolledToResults) {
+              scrolledToResults = true;
+              this.scrollToResults();
+            }
             this.pricesLoading.set(false);
           }
           if (response.cacheStatus === 'HIT') {
@@ -422,6 +428,12 @@ export class SearchPage {
     this.inlineMessage.set(
       this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
     );
+  }
+
+  private scrollToResults(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.resultsSection()?.nativeElement.scrollIntoView?.();
+    }
   }
 
   private revalidationFailureMessage(): string {

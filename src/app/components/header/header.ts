@@ -9,7 +9,7 @@ interface NavigationItem {
 @Component({
   selector: 'app-header',
   host: {
-    class: 'block',
+    class: 'sticky top-0 z-[1100] block',
   },
   templateUrl: './header.html',
 })
