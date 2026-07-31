@@ -291,16 +291,23 @@ describe('SearchPage', () => {
     ]);
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
+    const scrollIntoView = vi.fn();
+    element.querySelector<HTMLElement>('#search-results')!.scrollIntoView = scrollIntoView;
 
     input.value = 'arroz';
     input.dispatchEvent(new Event('input'));
     element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
     await fixture.whenStable();
 
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
     expect(element.querySelector('[aria-current="page"]')?.textContent).toContain('1');
+    expect(element.querySelector<HTMLAnchorElement>('.back-to-search')?.hash).toBe(
+      '#product-search',
+    );
     element.querySelector<HTMLButtonElement>('[aria-label="Página 2"]')!.click();
     await fixture.whenStable();
 
+    expect(scrollIntoView).toHaveBeenCalledTimes(2);
     expect(api.priceCalls.at(-1)?.params.page).toBe(2);
     expect(element.textContent).toContain('Feijão carioca 1kg');
     expect(element.textContent).not.toContain('Arroz branco 1kg');
@@ -308,6 +315,7 @@ describe('SearchPage', () => {
     element.querySelector<HTMLButtonElement>('[aria-label="Página 3"]')!.click();
     await fixture.whenStable();
 
+    expect(scrollIntoView).toHaveBeenCalledTimes(3);
     expect(api.priceCalls.at(-1)?.params.page).toBe(3);
     expect(element.querySelector('[aria-current="page"]')?.textContent).toContain('3');
     expect(element.textContent).toContain('Macarrão 500g');
@@ -408,6 +416,8 @@ describe('SearchPage', () => {
     api.pendingResponse = pendingResponse;
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
+    const scrollIntoView = vi.fn();
+    element.querySelector<HTMLElement>('#search-results')!.scrollIntoView = scrollIntoView;
 
     input.value = 'arroz';
     input.dispatchEvent(new Event('input'));
@@ -419,6 +429,8 @@ describe('SearchPage', () => {
     await vi.waitFor(() => expect(element.querySelectorAll('.skeleton')).toHaveLength(20));
     expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(element.querySelector('.back-to-search')).toBeNull();
 
     pendingResponse.next({
       data: {
@@ -445,6 +457,8 @@ describe('SearchPage', () => {
     });
     expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(element.querySelector('.back-to-search')).not.toBeNull();
   });
 
   it('aborts a pending request when the query changes', async () => {
@@ -503,6 +517,8 @@ describe('SearchPage', () => {
     api.cacheStatuses.set(1, ['STALE', 'HIT']);
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
+    const scrollIntoView = vi.fn();
+    element.querySelector<HTMLElement>('#search-results')!.scrollIntoView = scrollIntoView;
 
     input.value = 'arroz';
     input.dispatchEvent(new Event('input'));
@@ -510,6 +526,7 @@ describe('SearchPage', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(element.textContent).toContain('Arroz em cache');
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
     expect(element.textContent).toContain('Exibindo dados em cache enquanto atualizamos.');
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
 
@@ -522,6 +539,7 @@ describe('SearchPage', () => {
     expect(element.textContent).toContain('Arroz atualizado');
     expect(element.textContent).not.toContain('Arroz em cache');
     expect(element.textContent).toContain('Resultados atualizados.');
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
   it('cancels stale revalidation when filters change', async () => {

@@ -150,6 +150,32 @@
   width: fit-content;
 }
 
+.back-to-search svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.back-to-search:hover svg,
+.back-to-search:focus-visible svg {
+  animation: back-to-search-bounce 360ms ease-out;
+}
+
+@keyframes back-to-search-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
 @media (max-width: 640px) {
   .recent-search-chip {
     flex-basis: 100%;
