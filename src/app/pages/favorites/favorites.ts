@@ -13,10 +13,11 @@ import { Footer } from '../../components/footer/footer';
 import { FavoriteToggle } from '../../components/favorite-toggle/favorite-toggle';
 import { Header } from '../../components/header/header';
 import {
+  formatAddress,
   formatMoney,
-  formatSaleDate,
+  formatSaleTime,
   formatSaleValue,
-  locationLine,
+  formatTitle,
   recordCoordinates,
 } from '../../price-record';
 import { Favorites as FavoritesStore } from '../../services/favorites';
@@ -39,10 +40,11 @@ export class FavoritesPage {
   protected readonly records = this.favorites.records;
   protected readonly message = signal<string | null>(null);
   protected readonly selectedRecord = signal<PriceRecord | null>(null);
+  protected readonly formatAddress = formatAddress;
   protected readonly formatMoney = formatMoney;
-  protected readonly formatSaleDate = formatSaleDate;
+  protected readonly formatSaleTime = formatSaleTime;
   protected readonly formatSaleValue = formatSaleValue;
-  protected readonly locationLine = locationLine;
+  protected readonly formatTitle = formatTitle;
 
   constructor() {
     this.destroyRef.onDestroy(() => this.map?.remove());

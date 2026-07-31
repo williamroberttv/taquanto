@@ -49,7 +49,7 @@ describe('FavoritesPage', () => {
 
     const records = element.querySelectorAll<HTMLElement>('.favorite-record');
     expect(records).toHaveLength(2);
-    expect(records[0].textContent).toContain('Feijão carioca 1kg');
+    expect(records[0].textContent).toContain('Feijão Carioca 1kg');
     expect(records[0].textContent).toContain('R$ 5,99');
     expect(records[0].querySelector('.map-button')).toBeNull();
     expect(records[1].querySelector<HTMLButtonElement>('.map-button')?.textContent).toContain(
@@ -65,7 +65,7 @@ describe('FavoritesPage', () => {
     await fixture.whenStable();
 
     expect(element.querySelectorAll('.favorite-record')).toHaveLength(1);
-    expect(element.textContent).not.toContain('Feijão carioca 1kg');
+    expect(element.textContent).not.toContain('Feijão Carioca 1kg');
   });
 
   afterEach(() => {

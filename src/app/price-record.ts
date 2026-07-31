@@ -8,28 +8,38 @@ export function formatSaleValue(record: PriceRecord): string {
   return `${formatMoney(record.sale_value_cents)}${record.unit ? ` / ${record.unit}` : ''}`;
 }
 
-export function formatSaleDate(record: PriceRecord): string {
-  const date = new Date(record.sold_at);
-  if (Number.isNaN(date.getTime())) {
-    return 'Data da venda não informada';
-  }
-  return `Venda em ${new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
-    .format(date)
-    .replace(', ', ' às ')}`;
+export function formatAddress(address: string): string {
+  const normalized = address
+    .trim()
+    .replace(/\s*[,;-]\s*macei[oó](?!\p{L}).*$/iu, '')
+    .replace(/\s*[,;-]?\s*cep\s*:?\s*\d{5}-?\d{3}.*$/iu, '')
+    .trim();
+  return normalized ? formatTitle(normalized) : 'Endereço não informado';
 }
 
-export function locationLine(record: PriceRecord): string {
-  return (
-    [record.location.district, record.location.city, record.location.zip_code]
-      .filter(Boolean)
-      .join(' · ') || 'Localização textual não informada'
-  );
+export function formatTitle(value: string): string {
+  return value
+    .normalize('NFC')
+    .toLocaleLowerCase('pt-BR')
+    .replace(/(^|[^\p{L}\p{N}])\p{L}/gu, (letter) => letter.toLocaleUpperCase('pt-BR'));
+}
+
+export function formatSaleTime(record: PriceRecord): string {
+  const date = new Date(record.sold_at);
+  if (Number.isNaN(date.getTime())) {
+    return 'Horário não informado';
+  }
+  const elapsedSeconds = Math.round((date.getTime() - Date.now()) / 1000);
+  const [value, unit]: [number, Intl.RelativeTimeFormatUnit] =
+    Math.abs(elapsedSeconds) < 60
+      ? [0, 'second']
+      : Math.abs(elapsedSeconds) < 3600
+        ? [Math.round(elapsedSeconds / 60), 'minute']
+        : Math.abs(elapsedSeconds) < 86400
+          ? [Math.round(elapsedSeconds / 3600), 'hour']
+          : [Math.round(elapsedSeconds / 86400), 'day'];
+  const relative = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' }).format(value, unit);
+  return relative[0].toLocaleUpperCase('pt-BR') + relative.slice(1);
 }
 
 export function recordCoordinates(record: PriceRecord): [number, number] | null {

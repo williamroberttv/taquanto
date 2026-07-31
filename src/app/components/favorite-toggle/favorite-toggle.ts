@@ -9,7 +9,8 @@ import { PriceRecord } from '../../services/taquanto-api';
   template: `
     <button
       type="button"
-      class="favorite-toggle btn btn-square btn-ghost min-h-11 border-0 text-primary shadow-none hover:border-0"
+      class="favorite-toggle tooltip tooltip-bottom btn btn-square btn-ghost min-h-11 border-0 text-primary shadow-none hover:border-0"
+      [attr.data-tip]="favorite() ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
       [attr.aria-pressed]="favorite()"
       [attr.aria-label]="label()"
       (click)="toggled.emit(record())"

@@ -21,10 +21,11 @@ import {
   type MunicipalitySelection,
 } from '../../components/municipality-map/municipality-map';
 import {
+  formatAddress,
   formatMoney,
-  formatSaleDate,
+  formatSaleTime,
   formatSaleValue,
-  locationLine,
+  formatTitle,
   recordCoordinates,
 } from '../../price-record';
 import { Favorites } from '../../services/favorites';
@@ -94,9 +95,15 @@ export class SearchPage {
   protected readonly skeletons = [1, 2, 3, 4];
 
   protected readonly hasResults = computed(() => this.records().length > 0);
-  protected readonly totalRecords = computed(
-    () => this.pagination()?.total_records ?? this.records().length,
-  );
+  protected readonly recordsSummary = computed(() => {
+    const pagination = this.pagination();
+    if (!pagination) {
+      return '';
+    }
+
+    const offset = (pagination.page - 1) * pagination.page_size;
+    return `${offset + 1}-${offset + pagination.page_records} de ${pagination.total_records} registros`;
+  });
   protected readonly pageNumbers = computed(() => {
     const pagination = this.pagination();
     if (!pagination) {
@@ -110,10 +117,11 @@ export class SearchPage {
     );
     return Array.from({ length: count }, (_, index) => start + index);
   });
+  protected readonly formatAddress = formatAddress;
   protected readonly formatMoney = formatMoney;
-  protected readonly formatSaleDate = formatSaleDate;
+  protected readonly formatSaleTime = formatSaleTime;
   protected readonly formatSaleValue = formatSaleValue;
-  protected readonly locationLine = locationLine;
+  protected readonly formatTitle = formatTitle;
 
   constructor() {
     afterNextRender(() => {

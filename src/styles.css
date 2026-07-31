@@ -163,7 +163,7 @@ body {
 .detail-label {
   color: var(--tq-muted);
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 0;
   text-transform: uppercase;
 }
