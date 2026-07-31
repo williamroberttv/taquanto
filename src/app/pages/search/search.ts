@@ -53,6 +53,7 @@ export class SearchPage {
   private readonly pricePolling = inject(PricePolling);
   private readonly detailMapContainer = viewChild<ElementRef<HTMLElement>>('detailMapContainer');
   private readonly detailDialog = viewChild<ElementRef<HTMLDialogElement>>('detailDialog');
+  private readonly filtersSection = viewChild<ElementRef<HTMLElement>>('filtersSection');
   private readonly resultsSection = viewChild<ElementRef<HTMLElement>>('resultsSection');
 
   private readonly defaultMunicipality: MunicipalitySelection = {
@@ -80,6 +81,7 @@ export class SearchPage {
     { days: 10, label: 'Últimos 10 dias', hint: '' },
   ] as const;
   protected readonly days = signal(1);
+  protected readonly filtersVisible = signal(true);
   protected readonly filtersReady = signal(false);
   protected readonly records = signal<PriceRecord[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
@@ -117,6 +119,17 @@ export class SearchPage {
     afterNextRender(() => {
       if (!isPlatformBrowser(this.platformId)) {
         return;
+      }
+
+      const filtersSection = this.filtersSection()?.nativeElement;
+      if (filtersSection) {
+        const observer = new IntersectionObserver(
+          ([entry]) =>
+            this.filtersVisible.set(entry.isIntersecting || entry.boundingClientRect.top >= 0),
+          { threshold: 0.01 },
+        );
+        observer.observe(filtersSection);
+        this.destroyRef.onDestroy(() => observer.disconnect());
       }
 
       const queryParams = this.route.snapshot.queryParamMap;
@@ -215,6 +228,13 @@ export class SearchPage {
     }
     this.cancelPricePolling();
     this.requestPricePage(this.currentPriceQuery, page);
+  }
+
+  protected scrollToFilters(): void {
+    const filtersSection = this.filtersSection()?.nativeElement;
+    filtersSection?.scrollIntoView();
+    filtersSection?.focus({ preventScroll: true });
+    this.filtersVisible.set(true);
   }
 
   protected openRecordDetail(record: PriceRecord): void {

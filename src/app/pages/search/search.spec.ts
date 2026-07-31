@@ -125,12 +125,36 @@ describe('SearchPage', () => {
   let http: HttpTestingController;
   let router: { navigate: ReturnType<typeof vi.fn> };
   let routeParams: Record<string, string>;
+  let setFiltersPosition: (visible: boolean, top?: number) => void;
 
   beforeEach(async () => {
     localStorage.clear();
     api = new TaquantoApiStub();
     router = { navigate: vi.fn(() => Promise.resolve(true)) };
     routeParams = {};
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          setFiltersPosition = (visible, top = visible ? 0 : -1) =>
+            callback(
+              [
+                {
+                  isIntersecting: visible,
+                  boundingClientRect: { top },
+                } as IntersectionObserverEntry,
+              ],
+              this as unknown as IntersectionObserver,
+            );
+        }
+
+        observe(): void {
+          setFiltersPosition(false);
+        }
+
+        disconnect = vi.fn();
+      },
+    );
 
     await TestBed.configureTestingModule({
       imports: [SearchPage],
@@ -292,7 +316,9 @@ describe('SearchPage', () => {
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
     const scrollIntoView = vi.fn();
+    const scrollToFilters = vi.fn();
     element.querySelector<HTMLElement>('#search-results')!.scrollIntoView = scrollIntoView;
+    element.querySelector<HTMLElement>('#product-search')!.scrollIntoView = scrollToFilters;
 
     input.value = 'arroz';
     input.dispatchEvent(new Event('input'));
@@ -301,9 +327,22 @@ describe('SearchPage', () => {
 
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     expect(element.querySelector('[aria-current="page"]')?.textContent).toContain('1');
-    expect(element.querySelector<HTMLAnchorElement>('.back-to-search')?.hash).toBe(
-      '#product-search',
-    );
+    element.querySelector<HTMLButtonElement>('.back-to-search')!.click();
+    await fixture.whenStable();
+
+    expect(scrollToFilters).toHaveBeenCalledTimes(1);
+    expect(element.querySelector('.back-to-search')).toBeNull();
+    setFiltersPosition(false);
+    await fixture.whenStable();
+    expect(element.querySelector('.back-to-search')).not.toBeNull();
+    setFiltersPosition(true);
+    await fixture.whenStable();
+    expect(element.querySelector('.back-to-search')).toBeNull();
+    setFiltersPosition(false, 1);
+    await fixture.whenStable();
+    expect(element.querySelector('.back-to-search')).toBeNull();
+    setFiltersPosition(false);
+    await fixture.whenStable();
     element.querySelector<HTMLButtonElement>('[aria-label="Página 2"]')!.click();
     await fixture.whenStable();
 
