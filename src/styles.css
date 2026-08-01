@@ -130,7 +130,70 @@ body {
   }
 }
 
-/* Leaflet and detail-map overrides stay global to avoid Angular component-style duplication. */
+/* Shared record-card, Leaflet and detail-map styles stay global to avoid component duplication. */
+.price-value {
+  color: var(--color-primary);
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.price-card {
+  height: 17.5rem;
+  border: 1px solid var(--tq-border70);
+}
+
+.card-price-slot {
+  height: 2.15rem;
+  flex: 0 0 2.15rem;
+  line-height: 1.1;
+  padding-right: 2.5rem;
+}
+
+.card-title-slot {
+  display: -webkit-box;
+  height: 2.75rem;
+  margin-top: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.card-store-slot {
+  height: 1.75rem;
+  margin-top: 0.3rem;
+}
+
+.card-store-name,
+.card-secondary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-store-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.card-secondary {
+  color: var(--tq-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-top: 0.1rem;
+}
+
+.card-location-slot {
+  height: 1.4rem;
+}
+
+.card-time-slot {
+  display: block;
+  height: 1.25rem;
+  margin-top: 0.1rem;
+}
+
 .leaflet-container {
   font-family: 'Inter', sans-serif;
 }
