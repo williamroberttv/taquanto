@@ -14,7 +14,6 @@ import { FavoriteToggle } from '../../components/favorite-toggle/favorite-toggle
 import { Header } from '../../components/header/header';
 import {
   formatAddress,
-  formatMoney,
   formatSaleTime,
   formatSaleValue,
   formatTitle,
@@ -41,7 +40,6 @@ export class FavoritesPage {
   protected readonly message = signal<string | null>(null);
   protected readonly selectedRecord = signal<PriceRecord | null>(null);
   protected readonly formatAddress = formatAddress;
-  protected readonly formatMoney = formatMoney;
   protected readonly formatSaleTime = formatSaleTime;
   protected readonly formatSaleValue = formatSaleValue;
   protected readonly formatTitle = formatTitle;
