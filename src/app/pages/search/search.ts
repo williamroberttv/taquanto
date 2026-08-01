@@ -300,29 +300,23 @@ export class SearchPage {
     const minuteMs = 60 * 1000;
     const hourMs = 60 * minuteMs;
     const dayMs = 24 * hourMs;
-    const dateTime = new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      month: '2-digit',
-    }).format(new Date(search.searchedAt));
 
     if (diffMs < minuteMs) {
-      return 'agora · ' + dateTime;
+      return 'Agora';
     }
     if (diffMs < hourMs) {
       const minutes = Math.floor(diffMs / minuteMs);
-      return 'há ' + minutes + ' ' + (minutes === 1 ? 'minuto' : 'minutos') + ' · ' + dateTime;
+      return 'há ' + minutes + ' ' + (minutes === 1 ? 'minuto' : 'minutos');
     }
     if (diffMs < dayMs) {
       const hours = Math.floor(diffMs / hourMs);
-      return 'há ' + hours + ' ' + (hours === 1 ? 'hora' : 'horas') + ' · ' + dateTime;
+      return 'há ' + hours + ' ' + (hours === 1 ? 'hora' : 'horas');
     }
     if (diffMs < 2 * dayMs) {
-      return 'ontem · ' + dateTime;
+      return 'ontem';
     }
     const days = Math.floor(diffMs / dayMs);
-    return 'há ' + days + ' dias · ' + dateTime;
+    return 'há ' + days + ' dias';
   }
 
   protected formatRecentSearchPeriod(days: number): string {

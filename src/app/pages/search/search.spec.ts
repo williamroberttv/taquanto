@@ -446,7 +446,7 @@ describe('SearchPage', () => {
     expect(recentSearchesTitle?.querySelector('svg')).not.toBeNull();
     expect(card?.textContent).toContain('arroz');
     expect(card?.textContent).toContain('Arapiraca · Últimos 3 dias');
-    expect(card?.textContent).toContain('agora');
+    expect(card?.textContent).toContain('Agora');
     expect(JSON.parse(localStorage.getItem('taquanto:recent-searches') ?? '[]')).toEqual([
       {
         query: 'arroz',
