@@ -387,6 +387,60 @@ describe('SearchPage', () => {
     expect(element.textContent).toContain('Macarrão 500g');
   });
 
+  it('hides the records count while loading another page', async () => {
+    api.totalPages = 2;
+    api.pageResults.set(
+      1,
+      Array.from({ length: 50 }, () => priceRecord),
+    );
+    const page2 = Array.from({ length: 20 }, () => ({
+      ...priceRecord,
+      description: 'Feijão carioca 1kg',
+      gtin: '7891234567891',
+    }));
+    api.pageResults.set(2, page2);
+
+    const element = fixture.nativeElement as HTMLElement;
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+
+    input.value = 'arroz';
+    input.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
+    await fixture.whenStable();
+    expect(element.textContent).toContain('1-50 de 70 registros');
+
+    const pendingResponse = new Subject<PriceSearchResponse>();
+    api.pendingResponse = pendingResponse;
+    element.querySelector<HTMLButtonElement>('[aria-label="Página 2"]')!.click();
+
+    await vi.waitFor(() =>
+      expect(element.textContent).not.toContain('1-50 de 70 registros'),
+    );
+
+    pendingResponse.next({
+      data: {
+        query: 'arroz',
+        source: 'test',
+        results: page2,
+        pagination: {
+          page: 2,
+          page_size: 50,
+          page_records: page2.length,
+          total_records: 70,
+          total_pages: 2,
+          first_page: false,
+          last_page: true,
+        },
+      },
+      cacheStatus: 'HIT',
+      ageSeconds: 0,
+    });
+    pendingResponse.complete();
+    await fixture.whenStable();
+
+    expect(element.textContent).toContain('51-70 de 70 registros');
+  });
+
   it('shows the precise marker when API coordinates are numeric strings', async () => {
     api.results = [
       {
