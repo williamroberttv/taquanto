@@ -178,7 +178,7 @@
                 </span>
               </div>
             </div>
-            @if (hasResults()) {
+            @if (hasResults() && !pricesLoading()) {
               <p class="text-sm font-medium text-[var(--tq-muted)]">
                 {{ recordsSummary() }}
               </p>
