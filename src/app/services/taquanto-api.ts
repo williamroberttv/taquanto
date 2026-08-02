@@ -96,11 +96,7 @@ export class TaquantoApi {
           ) {
             return { data: null, cacheStatus, ageSeconds };
           }
-          if (
-            response.status === 200 &&
-            (cacheStatus === 'HIT' || cacheStatus === 'STALE') &&
-            response.body
-          ) {
+          if (response.status === 200 && (cacheStatus === 'HIT' || cacheStatus === 'STALE')) {
             return { data: response.body, cacheStatus, ageSeconds };
           }
 

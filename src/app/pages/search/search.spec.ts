@@ -581,6 +581,24 @@ describe('SearchPage', () => {
     expect(element.querySelector('.back-to-search')).not.toBeNull();
   });
 
+  it('shows an empty state without an error toast for empty successful data', async () => {
+    const pendingResponse = new Subject<PriceSearchResponse>();
+    api.pendingResponse = pendingResponse;
+    const element = fixture.nativeElement as HTMLElement;
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+
+    input.value = 'arroz';
+    input.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
+
+    pendingResponse.next({ data: null, cacheStatus: 'HIT', ageSeconds: null });
+    pendingResponse.complete();
+    await fixture.whenStable();
+
+    expect(element.textContent).toContain('Nenhum registro encontrado para esses filtros.');
+    expect(element.querySelector('.toast')).toBeNull();
+  });
+
   it('aborts a pending request when the query changes', async () => {
     const pendingResponse = new Subject<PriceSearchResponse>();
     api.pendingResponse = pendingResponse;
