@@ -25,11 +25,16 @@
             <article class="favorite-record price-card card bg-base-100 shadow-sm">
               <div class="card-body h-full gap-0 p-5">
                 <p class="card-price-slot price-value">{{ formatSaleValue(favorite.record) }}</p>
-                <h2
-                  class="card-title-slot text-base font-semibold leading-snug text-[var(--tq-ink)]"
+                <div
+                  class="card-title-tooltip tooltip tooltip-bottom"
+                  [attr.data-tip]="formatTitle(favorite.record.description)"
                 >
-                  {{ formatTitle(favorite.record.description) }}
-                </h2>
+                  <h2
+                    class="card-title-slot text-base font-semibold leading-snug text-[var(--tq-ink)]"
+                  >
+                    {{ formatTitle(favorite.record.description) }}
+                  </h2>
+                </div>
                 <div class="card-store-slot">
                   <p class="card-store-name">{{ formatTitle(favorite.record.store.name) }}</p>
                 </div>

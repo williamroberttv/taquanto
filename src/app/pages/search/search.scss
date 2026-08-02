@@ -20,6 +20,23 @@
   text-transform: uppercase;
 }
 
+.eyebrow-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.eyebrow-icon {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
 .recent-searches {
   margin-top: 24px;
 }
@@ -36,53 +53,28 @@
 }
 
 .recent-search-list {
-  display: flex;
-  align-items: stretch;
-  flex-wrap: wrap;
-  gap: 8px;
+  max-height: 7.5rem;
   margin-top: 10px;
-}
-
-.recent-search-chip {
-  display: inline-grid;
-  flex: 0 0 240px;
-  width: 240px;
-  height: 104px;
-  max-width: 100%;
-  align-content: center;
-  padding: 8px 10px;
-  text-align: left;
-}
-
-.recent-search-query,
-.recent-search-meta,
-.recent-search-time {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recent-search-query {
-  font-size: 0.88rem;
-  font-weight: 800;
-}
-
-.recent-search-meta,
-.recent-search-time {
-  margin-top: 2px;
-  color: var(--tq-muted);
-  font-size: 0.74rem;
+  color: var(--color-primary);
+  font-size: 0.8rem;
   font-weight: 700;
+  line-height: 1.5rem;
 }
 
-.recent-search-meta {
-  margin-top: 6px;
-  font-size: 0.78rem;
+.recent-search-link {
+  display: inline;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
 }
 
-.recent-search-chip:hover .recent-search-meta,
-.recent-search-chip:hover .recent-search-time {
-  color: var(--tq-muted);
+.recent-search-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15rem;
 }
 
 .search-input-wrap {
@@ -90,7 +82,6 @@
 }
 
 .button-icon,
-.recent-search-title-icon,
 .search-icon {
   fill: none;
   stroke: currentColor;
@@ -102,12 +93,6 @@
 .button-icon {
   width: 18px;
   height: 18px;
-}
-
-.recent-search-title-icon {
-  width: 17px;
-  height: 17px;
-  flex: none;
 }
 
 .search-icon {
@@ -135,6 +120,37 @@
   color: var(--tq-muted);
   font-size: 0.75rem;
   line-height: 1.5;
+}
+
+.results-heading,
+.results-message,
+.cache-status {
+  padding-inline: 1.25rem;
+}
+
+.cache-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cache-status-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+
+.cache-status-dot-pending {
+  background: var(--color-error);
+  animation: cache-status-fade 1.2s ease-in-out infinite;
+}
+
+@keyframes cache-status-fade {
+  50% {
+    opacity: 0.25;
+  }
 }
 
 .lowest-price-tag {
@@ -209,11 +225,6 @@
 }
 
 @media (max-width: 640px) {
-  .recent-search-chip {
-    flex-basis: 100%;
-    width: 100%;
-  }
-
   .detail-modal {
     width: calc(100% - 1.5rem);
     max-height: calc(100dvh - 1.5rem);

@@ -257,9 +257,11 @@ describe('SearchPage', () => {
     await fixture.whenStable();
 
     const lowestPrice = element.querySelector<HTMLElement>('.lowest-price-tag');
+    const description = element.querySelector<HTMLElement>('.card-title-tooltip');
     const detailButton = element.querySelector<HTMLButtonElement>('.detail-button')!;
     const address = element.querySelector<HTMLElement>('.card-location-slot .tooltip');
     expect(lowestPrice?.dataset['tip']).toBe('Menor preço');
+    expect(description?.dataset['tip']).toBe('Arroz Branco 1kg');
     expect(address?.dataset['tip']).toBe('Rua Do Comércio, 10');
     expect(detailButton.textContent?.trim()).toBe('Detalhes');
 
@@ -471,8 +473,9 @@ describe('SearchPage', () => {
     expect(element.querySelector('.leaflet-popup')).not.toBeNull();
   });
 
-  it('saves and repeats a complete recent search from its card', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-07-16T01:00:00Z').getTime());
+  it('saves and repeats a complete recent search from its compact link', async () => {
+    const searchedAt = new Date('2026-07-16T01:00:00Z').getTime();
+    const dateNow = vi.spyOn(Date, 'now').mockReturnValue(searchedAt);
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
     const period = element.querySelector<HTMLSelectElement>('#search-period')!;
@@ -489,7 +492,7 @@ describe('SearchPage', () => {
     element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
     await fixture.whenStable();
 
-    const card = element.querySelector<HTMLButtonElement>('.recent-search-chip');
+    const link = element.querySelector<HTMLButtonElement>('.recent-search-link');
     const recentSearchesTitle = element.querySelector('.recent-searches-title');
     const recentSearches = element.querySelector('.recent-searches')!;
     const locationFilter = element.querySelector('.location-filter')!;
@@ -497,19 +500,18 @@ describe('SearchPage', () => {
       recentSearches.compareDocumentPosition(locationFilter) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(recentSearchesTitle?.textContent).toContain('Suas últimas pesquisas');
-    expect(recentSearchesTitle?.querySelector('svg')).not.toBeNull();
-    expect(card?.textContent).toContain('arroz');
-    expect(card?.textContent).toContain('Arapiraca · Últimos 3 dias');
-    expect(card?.textContent).toContain('Agora');
+    expect(recentSearchesTitle?.querySelector('svg')).toBeNull();
+    expect(link?.textContent).toContain('Arroz • Arapiraca • agora');
     expect(JSON.parse(localStorage.getItem('taquanto:recent-searches') ?? '[]')).toEqual([
       {
         query: 'arroz',
         municipality: { code: '2700300', name: 'Arapiraca' },
         days: 3,
-        searchedAt: new Date('2026-07-16T01:00:00Z').getTime(),
+        searchedAt,
       },
     ]);
 
+    dateNow.mockReturnValue(searchedAt + 10 * 60 * 1000);
     input.value = '';
     input.dispatchEvent(new Event('input'));
     period.value = '1';
@@ -518,7 +520,10 @@ describe('SearchPage', () => {
     municipality.dispatchEvent(new Event('change'));
     await fixture.whenStable();
 
-    element.querySelector<HTMLButtonElement>('.recent-search-chip')!.click();
+    expect(link?.textContent).toContain('10min');
+    const scrollIntoView = vi.fn();
+    element.querySelector<HTMLElement>('#search-results')!.scrollIntoView = scrollIntoView;
+    element.querySelector<HTMLButtonElement>('.recent-search-link')!.click();
     await fixture.whenStable();
 
     expect(input.value).toBe('arroz');
@@ -529,6 +534,7 @@ describe('SearchPage', () => {
       query: 'arroz',
       params: { municipality: '2700300', days: 3, limit: 50, page: 1 },
     });
+    expect(scrollIntoView).toHaveBeenCalled();
   });
 
   it('shows skeletons without blocking a replacement search', async () => {
@@ -596,6 +602,8 @@ describe('SearchPage', () => {
     await fixture.whenStable();
 
     expect(element.textContent).toContain('Nenhum registro encontrado para esses filtros.');
+    expect(element.querySelector('.empty-results')).not.toBeNull();
+    expect(element.querySelector('.text-warning')).toBeNull();
     expect(element.querySelector('.toast')).toBeNull();
   });
 
@@ -677,6 +685,8 @@ describe('SearchPage', () => {
     expect(element.textContent).toContain('Arroz Atualizado');
     expect(element.textContent).not.toContain('Arroz Em Cache');
     expect(element.textContent).toContain('Resultados atualizados.');
+    expect(element.querySelector('.cache-status-dot')).not.toBeNull();
+    expect(element.querySelector('.cache-status-dot-pending')).toBeNull();
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
@@ -721,6 +731,7 @@ describe('SearchPage', () => {
     expect(element.textContent).toContain(
       'Não foi possível atualizar agora; exibindo dados em cache.',
     );
+    expect(element.querySelector('.cache-status-dot-pending')).not.toBeNull();
   });
 
   it('shows validation warnings and API failure guidance', async () => {

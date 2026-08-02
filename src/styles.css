@@ -155,8 +155,14 @@ body {
   height: 2.75rem;
   margin-top: 0;
   overflow: hidden;
+  overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.card-title-tooltip {
+  display: block;
+  min-width: 0;
 }
 
 .card-store-slot {

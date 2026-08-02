@@ -88,7 +88,9 @@ export class SearchPage {
   protected readonly pagination = signal<Pagination | null>(null);
   protected readonly pricesLoading = signal(false);
   protected readonly inlineMessage = signal<string | null>(null);
+  protected readonly emptyMessage = signal<string | null>(null);
   protected readonly cacheMessage = signal<string | null>(null);
+  protected readonly cachePending = signal(false);
   protected readonly toast = signal<string | null>(null);
   protected readonly selectedRecord = signal<PriceRecord | null>(null);
   protected readonly recentSearches = signal<RecentSearch[]>([]);
@@ -176,11 +178,14 @@ export class SearchPage {
   }
 
   protected repeatSearch(search: RecentSearch): void {
+    this.cancelPricePolling();
+    this.loadedPriceKey = null;
     this.query.set(search.query);
     this.municipality.set(search.municipality);
     this.days.set(search.days);
     this.inlineMessage.set(null);
     void this.runSearch(search.query, true);
+    this.scrollToResults();
   }
 
   protected updateQuery(event: Event): void {
@@ -300,27 +305,21 @@ export class SearchPage {
     const minuteMs = 60 * 1000;
     const hourMs = 60 * minuteMs;
     const dayMs = 24 * hourMs;
+    const dayCount = Math.floor(diffMs / dayMs);
 
     if (diffMs < minuteMs) {
-      return 'Agora';
+      return 'agora';
     }
     if (diffMs < hourMs) {
-      const minutes = Math.floor(diffMs / minuteMs);
-      return 'há ' + minutes + ' ' + (minutes === 1 ? 'minuto' : 'minutos');
+      return `${Math.floor(diffMs / minuteMs)}min`;
     }
     if (diffMs < dayMs) {
-      const hours = Math.floor(diffMs / hourMs);
-      return 'há ' + hours + ' ' + (hours === 1 ? 'hora' : 'horas');
+      return `${Math.floor(diffMs / hourMs)}h`;
     }
-    if (diffMs < 2 * dayMs) {
-      return 'ontem';
+    if (dayCount < 30) {
+      return `${dayCount}d`;
     }
-    const days = Math.floor(diffMs / dayMs);
-    return 'há ' + days + ' dias';
-  }
-
-  protected formatRecentSearchPeriod(days: number): string {
-    return this.periods.find((period) => period.days === days)?.label ?? '';
+    return dayCount < 365 ? `${Math.floor(dayCount / 30)}m` : `${Math.floor(dayCount / 365)}a`;
   }
 
   private runUrlSearch(): void {
@@ -338,12 +337,14 @@ export class SearchPage {
     this.records.set([]);
     this.pagination.set(null);
     this.inlineMessage.set(null);
+    this.emptyMessage.set(null);
     this.pricesLoading.set(false);
     this.updateUrl();
   }
 
   private runSearch(query: string, updateUrl: boolean): void {
     if (!this.isGTIN(query) && (query.length < 3 || query.length > 50)) {
+      this.emptyMessage.set(null);
       this.inlineMessage.set('Digite uma descrição de 3 a 50 caracteres ou um GTIN válido.');
       return;
     }
@@ -356,6 +357,7 @@ export class SearchPage {
     this.activeSearchKey = searchKey;
     this.query.set(query);
     this.inlineMessage.set(null);
+    this.emptyMessage.set(null);
     this.records.set([]);
     this.pagination.set(null);
     this.loadedPriceKey = null;
@@ -397,6 +399,7 @@ export class SearchPage {
               this.loadedPriceKey = null;
             }
             this.cacheMessage.set(this.revalidationFailureMessage());
+            this.cachePending.set(true);
             this.pricesLoading.set(false);
             return;
           }
@@ -412,6 +415,7 @@ export class SearchPage {
           }
           if (response.cacheStatus === 'HIT') {
             this.cacheMessage.set(event.revalidation ? 'Resultados atualizados.' : null);
+            this.cachePending.set(false);
             this.pricesLoading.set(false);
           } else {
             this.cacheMessage.set(
@@ -419,6 +423,7 @@ export class SearchPage {
                 ? 'Exibindo dados em cache enquanto atualizamos.'
                 : 'Buscando dados atualizados.',
             );
+            this.cachePending.set(true);
           }
         },
         error: () => {
@@ -427,6 +432,7 @@ export class SearchPage {
           this.pricesLoading.set(false);
           if (this.pagination()) {
             this.cacheMessage.set(this.revalidationFailureMessage());
+            this.cachePending.set(true);
           } else {
             this.cacheMessage.set(null);
             this.inlineMessage.set(null);
@@ -444,7 +450,7 @@ export class SearchPage {
   private applyPriceData(response: PriceSearchResponse): void {
     this.records.set(response.data?.results ?? []);
     this.pagination.set(response.data?.pagination ?? null);
-    this.inlineMessage.set(
+    this.emptyMessage.set(
       this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
     );
   }
@@ -466,6 +472,7 @@ export class SearchPage {
     this.pricePollingSubscription = null;
     this.activeSearchKey = null;
     this.cacheMessage.set(null);
+    this.cachePending.set(false);
     this.pricesLoading.set(false);
   }
 
