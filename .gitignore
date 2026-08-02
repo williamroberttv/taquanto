@@ -39,6 +39,9 @@ testem.log
 /typings
 __screenshots__/
 
+# Local architecture notes
+/docs/adr/
+
 # System files
 .DS_Store
 Thumbs.db
