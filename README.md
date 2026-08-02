@@ -12,7 +12,7 @@ This repository must not call SEFAZ directly and must not expose SEFAZ credentia
 - Leaflet is dynamically imported after browser render for the landing map preview.
 - Tailwind CSS and daisyUI are configured through `src/styles.css` with custom TáQuanto light and dark themes.
 - Unit tests run through Angular's unit-test builder with Vitest installed.
-- Production Docker image builds the Angular app and runs the SSR server on port `4000`.
+- Production deploy publishes the static Angular build to S3 and serves it through CloudFront.
 
 Not implemented yet: authentication, saved searches, alerts, consumer pages, and personalized history.
 
@@ -52,17 +52,26 @@ npm run build
 npm test
 ```
 
-## Production Container
+## Production Deploy
+
+Pushes to `main` deploy `dist/taquanto/browser` through GitHub Actions. The
+`production` environment must define these variables:
+
+- `AWS_REGION`
+- `AWS_DEPLOY_ROLE_ARN`
+- `S3_BUCKET`
+- `CLOUDFRONT_DISTRIBUTION_ID`
+
+The workflow authenticates with AWS through GitHub OIDC, synchronizes the build
+with S3, removes stale files, and waits for the CloudFront invalidation to
+complete. CloudFront is responsible for routing `/api/*` to the TáQuanto API and
+falling back to `index.csr.html` for client-rendered routes.
+
+## Optional Production Container
+
+The existing Nginx image remains available for local or manual deployments:
 
 ```bash
 docker build -f ci/prod/Dockerfile -t taquanto-frontend .
-docker run --rm -p 4000:4000 taquanto-frontend
+docker run --rm -p 8080:80 taquanto-frontend
 ```
-
-Angular SSR validates the request host. For a real domain, pass the allowed host explicitly:
-
-```bash
-docker run --rm -p 4000:4000 -e NG_ALLOWED_HOSTS=taquanto.com.br taquanto-frontend
-```
-
-Use a comma-separated list for multiple domains. Do not use `*` unless another trusted layer validates `Host` and `X-Forwarded-Host`.
