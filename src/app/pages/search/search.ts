@@ -88,7 +88,9 @@ export class SearchPage {
   protected readonly pagination = signal<Pagination | null>(null);
   protected readonly pricesLoading = signal(false);
   protected readonly inlineMessage = signal<string | null>(null);
+  protected readonly emptyMessage = signal<string | null>(null);
   protected readonly cacheMessage = signal<string | null>(null);
+  protected readonly cachePending = signal(false);
   protected readonly toast = signal<string | null>(null);
   protected readonly selectedRecord = signal<PriceRecord | null>(null);
   protected readonly recentSearches = signal<RecentSearch[]>([]);
@@ -338,12 +340,14 @@ export class SearchPage {
     this.records.set([]);
     this.pagination.set(null);
     this.inlineMessage.set(null);
+    this.emptyMessage.set(null);
     this.pricesLoading.set(false);
     this.updateUrl();
   }
 
   private runSearch(query: string, updateUrl: boolean): void {
     if (!this.isGTIN(query) && (query.length < 3 || query.length > 50)) {
+      this.emptyMessage.set(null);
       this.inlineMessage.set('Digite uma descrição de 3 a 50 caracteres ou um GTIN válido.');
       return;
     }
@@ -356,6 +360,7 @@ export class SearchPage {
     this.activeSearchKey = searchKey;
     this.query.set(query);
     this.inlineMessage.set(null);
+    this.emptyMessage.set(null);
     this.records.set([]);
     this.pagination.set(null);
     this.loadedPriceKey = null;
@@ -397,6 +402,7 @@ export class SearchPage {
               this.loadedPriceKey = null;
             }
             this.cacheMessage.set(this.revalidationFailureMessage());
+            this.cachePending.set(true);
             this.pricesLoading.set(false);
             return;
           }
@@ -412,6 +418,7 @@ export class SearchPage {
           }
           if (response.cacheStatus === 'HIT') {
             this.cacheMessage.set(event.revalidation ? 'Resultados atualizados.' : null);
+            this.cachePending.set(false);
             this.pricesLoading.set(false);
           } else {
             this.cacheMessage.set(
@@ -419,6 +426,7 @@ export class SearchPage {
                 ? 'Exibindo dados em cache enquanto atualizamos.'
                 : 'Buscando dados atualizados.',
             );
+            this.cachePending.set(true);
           }
         },
         error: () => {
@@ -427,6 +435,7 @@ export class SearchPage {
           this.pricesLoading.set(false);
           if (this.pagination()) {
             this.cacheMessage.set(this.revalidationFailureMessage());
+            this.cachePending.set(true);
           } else {
             this.cacheMessage.set(null);
             this.inlineMessage.set(null);
@@ -444,7 +453,7 @@ export class SearchPage {
   private applyPriceData(response: PriceSearchResponse): void {
     this.records.set(response.data?.results ?? []);
     this.pagination.set(response.data?.pagination ?? null);
-    this.inlineMessage.set(
+    this.emptyMessage.set(
       this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
     );
   }
@@ -466,6 +475,7 @@ export class SearchPage {
     this.pricePollingSubscription = null;
     this.activeSearchKey = null;
     this.cacheMessage.set(null);
+    this.cachePending.set(false);
     this.pricesLoading.set(false);
   }
 

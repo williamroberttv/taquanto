@@ -257,9 +257,11 @@ describe('SearchPage', () => {
     await fixture.whenStable();
 
     const lowestPrice = element.querySelector<HTMLElement>('.lowest-price-tag');
+    const description = element.querySelector<HTMLElement>('.card-title-tooltip');
     const detailButton = element.querySelector<HTMLButtonElement>('.detail-button')!;
     const address = element.querySelector<HTMLElement>('.card-location-slot .tooltip');
     expect(lowestPrice?.dataset['tip']).toBe('Menor preço');
+    expect(description?.dataset['tip']).toBe('Arroz Branco 1kg');
     expect(address?.dataset['tip']).toBe('Rua Do Comércio, 10');
     expect(detailButton.textContent?.trim()).toBe('Detalhes');
 
@@ -596,6 +598,8 @@ describe('SearchPage', () => {
     await fixture.whenStable();
 
     expect(element.textContent).toContain('Nenhum registro encontrado para esses filtros.');
+    expect(element.querySelector('.empty-results')).not.toBeNull();
+    expect(element.querySelector('.text-warning')).toBeNull();
     expect(element.querySelector('.toast')).toBeNull();
   });
 
@@ -677,6 +681,8 @@ describe('SearchPage', () => {
     expect(element.textContent).toContain('Arroz Atualizado');
     expect(element.textContent).not.toContain('Arroz Em Cache');
     expect(element.textContent).toContain('Resultados atualizados.');
+    expect(element.querySelector('.cache-status-dot')).not.toBeNull();
+    expect(element.querySelector('.cache-status-dot-pending')).toBeNull();
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
@@ -721,6 +727,7 @@ describe('SearchPage', () => {
     expect(element.textContent).toContain(
       'Não foi possível atualizar agora; exibindo dados em cache.',
     );
+    expect(element.querySelector('.cache-status-dot-pending')).not.toBeNull();
   });
 
   it('shows validation warnings and API failure guidance', async () => {
