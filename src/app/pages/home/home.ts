@@ -8,7 +8,9 @@ import {
   inject,
   viewChild,
 } from '@angular/core';
+import { Meta, Title } from '@angular/platform-browser';
 import type * as Leaflet from 'leaflet';
+import { environment } from '../../../environments/environment';
 import { Footer } from '../../components/footer/footer';
 import { Header } from '../../components/header/header';
 
@@ -36,6 +38,8 @@ export class Home {
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly mapContainer = viewChild<ElementRef<HTMLElement>>('mapContainer');
+  private readonly meta = inject(Meta);
+  private readonly title = inject(Title);
   private map?: Leaflet.Map;
 
   protected readonly steps: Step[] = [
@@ -81,6 +85,17 @@ export class Home {
   ];
 
   constructor() {
+    this.title.setTitle('Preços em Alagoas | TáQuanto');
+    this.meta.updateTag({ name: 'description', content: 'Consulte registros reais de vendas NFC-e em Alagoas. Compare valor, estabelecimento, data e município.' });
+    this.meta.updateTag({ property: 'og:title', content: 'Preços em Alagoas | TáQuanto' });
+    this.meta.updateTag({ property: 'og:description', content: 'Consulte registros reais de vendas NFC-e em Alagoas. Compare valor, estabelecimento, data e município.' });
+    this.meta.updateTag({ property: 'og:url', content: `${environment.siteUrl}/` });
+    this.meta.updateTag({ property: 'og:image', content: `${environment.siteUrl}/images/elephant-3.png` });
+    this.meta.updateTag({ name: 'twitter:title', content: 'Preços em Alagoas | TáQuanto' });
+    this.meta.updateTag({ name: 'twitter:description', content: 'Consulte registros reais de vendas NFC-e em Alagoas. Compare valor, estabelecimento, data e município.' });
+    this.meta.updateTag({ name: 'twitter:image', content: `${environment.siteUrl}/images/elephant-3.png` });
+    this.meta.updateTag({ rel: 'canonical', href: `${environment.siteUrl}/` });
+
     afterNextRender(() => {
       if (isPlatformBrowser(this.platformId)) {
         void this.initializeMap();
