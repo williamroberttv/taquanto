@@ -1,65 +1,139 @@
-# TáQuanto
+# Linguagem de domínio do TáQuanto
 
-TáQuanto is a public price-consultation app for Alagoas that presents real NFC-e sale records from the official Economiza Alagoas/SEFAZ-AL data source in a simpler product-price discovery experience.
+Este documento mantém o vocabulário usado no produto, no código e na documentação. Os termos estão em português porque descrevem o domínio atendido pela interface. A linha _Evitar_ registra palavras que alteram o significado ou criam promessas que o produto não pode cumprir.
 
-## Language
+## Limites fundamentais
 
-**TáQuanto**:
-O produto TáQuanto para consulta publica de precos de produtos em Alagoas, composto por este frontend e por uma API separada que integra com o Economiza Alagoas/SEFAZ-AL.
-_Avoid_: substituto da SEFAZ, scraper do Economiza Alagoas
+- O TáQuanto apresenta registros públicos de vendas emitidas em NFC-e em Alagoas.
+- Este frontend conversa apenas com a API TáQuanto; credenciais e integração com a fonte oficial pertencem ao backend.
+- Um registro histórico não é uma oferta, promoção ou garantia de preço atual.
+- Coordenadas são opcionais e nunca devem ser inferidas quando a fonte não as fornece.
+- A consulta pública e os recursos locais não exigem autenticação.
 
-**Frontend TáQuanto**:
-Este repositorio: a aplicacao Angular responsavel pela interface publica e pelas futuras experiencias autenticadas do TáQuanto. Nao chama a API da SEFAZ diretamente.
-_Avoid_: backend, proxy SEFAZ, token SEFAZ no browser
+## Termos
 
-**API TáQuanto**:
-A API separada responsavel por integrar com o Economiza Alagoas/SEFAZ-AL, proteger credenciais e expor dados normalizados para o frontend.
-_Avoid_: frontend, chamada direta do Angular para SEFAZ
+**TáQuanto**
 
-**Economiza Alagoas**:
-A plataforma oficial da SEFAZ-AL que disponibiliza consulta web e API publica para informacoes de vendas reais registradas em NFC-e no estado de Alagoas.
-_Avoid_: base propria, fornecedor privado de precos
+Produto de consulta pública de preços em Alagoas, composto por este frontend e por uma API separada que integra com o Economiza Alagoas/SEFAZ-AL.
 
-**Registro de Venda NFC-e**:
-Um registro publico de venda real emitido em NFC-e, com informacoes como descricao do produto, codigo de barras quando informado, valor, estabelecimento e data da venda.
-_Avoid_: oferta, promocao, preco garantido, compra do usuario
+_Evitar_: substituto da SEFAZ, scraper do Economiza Alagoas, loja
 
-**Detalhe de Registro de Venda NFC-e**:
-A visualizacao detalhada de um Registro de Venda NFC-e selecionado na Consulta Publica, usando os dados do registro exibido e mantendo o foco na venda real, nao em um produto agregado criado pelo TáQuanto.
-_Avoid_: pagina de produto agregado, ficha de oferta, detalhe de promocao
+**Frontend TáQuanto**
 
-**Registro de Venda Favorito**:
-O retrato de um Registro de Venda NFC-e escolhido pelo visitante para consulta posterior no mesmo dispositivo, preservando os dados exibidos no momento em que foi favoritado e sem exigir uma conta TáQuanto.
-_Avoid_: produto favorito, oferta salva, favorito da conta
+Este repositório: a aplicação Angular responsável pela interface pública, pelo estado do navegador e por futuras experiências autenticadas. Não chama a SEFAZ-AL diretamente.
 
-**Lista de Favoritos**:
-A colecao de Registros de Venda Favoritos preservados pelo visitante para consulta posterior.
-_Avoid_: consulta salva, lista de produtos, ofertas favoritas
+_Evitar_: backend, proxy SEFAZ, token SEFAZ no navegador
 
-**Promocao**:
-Um rotulo comercial de oferta ou desconto que o TáQuanto nao infere a partir de registros de venda NFC-e.
-_Avoid_: preco baixo, menor preco, venda recente
+**API TáQuanto**
 
-**Consulta Publica**:
-A experiencia sem login para pesquisar precos de produtos e consultar registros recentes de venda NFC-e.
-_Avoid_: area autenticada, historico pessoal
+Serviço separado que protege credenciais, integra com o Economiza Alagoas/SEFAZ-AL e expõe dados normalizados e paginados ao frontend.
 
-**Area Autenticada**:
-O espaco futuro para recursos pessoais como pesquisas salvas, historico, preferencias, alertas ou paginas do consumidor. Nao e requisito para a consulta publica de produto.
-_Avoid_: requisito para pesquisar preco
+_Evitar_: frontend, chamada direta do Angular para a SEFAZ
 
-**Consulta de Produto**:
-A busca por descricao ou codigo de barras que retorna registros recentes de venda NFC-e para comparacao de preco.
-_Avoid_: pesquisa generica, busca de oferta
+**Economiza Alagoas**
 
-**Categoria de Produto**:
-Um candidato de categoria retornado pela API TáQuanto para afunilar uma Consulta de Produto antes de exibir Registros de Venda NFC-e.
-_Avoid_: segmento GPC, SKU, filtro generico
+Plataforma oficial da SEFAZ-AL que disponibiliza consulta de informações de vendas reais registradas em NFC-e no estado.
 
-**SKU de Origem**:
-O identificador do produto fornecido pela fonte SEFAZ-AL quando existir; nao e criado pelo TáQuanto a partir da descricao.
-_Avoid_: codigo de barras, GTIN, codigo interno inventado
+_Evitar_: base própria do TáQuanto, fornecedor privado de preços
 
-**Localizacao Aproximada**:
-A informacao geografica opcional usada para contextualizar onde uma venda foi registrada; quando coordenadas nao existirem, o TáQuanto pode exibir um mapa de referencia sem marcador, mas nao deve inventar pontos no mapa.
-_Avoid_: rastreamento, localizacao exata do comprador
+**Registro de Venda NFC-e**
+
+Registro público de uma venda real emitida em NFC-e, com dados como descrição, GTIN quando informado, valor, unidade, estabelecimento, horário e localização. É a unidade principal exibida pelo produto.
+
+_Evitar_: oferta, promoção, preço garantido, compra do visitante
+
+**Detalhe de Registro de Venda NFC-e**
+
+Visualização ampliada do registro selecionado na Consulta Pública. Mostra o mesmo retrato da venda, sem agregar produtos diferentes ou prometer disponibilidade atual.
+
+_Evitar_: página de produto, ficha de oferta, detalhe de promoção
+
+**Consulta Pública**
+
+Experiência sem login para pesquisar e comparar Registros de Venda NFC-e recentes.
+
+_Evitar_: área autenticada, histórico pessoal
+
+**Consulta de Produto**
+
+Busca por uma descrição de 3 a 50 caracteres ou por um GTIN válido, combinada com município e período.
+
+_Evitar_: busca de oferta, pesquisa genérica sem filtros
+
+**GTIN**
+
+Código numérico de identificação comercial informado pela fonte. A interface aceita os comprimentos válidos usados pelo produto: 8, 12, 13 ou 14 dígitos.
+
+_Evitar_: SKU interno, código inventado, código sempre disponível
+
+**SKU de Origem**
+
+Identificador do produto fornecido pela fonte quando existir. O TáQuanto não o cria a partir da descrição.
+
+_Evitar_: GTIN, código interno inventado
+
+**Município da Consulta**
+
+Município de Alagoas selecionado pelo visitante por meio do mapa ou do campo de seleção. A API recebe seu código IBGE. Maceió é a seleção inicial e o fallback para códigos inválidos.
+
+_Evitar_: localização do visitante, geolocalização automática
+
+**Período da Consulta**
+
+Janela recente enviada à fonte: 1, 3, 7 ou 10 dias. Não representa uma garantia de que o registro ainda tenha o mesmo preço.
+
+_Evitar_: validade da oferta, período promocional
+
+**Pesquisa Recente**
+
+Combinação de consulta, município e período salva no navegador depois de uma busca. As dez combinações mais recentes podem ser repetidas no mesmo dispositivo.
+
+_Evitar_: histórico da conta, pesquisa sincronizada, consulta salva no servidor
+
+**Registro de Venda Favorito**
+
+Cópia de um Registro de Venda NFC-e escolhida pelo visitante para consulta posterior no mesmo navegador. Preserva os dados exibidos quando foi favoritada e não exige conta.
+
+_Evitar_: produto favorito, oferta salva, favorito da conta
+
+**Lista de Favoritos**
+
+Coleção local de Registros de Venda Favoritos, ordenada do mais recentemente salvo para o mais antigo.
+
+_Evitar_: lista de produtos, ofertas favoritas, sincronização entre dispositivos
+
+**Localização Aproximada**
+
+Contexto geográfico opcional da venda. Quando coordenadas válidas existem, a interface pode mostrar um marcador; sem elas, mostra apenas o texto disponível e um mapa de referência sem ponto inventado.
+
+_Evitar_: localização exata do comprador, rastreamento, coordenada inferida
+
+**Dados em Cache**
+
+Resultado reutilizável fornecido pela API TáQuanto. Pode estar fresco (`HIT`) ou disponível enquanto a API prepara uma atualização (`STALE`). A interface informa quando exibe dados antigos.
+
+_Evitar_: dado necessariamente atual, resultado fabricado pelo frontend
+
+**Revalidação de Cache**
+
+Novas tentativas feitas pela interface para obter dados frescos após `STALE` ou `MISS`, em intervalos de cinco segundos e por no máximo dois minutos. O backend continua responsável pela política e pelo conteúdo do cache.
+
+_Evitar_: atualização contínua infinita, cache mantido pelo navegador
+
+**Promoção**
+
+Rótulo comercial de oferta ou desconto que o TáQuanto não infere a partir de Registros de Venda NFC-e.
+
+_Evitar_: sinônimo de menor preço, venda recente ou diferença de valor
+
+**Área Autenticada**
+
+Espaço futuro para recursos pessoais que realmente exijam identidade, como sincronização, alertas ou preferências entre dispositivos. Não é requisito para consultar preços, repetir pesquisas recentes ou usar favoritos locais.
+
+_Evitar_: requisito para a Consulta Pública
+
+## Escopo atual
+
+Estão implementados: landing page pública, Consulta de Produto, seleção dos municípios de Alagoas, períodos recentes, paginação, detalhe do registro, mapas condicionais, pesquisas recentes, favoritos locais e temas claro/escuro.
+
+Permanecem fora do escopo atual: autenticação, sincronização entre dispositivos, alertas, páginas de consumidor e histórico pessoal no servidor.
