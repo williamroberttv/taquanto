@@ -83,9 +83,9 @@ export class TaquantoApi {
       .pipe(
         timeout(this.priceTimeoutMs),
         map((response): PriceSearchResponse => {
-          const cacheStatus = response.headers.get('X-Cache');
-          const age = response.headers.get('Age');
-          const retryAfter = response.headers.get('Retry-After');
+          const cacheStatus = response.headers.get('X-TaQuanto-Cache-Status');
+          const age = response.headers.get('X-TaQuanto-Cache-Age');
+          const retryAfter = response.headers.get('X-TaQuanto-Cache-Retry-After');
           const ageSeconds = age !== null && /^\d+$/.test(age) ? Number(age) : null;
 
           if (

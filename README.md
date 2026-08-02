@@ -159,11 +159,11 @@ GET /v1/prices?query=<text-or-gtin>&municipality=<ibge-code>&days=<1-10>&limit=5
 
 The response contains normalized sale records and pagination metadata. The frontend also validates the API cache protocol:
 
-| Response                                 | Meaning                  | Client behavior                   |
-| ---------------------------------------- | ------------------------ | --------------------------------- |
-| `200`, `X-Cache: HIT`                    | Fresh result             | Render and stop polling.          |
-| `200`, `X-Cache: STALE`                  | Usable cached result     | Render, label it, and revalidate. |
-| `202`, `X-Cache: MISS`, `Retry-After: 5` | Search is being prepared | Wait five seconds and retry.      |
+| Response                                                                                   | Meaning                  | Client behavior                   |
+| ------------------------------------------------------------------------------------------ | ------------------------ | --------------------------------- |
+| `200`, `X-TaQuanto-Cache-Status: HIT`, `X-TaQuanto-Cache-Age: <seconds>`                    | Fresh result             | Render and stop polling.          |
+| `200`, `X-TaQuanto-Cache-Status: STALE`, `X-TaQuanto-Cache-Age: <seconds>`                  | Usable cached result     | Render, label it, and revalidate. |
+| `202`, `X-TaQuanto-Cache-Status: MISS`, `X-TaQuanto-Cache-Retry-After: 5`                   | Search is being prepared | Wait five seconds and retry.      |
 
 Unexpected status/header combinations are rejected instead of being treated as valid data. Requests time out after five seconds.
 
