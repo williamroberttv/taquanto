@@ -401,7 +401,7 @@ export class SearchPage {
             return;
           }
           const { response } = event;
-          if (response.data) {
+          if (response.cacheStatus !== 'MISS') {
             this.loadedPriceKey = searchKey;
             this.applyPriceData(response);
             if (!scrolledToResults) {
@@ -442,11 +442,8 @@ export class SearchPage {
   }
 
   private applyPriceData(response: PriceSearchResponse): void {
-    if (!response.data) {
-      return;
-    }
-    this.records.set(response.data.results);
-    this.pagination.set(response.data.pagination);
+    this.records.set(response.data?.results ?? []);
+    this.pagination.set(response.data?.pagination ?? null);
     this.inlineMessage.set(
       this.records().length ? null : 'Nenhum registro encontrado para esses filtros.',
     );

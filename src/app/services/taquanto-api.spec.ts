@@ -84,6 +84,25 @@ describe('TaquantoApi', () => {
     });
   });
 
+  it('maps a successful empty response as empty data', () => {
+    let response: PriceSearchResponse | undefined;
+
+    api
+      .prices('arroz', { municipality: '2700300', days: 3, limit: 50, page: 1 })
+      .subscribe((value) => {
+        response = value;
+      });
+
+    const request = http.expectOne((req) => req.url === 'http://localhost:8080/v1/prices');
+    request.flush(null, {
+      headers: { 'X-Cache': 'HIT' },
+      status: 200,
+      statusText: 'OK',
+    });
+
+    expect(response).toEqual({ data: null, cacheStatus: 'HIT', ageSeconds: null });
+  });
+
   it('rejects a response without cache metadata', () => {
     let failure: unknown;
 
