@@ -52,7 +52,10 @@ describe('TaquantoApi', () => {
         },
       },
       {
-        headers: { Age: '3600', 'X-Cache': 'STALE' },
+        headers: {
+          'X-TaQuanto-Cache-Age': '3600',
+          'X-TaQuanto-Cache-Status': 'STALE',
+        },
       },
     );
 
@@ -72,7 +75,10 @@ describe('TaquantoApi', () => {
 
     const request = http.expectOne((req) => req.url === 'http://localhost:8080/v1/prices');
     request.flush(null, {
-      headers: { 'Retry-After': '5', 'X-Cache': 'MISS' },
+      headers: {
+        'X-TaQuanto-Cache-Retry-After': '5',
+        'X-TaQuanto-Cache-Status': 'MISS',
+      },
       status: 202,
       statusText: 'Accepted',
     });
@@ -95,7 +101,7 @@ describe('TaquantoApi', () => {
 
     const request = http.expectOne((req) => req.url === 'http://localhost:8080/v1/prices');
     request.flush(null, {
-      headers: { 'X-Cache': 'HIT' },
+      headers: { 'X-TaQuanto-Cache-Status': 'HIT' },
       status: 200,
       statusText: 'OK',
     });
