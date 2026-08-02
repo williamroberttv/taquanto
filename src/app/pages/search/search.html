@@ -20,25 +20,17 @@
       @if (recentSearches().length > 0) {
         <section class="recent-searches" aria-labelledby="recent-searches-title">
           <h2 id="recent-searches-title" class="recent-searches-title">
-            <svg class="recent-search-title-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="m16 16 4 4" />
-            </svg>
             <span>Suas últimas pesquisas</span>
           </h2>
           <div class="recent-search-list">
-            @for (search of recentSearches(); track search) {
-              <button
-                type="button"
-                class="recent-search-chip card min-h-11 cursor-pointer bg-base-100 text-base-content shadow-sm transition-shadow hover:shadow-md"
-                (click)="repeatSearch(search)"
-              >
-                <span class="recent-search-query">{{ search.query }}</span>
-                <span class="recent-search-meta">
-                  {{ search.municipality.name }} · {{ formatRecentSearchPeriod(search.days) }}
-                </span>
-                <span class="recent-search-time">{{ formatRecentSearchTime(search) }}</span>
+            @for (search of recentSearches(); track search; let last = $last) {
+              <button type="button" class="recent-search-link" (click)="repeatSearch(search)">
+                {{ formatTitle(search.query) }} • {{ search.municipality.name }} •
+                {{ formatRecentSearchTime(search) }}
               </button>
+              @if (!last) {
+                <span aria-hidden="true">, </span>
+              }
             }
           </div>
         </section>
@@ -50,7 +42,13 @@
       >
         <div class="location-filter-heading">
           <div>
-            <p class="eyebrow">Onde e quando procurar</p>
+            <p class="eyebrow eyebrow-with-icon">
+              Onde e quando procurar
+              <svg class="eyebrow-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+                <circle cx="12" cy="10" r="2.5" />
+              </svg>
+            </p>
             <h2 id="location-filter-title" class="mt-2 text-2xl font-bold text-[var(--tq-ink)]">
               Escolha um município de Alagoas
             </h2>
@@ -92,7 +90,13 @@
         (submit)="submitSearch($event)"
       >
         <div class="sm:col-span-2">
-          <p class="eyebrow">O que procurar</p>
+          <p class="eyebrow eyebrow-with-icon">
+            O que procurar
+            <svg class="eyebrow-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m16 16 4 4" />
+            </svg>
+          </p>
           <h2 id="product-search-title" class="mt-2 text-2xl font-bold text-[var(--tq-ink)]">
             Digite o produto que deseja buscar
           </h2>
@@ -147,7 +151,13 @@
             class="results-heading flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
           >
             <div>
-              <p class="eyebrow">Vendas e preços</p>
+              <p class="eyebrow eyebrow-with-icon">
+                Vendas e preços
+                <svg class="eyebrow-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 13 13 20 4 11V4h7Z" />
+                  <circle cx="8.5" cy="8.5" r="1" />
+                </svg>
+              </p>
               <div class="mt-2 flex items-center gap-2">
                 <h2 class="text-2xl font-bold text-[var(--tq-ink)]">Registros encontrados</h2>
                 <span class="tooltip tooltip-left tooltip-primary">

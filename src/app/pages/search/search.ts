@@ -178,11 +178,14 @@ export class SearchPage {
   }
 
   protected repeatSearch(search: RecentSearch): void {
+    this.cancelPricePolling();
+    this.loadedPriceKey = null;
     this.query.set(search.query);
     this.municipality.set(search.municipality);
     this.days.set(search.days);
     this.inlineMessage.set(null);
     void this.runSearch(search.query, true);
+    this.scrollToResults();
   }
 
   protected updateQuery(event: Event): void {
@@ -302,27 +305,21 @@ export class SearchPage {
     const minuteMs = 60 * 1000;
     const hourMs = 60 * minuteMs;
     const dayMs = 24 * hourMs;
+    const dayCount = Math.floor(diffMs / dayMs);
 
     if (diffMs < minuteMs) {
-      return 'Agora';
+      return 'agora';
     }
     if (diffMs < hourMs) {
-      const minutes = Math.floor(diffMs / minuteMs);
-      return 'há ' + minutes + ' ' + (minutes === 1 ? 'minuto' : 'minutos');
+      return `${Math.floor(diffMs / minuteMs)}min`;
     }
     if (diffMs < dayMs) {
-      const hours = Math.floor(diffMs / hourMs);
-      return 'há ' + hours + ' ' + (hours === 1 ? 'hora' : 'horas');
+      return `${Math.floor(diffMs / hourMs)}h`;
     }
-    if (diffMs < 2 * dayMs) {
-      return 'ontem';
+    if (dayCount < 30) {
+      return `${dayCount}d`;
     }
-    const days = Math.floor(diffMs / dayMs);
-    return 'há ' + days + ' dias';
-  }
-
-  protected formatRecentSearchPeriod(days: number): string {
-    return this.periods.find((period) => period.days === days)?.label ?? '';
+    return dayCount < 365 ? `${Math.floor(dayCount / 30)}m` : `${Math.floor(dayCount / 365)}a`;
   }
 
   private runUrlSearch(): void {
