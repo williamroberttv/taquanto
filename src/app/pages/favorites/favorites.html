@@ -17,71 +17,62 @@
       }
 
       @if (records().length > 0) {
-        <section class="mt-8 grid gap-4 lg:grid-cols-2" aria-label="Lista de favoritos">
+        <section
+          class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          aria-label="Lista de favoritos"
+        >
           @for (favorite of records(); track favorite.savedAt) {
-            <article class="favorite-record card bg-base-100 p-5 shadow-sm sm:p-7">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <p class="price-value">{{ formatSaleValue(favorite.record) }}</p>
-                  <h2 class="mt-2 text-2xl font-bold">
-                    {{ formatTitle(favorite.record.description) }}
-                  </h2>
+            <article class="favorite-record price-card card bg-base-100 shadow-sm">
+              <div class="card-body h-full gap-0 p-5">
+                <p class="card-price-slot price-value">{{ formatSaleValue(favorite.record) }}</p>
+                <h2
+                  class="card-title-slot text-base font-semibold leading-snug text-[var(--tq-ink)]"
+                >
+                  {{ formatTitle(favorite.record.description) }}
+                </h2>
+                <div class="card-store-slot">
+                  <p class="card-store-name">{{ formatTitle(favorite.record.store.name) }}</p>
                 </div>
-                <app-favorite-toggle
-                  class="shrink-0"
-                  [record]="favorite.record"
-                  [favorite]="true"
-                  (toggled)="toggle($event)"
-                />
-              </div>
-
-              <dl class="detail-grid">
-                <div>
-                  <dt class="detail-label">Estabelecimento</dt>
-                  <dd class="detail-value">{{ formatTitle(favorite.record.store.name) }}</dd>
-                </div>
-                <div>
-                  <dt class="detail-label">Horário da venda</dt>
-                  <dd class="detail-value">{{ formatSaleTime(favorite.record) }}</dd>
-                </div>
-                <div>
-                  <dt class="detail-label">GTIN</dt>
-                  <dd class="detail-value">{{ favorite.record.gtin || 'Não informado' }}</dd>
-                </div>
-                @if (favorite.record.declared_value_cents !== favorite.record.sale_value_cents) {
-                  <div>
-                    <dt class="detail-label">Valor declarado</dt>
-                    <dd class="detail-value">
-                      {{ formatMoney(favorite.record.declared_value_cents) }}
-                    </dd>
-                  </div>
-                }
-                <div>
-                  <dt class="detail-label">Localização</dt>
+                <div class="card-location-slot">
                   @if (favorite.record.location.address) {
-                    <dd class="detail-value">
+                    <p
+                      class="card-secondary tooltip tooltip-bottom"
+                      [attr.data-tip]="formatAddress(favorite.record.location.address)"
+                    >
                       {{ formatAddress(favorite.record.location.address) }}
-                    </dd>
+                    </p>
                   } @else {
-                    <dd class="detail-value">Endereço não informado</dd>
+                    <p class="card-secondary">Endereço não informado</p>
                   }
                 </div>
-              </dl>
-
-              @if (hasCoordinates(favorite.record)) {
-                <button
-                  type="button"
-                  class="map-button btn btn-outline btn-primary mt-5 w-fit min-h-11"
-                  (click)="openMap(favorite.record)"
+                <time
+                  class="card-time-slot card-secondary"
+                  [attr.datetime]="favorite.record.sold_at"
                 >
-                  Abrir no mapa
-                  <svg class="map-link-icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z" />
-                    <path d="M9 3v15" />
-                    <path d="M15 6v15" />
-                  </svg>
-                </button>
-              }
+                  {{ formatSaleTime(favorite.record) }}
+                </time>
+                <div class="card-actions mt-auto justify-start gap-1 pt-1">
+                  <app-favorite-toggle
+                    [record]="favorite.record"
+                    [favorite]="true"
+                    (toggled)="toggle($event)"
+                  />
+                  @if (hasCoordinates(favorite.record)) {
+                    <button
+                      type="button"
+                      class="map-button btn btn-outline btn-primary h-10 min-h-10 px-3 text-sm"
+                      (click)="openMap(favorite.record)"
+                    >
+                      Abrir no mapa
+                      <svg class="map-link-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z" />
+                        <path d="M9 3v15" />
+                        <path d="M15 6v15" />
+                      </svg>
+                    </button>
+                  }
+                </div>
+              </div>
             </article>
           }
         </section>

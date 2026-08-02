@@ -1,0 +1,76 @@
+name: Deploy to S3 and CloudFront
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+      id-token: write
+
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload to S3
+        env:
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+        run: |
+          set -euo pipefail
+
+          aws s3 sync dist/taquanto/browser "s3://${S3_BUCKET}" \
+            --delete \
+            --cache-control "no-cache"
+
+          aws s3 cp dist/taquanto/browser "s3://${S3_BUCKET}" \
+            --recursive \
+            --exclude "*" \
+            --include "*.css" \
+            --include "*.js" \
+            --cache-control "public,max-age=31536000,immutable"
+
+      - name: Invalidate CloudFront cache
+        env:
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          set -euo pipefail
+
+          invalidation_id="$(aws cloudfront create-invalidation \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+            --paths "/*" \
+            --query "Invalidation.Id" \
+            --output text)"
+
+          aws cloudfront wait invalidation-completed \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+            --id "${invalidation_id}"

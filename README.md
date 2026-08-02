@@ -91,7 +91,7 @@ The frontend owns presentation and ephemeral browser state. The API owns source 
 | `/buscar`    | Lazy    | Client-side               | Search depends on browser state and live API requests.         |
 | `/favoritos` | Lazy    | Client-side               | Favorites are private to the current browser.                  |
 
-The production build uses Angular's static output mode. Nginx serves the generated files and falls back to `index.csr.html` for client routes; there is no Node SSR process in the production image.
+The production build uses Angular's static output mode. CloudFront serves the generated files from S3 and falls back to `index.csr.html` for client routes; there is no Node SSR process.
 
 ### Search and cache flow
 
@@ -115,7 +115,7 @@ Transient timeouts and gateway failures are retried during that window. Other fa
 | Maps       | Leaflet, OpenStreetMap, and a bundled Alagoas GeoJSON |
 | Testing    | Angular unit-test builder, Vitest, jsdom, V8 coverage |
 | Quality    | ESLint, Prettier, Angular production budgets          |
-| Delivery   | Multi-stage Docker build, Nginx, GHCR, GitHub Actions |
+| Delivery   | GitHub Actions, Amazon S3, CloudFront, optional Nginx |
 
 ## Run locally
 
@@ -167,7 +167,22 @@ The response contains normalized sale records and pagination metadata. The front
 
 Unexpected status/header combinations are rejected instead of being treated as valid data. Requests time out after five seconds.
 
-## Production container
+## Production deployment
+
+Pushes to `main` deploy `dist/taquanto/browser` through GitHub Actions. The
+`production` environment must define these secrets:
+
+- `AWS_REGION`
+- `AWS_DEPLOY_ROLE_ARN`
+- `S3_BUCKET`
+- `CLOUDFRONT_DISTRIBUTION_ID`
+
+The workflow authenticates with AWS through GitHub OIDC, synchronizes the build
+with S3, removes stale files, and waits for the CloudFront invalidation to
+complete. CloudFront is responsible for routing `/api/*` to the TáQuanto API and
+falling back to `index.csr.html` for client-rendered routes.
+
+## Optional production container
 
 Build and run the static Nginx image:
 
@@ -177,8 +192,6 @@ docker run --rm -p 8080:80 taquanto-frontend
 ```
 
 Open `http://localhost:8080/`. A production deployment must route the same-origin `/api` prefix to the TáQuanto API before requests reach this static frontend container.
-
-On pushes to `main`, GitHub Actions builds the image, publishes `latest` and commit-SHA tags to GitHub Container Registry, and updates the production Docker Compose stack over SSH.
 
 ## Project structure
 

@@ -19,19 +19,12 @@
   text-transform: uppercase;
 }
 
-.favorite-record .detail-grid {
-  grid-template-columns: 1fr;
-}
-
 .map-link-icon {
   width: 20px;
   height: 20px;
+  fill: none;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;
-}
-
-.map-link-icon {
-  fill: none;
 }
