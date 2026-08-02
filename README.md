@@ -55,7 +55,7 @@ npm test
 ## Production Deploy
 
 Pushes to `main` deploy `dist/taquanto/browser` through GitHub Actions. The
-`production` environment must define these variables:
+`production` environment must define these secrets:
 
 - `AWS_REGION`
 - `AWS_DEPLOY_ROLE_ARN`
