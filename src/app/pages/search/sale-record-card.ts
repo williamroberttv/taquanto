@@ -11,9 +11,9 @@ import { PriceRecord } from '../../services/taquanto-api';
       @if (lowest()) {
         <span
           class="lowest-price-tag tooltip tooltip-left"
-          data-tip="Menor preço"
+          data-tip="Menor valor entre os registros desta página"
           role="img"
-          aria-label="Menor preço"
+          aria-label="Menor valor entre os registros desta página"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M20 13 13 20 4 11V4h7Z" />

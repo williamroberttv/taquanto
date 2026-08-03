@@ -100,10 +100,10 @@ import { SearchPagination } from './search-pagination';
           </div>
         } @else if (hasResults()) {
           <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            @for (record of records(); track $index; let first = $first) {
+            @for (record of records(); track $index) {
               <app-sale-record-card
                 [record]="record"
-                [lowest]="first"
+                [lowest]="record.sale_value_cents === lowestValueCents()"
                 [favorite]="isFavorite()(record)"
                 (favoriteToggled)="favoriteToggled.emit($event)"
                 (detailsRequested)="detailsRequested.emit($event)"
@@ -182,6 +182,9 @@ export class SearchResults {
   readonly pageSelected = output<number>();
   protected readonly skeletons = [1, 2, 3, 4];
   protected readonly hasResults = computed(() => this.records().length > 0);
+  protected readonly lowestValueCents = computed(() =>
+    Math.min(...this.records().map((record) => record.sale_value_cents)),
+  );
   protected readonly recordsSummary = computed(() => {
     const pagination = this.pagination();
     if (!pagination) {
