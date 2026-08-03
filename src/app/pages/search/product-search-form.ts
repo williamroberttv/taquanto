@@ -7,7 +7,7 @@ import { Component, ElementRef, input, output, viewChild } from '@angular/core';
       #form
       id="product-search"
       tabindex="-1"
-      class="card mt-8 grid scroll-mt-20 gap-3 bg-base-100 p-4 shadow-sm sm:grid-cols-[1fr_auto]"
+      class="card mt-8 grid max-w-3xl scroll-mt-20 gap-4 bg-base-100 p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
       aria-labelledby="product-search-title"
       (submit)="submit($event)"
     >

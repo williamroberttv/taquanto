@@ -68,6 +68,10 @@ const priceRecord: PriceRecord = {
   },
 };
 
+function selectMunicipality(root: HTMLElement, code: string): void {
+  root.querySelector<HTMLButtonElement>(`.municipality-option[value="${code}"]`)!.click();
+}
+
 class TaquantoApiStub {
   readonly priceCalls: { query: string; params: PricePageParams }[] = [];
   fail = false;
@@ -221,7 +225,9 @@ describe('SearchPage', () => {
     expect(filters.textContent).toContain('Maceió');
     expect(filters.textContent).toContain('Últimas 24 horas');
     expect(filters.textContent).not.toContain('Alterar filtros');
-    expect(filters.querySelector<HTMLSelectElement>('#municipality-select')?.value).toBe('2704302');
+    expect(filters.querySelector('#municipality-select')?.getAttribute('data-value')).toBe(
+      '2704302',
+    );
     expect(element.querySelector('app-municipality-map')).toBeNull();
     http.expectNone('/assets/alagoas-municipios.geojson');
 
@@ -236,25 +242,20 @@ describe('SearchPage', () => {
     expect(details.open).toBe(true);
 
     const municipalitySearch = filters.querySelector<HTMLInputElement>('#municipality-search')!;
+    expect(municipalitySearch.closest('details')).not.toBeNull();
     municipalitySearch.value = 'maceio';
     municipalitySearch.dispatchEvent(new Event('input'));
     await fixture.whenStable();
     expect(
-      Array.from(filters.querySelectorAll<HTMLOptionElement>('#municipality-select option')).map(
-        ({ value, textContent }) => [value, textContent],
+      Array.from(filters.querySelectorAll<HTMLButtonElement>('.municipality-option')).map(
+        ({ value, textContent }) => [value, textContent?.trim()],
       ),
-    ).toEqual([
-      ['', 'Selecione um município'],
-      ['2704302', 'Maceió'],
-    ]);
+    ).toEqual([['2704302', 'Maceió']]);
 
     municipalitySearch.value = 'arapiraca';
     municipalitySearch.dispatchEvent(new Event('input'));
     await fixture.whenStable();
-    const municipality = filters.querySelector<HTMLSelectElement>('#municipality-select')!;
-    expect(municipality.value).toBe('');
-    municipality.value = '2700300';
-    municipality.dispatchEvent(new Event('change'));
+    selectMunicipality(filters, '2700300');
     await fixture.whenStable();
     expect(filters.querySelector('.filter-values')?.textContent).toContain('Arapiraca');
     http.expectNone('/assets/alagoas-municipios.geojson');
@@ -286,6 +287,12 @@ describe('SearchPage', () => {
     expect(element.querySelector('app-municipality-map')).not.toBeNull();
     http.expectOne('/assets/alagoas-municipios.geojson').flush(municipalityMap);
     await fixture.whenStable();
+
+    mapButton.click();
+    await fixture.whenStable();
+    expect(mapButton.textContent).toContain('Selecionar no mapa');
+    expect(mapButton.getAttribute('aria-expanded')).toBe('false');
+    expect(element.querySelector('app-municipality-map')).toBeNull();
   });
 
   it('only searches when the form is submitted', async () => {
@@ -313,9 +320,7 @@ describe('SearchPage', () => {
     period.dispatchEvent(new Event('change'));
     await fixture.whenStable();
 
-    const municipality = element.querySelector<HTMLSelectElement>('#municipality-select')!;
-    municipality.value = '2700300';
-    municipality.dispatchEvent(new Event('change'));
+    selectMunicipality(element, '2700300');
     await fixture.whenStable();
 
     expect(api.priceCalls).toHaveLength(1);
@@ -344,7 +349,9 @@ describe('SearchPage', () => {
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector<HTMLInputElement>('#product-query')?.value).toBe('arroz');
     expect(element.querySelector<HTMLSelectElement>('#search-period')?.value).toBe('3');
-    expect(element.querySelector<HTMLSelectElement>('#municipality-select')?.value).toBe('2700300');
+    expect(element.querySelector('#municipality-select')?.getAttribute('data-value')).toBe(
+      '2700300',
+    );
     expect(api.priceCalls).toEqual([
       {
         query: 'arroz',
@@ -389,8 +396,18 @@ describe('SearchPage', () => {
 
   it('highlights the lowest sale value of the page, not the first record', async () => {
     api.results = [
-      { ...priceRecord, description: 'Arroz premium', gtin: '7891234567890', sale_value_cents: 799 },
-      { ...priceRecord, description: 'Arroz econômico', gtin: '7891234567891', sale_value_cents: 599 },
+      {
+        ...priceRecord,
+        description: 'Arroz premium',
+        gtin: '7891234567890',
+        sale_value_cents: 799,
+      },
+      {
+        ...priceRecord,
+        description: 'Arroz econômico',
+        gtin: '7891234567891',
+        sale_value_cents: 599,
+      },
       { ...priceRecord, description: 'Arroz comum', gtin: '7891234567892', sale_value_cents: 699 },
     ];
     const element = fixture.nativeElement as HTMLElement;
@@ -405,9 +422,7 @@ describe('SearchPage', () => {
     expect(tags).toHaveLength(1);
     expect(tags[0].closest('.price-card')?.textContent).toContain('Arroz Econômico');
     expect(tags[0].dataset['tip']).toBe('Menor valor entre os registros desta página');
-    expect(tags[0].getAttribute('aria-label')).toBe(
-      'Menor valor entre os registros desta página',
-    );
+    expect(tags[0].getAttribute('aria-label')).toBe('Menor valor entre os registros desta página');
     expect(
       element.querySelectorAll('.price-card')[0].querySelector('.lowest-price-tag'),
     ).toBeNull();
@@ -608,12 +623,10 @@ describe('SearchPage', () => {
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
     const period = element.querySelector<HTMLSelectElement>('#search-period')!;
-    const municipality = element.querySelector<HTMLSelectElement>('#municipality-select')!;
 
     period.value = '3';
     period.dispatchEvent(new Event('change'));
-    municipality.value = '2700300';
-    municipality.dispatchEvent(new Event('change'));
+    selectMunicipality(element, '2700300');
     await fixture.whenStable();
 
     input.value = 'arroz';
@@ -645,8 +658,7 @@ describe('SearchPage', () => {
     input.dispatchEvent(new Event('input'));
     period.value = '1';
     period.dispatchEvent(new Event('change'));
-    municipality.value = '2704302';
-    municipality.dispatchEvent(new Event('change'));
+    selectMunicipality(element, '2704302');
     await fixture.whenStable();
 
     expect(link?.textContent).toContain('Últimos 3 dias');
@@ -657,7 +669,9 @@ describe('SearchPage', () => {
 
     expect(input.value).toBe('arroz');
     expect(period.value).toBe('3');
-    expect(municipality.value).toBe('2700300');
+    expect(element.querySelector('#municipality-select')?.getAttribute('data-value')).toBe(
+      '2700300',
+    );
     expect(api.priceCalls).toHaveLength(2);
     expect(api.priceCalls[1]).toEqual({
       query: 'arroz',

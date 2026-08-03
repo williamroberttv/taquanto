@@ -1,11 +1,12 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { MunicipalityMap } from '../../components/municipality-map/municipality-map';
-import { ALAGOAS_MUNICIPALITIES, MunicipalitySelection } from '../../municipalities';
+import { MunicipalitySelect } from '../../components/municipality-select/municipality-select';
+import { MunicipalitySelection } from '../../municipalities';
 import { SEARCH_PERIODS } from './search.models';
 
 @Component({
   selector: 'app-search-filters',
-  imports: [MunicipalityMap],
+  imports: [MunicipalityMap, MunicipalitySelect],
   template: `
     <section class="location-filter card mt-4 bg-base-200 shadow-sm">
       <details open>
@@ -21,35 +22,10 @@ import { SEARCH_PERIODS } from './search.models';
 
         <div class="filter-panel">
           <div class="filter-fields">
-            <div class="fieldset">
-              <label class="fieldset-legend" for="municipality-select">Município</label>
-              <label class="sr-only" for="municipality-search">Buscar município</label>
-              <input
-                id="municipality-search"
-                type="search"
-                class="input mb-2 w-full"
-                autocomplete="off"
-                placeholder="Buscar município"
-                aria-controls="municipality-select"
-                (input)="filterMunicipalities($event)"
-              />
-              <select
-                id="municipality-select"
-                class="select w-full"
-                (change)="selectMunicipality($event)"
-              >
-                <option value="" disabled [selected]="!municipalitySelectValue()">Selecione um município</option>
-                @for (option of filteredMunicipalities(); track option.code) {
-                  <option
-                    [value]="option.code"
-                    [selected]="option.code === municipalitySelectValue()"
-                  >{{ option.name }}</option>
-                }
-                @if (filteredMunicipalities().length === 0) {
-                  <option disabled>Nenhum município encontrado</option>
-                }
-              </select>
-            </div>
+            <app-municipality-select
+              [municipality]="municipality()"
+              (municipalityChange)="municipalityChange.emit($event)"
+            />
 
             <div class="fieldset">
               <label class="fieldset-legend" for="search-period">Período</label>
@@ -72,9 +48,9 @@ import { SEARCH_PERIODS } from './search.models';
               class="map-selector btn btn-outline"
               aria-controls="municipality-map-panel"
               [attr.aria-expanded]="mapVisible()"
-              (click)="showMap()"
+              (click)="toggleMap()"
             >
-              {{ mapVisible() ? 'Mapa municipal aberto' : 'Selecionar no mapa' }}
+              {{ mapVisible() ? 'Recolher mapa' : 'Selecionar no mapa' }}
             </button>
           }
 
@@ -180,43 +156,16 @@ export class SearchFilters {
   readonly daysChange = output<number>();
 
   protected readonly mapVisible = signal(false);
-  protected readonly municipalityFilter = signal('');
-  protected readonly municipalities = ALAGOAS_MUNICIPALITIES;
-  protected readonly filteredMunicipalities = computed(() => {
-    const query = this.normalize(this.municipalityFilter());
-    return this.municipalities.filter(({ name }) => this.normalize(name).includes(query));
-  });
-  protected readonly municipalitySelectValue = computed(() =>
-    this.filteredMunicipalities().some(({ code }) => code === this.municipality().code)
-      ? this.municipality().code
-      : '',
-  );
   protected readonly periods = SEARCH_PERIODS;
   protected readonly periodLabel = computed(
     () => this.periods.find((period) => period.days === this.days())?.label ?? '',
   );
 
-  protected selectMunicipality(event: Event): void {
-    const code = (event.target as HTMLSelectElement).value;
-    const selection = this.municipalities.find((municipality) => municipality.code === code);
-    if (selection) {
-      this.municipalityChange.emit(selection);
-    }
-  }
-
   protected selectPeriod(event: Event): void {
     this.daysChange.emit(Number((event.target as HTMLSelectElement).value));
   }
 
-  protected filterMunicipalities(event: Event): void {
-    this.municipalityFilter.set((event.target as HTMLInputElement).value);
-  }
-
-  protected showMap(): void {
-    this.mapVisible.set(true);
-  }
-
-  private normalize(value: string): string {
-    return value.trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{M}/gu, '');
+  protected toggleMap(): void {
+    this.mapVisible.update((visible) => !visible);
   }
 }

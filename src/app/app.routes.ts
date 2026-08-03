@@ -20,7 +20,7 @@ export const routes: Routes = [
   {
     path: 'combustiveis',
     loadComponent: () => import('./pages/fuels/fuels').then((m) => m.FuelsPage),
-    title: 'Consultar combustíveis em Alagoas | TáQuanto',
+    title: 'Buscar preços dos combustíveis em Alagoas | TáQuanto',
   },
   {
     path: 'favoritos',
