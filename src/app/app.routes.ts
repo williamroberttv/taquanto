@@ -8,9 +8,14 @@ export const routes: Routes = [
     title: 'Preços em Alagoas | TáQuanto',
   },
   {
-    path: 'buscar',
+    path: 'produtos',
     loadComponent: () => import('./pages/search/search').then((m) => m.SearchPage),
     title: 'Buscar preços em Alagoas | TáQuanto',
+  },
+  {
+    path: 'buscar',
+    redirectTo: 'produtos',
+    pathMatch: 'full',
   },
   {
     path: 'favoritos',

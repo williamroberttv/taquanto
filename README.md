@@ -39,7 +39,7 @@ This repository contains the Angular frontend. A separate TáQuanto API protects
 - Uses optimized static imagery and a browser-only Leaflet preview.
 - Is prerendered at build time for fast, indexable initial HTML.
 
-### Price search (`/buscar`)
+### Price search (`/produtos`)
 
 - Searches by a 3–50 character description or an 8, 12, 13, or 14 digit GTIN.
 - Filters by municipality and a recent period of 1, 3, 7, or 10 days.
@@ -88,7 +88,7 @@ The frontend owns presentation and ephemeral browser state. The API owns source 
 | Route        | Loading | Rendering                 | Reason                                                         |
 | ------------ | ------- | ------------------------- | -------------------------------------------------------------- |
 | `/`          | Eager   | Prerendered at build time | Public, stable content benefits from SEO and fast first paint. |
-| `/buscar`    | Lazy    | Client-side               | Search depends on browser state and live API requests.         |
+| `/produtos`  | Lazy    | Client-side               | Search depends on browser state and live API requests.         |
 | `/favoritos` | Lazy    | Client-side               | Favorites are private to the current browser.                  |
 
 The production build uses Angular's static output mode. CloudFront serves the generated files from S3 and falls back to `index.csr.html` for client routes; there is no Node SSR process.
