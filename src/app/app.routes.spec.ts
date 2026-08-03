@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router, Routes } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from './app.routes';
 
@@ -11,7 +11,7 @@ describe('app routes', () => {
   let harness: RouterTestingHarness;
 
   beforeEach(async () => {
-    const testRoutes: Routes = routes.map((route) =>
+    const testRoutes = routes.map((route) =>
       route.path === 'produtos' ? { path: route.path, component: RouteTarget } : route,
     );
 
