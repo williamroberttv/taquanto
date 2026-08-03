@@ -1,7 +1,6 @@
 import { isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import {
   afterNextRender,
-  afterRenderEffect,
   Component,
   DestroyRef,
   ElementRef,
@@ -14,7 +13,6 @@ import type * as Leaflet from 'leaflet';
 import { environment } from '../../../environments/environment';
 import { Footer } from '../../components/footer/footer';
 import { Header } from '../../components/header/header';
-import { ThemeService } from '../../services/theme';
 
 interface Step {
   title: string;
@@ -39,16 +37,10 @@ interface SalePreview {
 export class Home {
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly themeService = inject(ThemeService);
   private readonly mapContainer = viewChild<ElementRef<HTMLElement>>('mapContainer');
   private readonly meta = inject(Meta);
   private readonly title = inject(Title);
-  private readonly tileUrl = {
-    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-  } as const;
   private map?: Leaflet.Map;
-  private tileLayer?: Leaflet.TileLayer;
 
   protected readonly steps: Step[] = [
     {
@@ -121,11 +113,6 @@ export class Home {
       }
     });
 
-    afterRenderEffect(() => {
-      const isDark = this.themeService.isDark();
-      this.tileLayer?.setUrl(this.tileUrl[isDark ? 'dark' : 'light']);
-    });
-
     this.destroyRef.onDestroy(() => {
       this.map?.remove();
     });
@@ -155,16 +142,12 @@ export class Home {
       dragging: false,
     });
 
-    const tileLayer = leaflet.tileLayer(
-      this.tileUrl[this.themeService.isDark() ? 'dark' : 'light'],
-      {
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    leaflet
+      .tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
         maxZoom: 19,
-      },
-    );
-
-    this.tileLayer = tileLayer;
-    tileLayer.addTo(this.map);
+      })
+      .addTo(this.map);
 
     requestAnimationFrame(() => {
       this.map?.invalidateSize();
