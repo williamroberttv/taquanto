@@ -500,7 +500,7 @@ describe('SearchPage', () => {
       recentSearches.compareDocumentPosition(locationFilter) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(recentSearchesTitle?.textContent).toContain('Suas últimas pesquisas');
-    expect(recentSearchesTitle?.querySelector('svg')).toBeNull();
+    expect(recentSearchesTitle?.querySelector('svg')).not.toBeNull();
     expect(link?.textContent).toContain('Arroz • Arapiraca • agora');
     expect(JSON.parse(localStorage.getItem('taquanto:recent-searches') ?? '[]')).toEqual([
       {
