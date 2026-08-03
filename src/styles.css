@@ -130,7 +130,32 @@ body {
   }
 }
 
-/* Shared record-card, Leaflet and detail-map styles stay global to avoid component duplication. */
+/* Shared search-component, record-card, Leaflet and detail-map styles stay global. */
+.eyebrow {
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.eyebrow-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.eyebrow-icon {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  transform: translateY(-0.06em);
+}
+
 .price-value {
   color: var(--color-primary);
   font-size: 1.35rem;

@@ -179,6 +179,32 @@ describe('SearchPage', () => {
     await fixture.whenStable();
   });
 
+  it('coordinates the search through focused components', async () => {
+    api.results = [priceRecord];
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('app-search-filters')).not.toBeNull();
+    expect(element.querySelector('app-product-search-form')).not.toBeNull();
+    expect(element.querySelector('app-recent-searches')).not.toBeNull();
+    expect(element.querySelector('app-search-results')).not.toBeNull();
+
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+    input.value = 'arroz';
+    input.dispatchEvent(new Event('input'));
+    element
+      .querySelector<HTMLFormElement>('#product-search')!
+      .dispatchEvent(new SubmitEvent('submit'));
+    await fixture.whenStable();
+
+    expect(element.querySelector('app-sale-record-card')).not.toBeNull();
+    expect(element.querySelector('app-search-pagination')).not.toBeNull();
+
+    element.querySelector<HTMLButtonElement>('.detail-button')!.click();
+    await fixture.whenStable();
+
+    expect(element.querySelector('app-sale-record-detail-dialog dialog')).not.toBeNull();
+  });
+
   it('only searches when the form is submitted', async () => {
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
@@ -415,9 +441,7 @@ describe('SearchPage', () => {
     api.pendingResponse = pendingResponse;
     element.querySelector<HTMLButtonElement>('[aria-label="Página 2"]')!.click();
 
-    await vi.waitFor(() =>
-      expect(element.textContent).not.toContain('1-50 de 70 registros'),
-    );
+    await vi.waitFor(() => expect(element.textContent).not.toContain('1-50 de 70 registros'));
 
     pendingResponse.next({
       data: {
