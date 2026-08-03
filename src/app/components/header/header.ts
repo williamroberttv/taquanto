@@ -21,7 +21,7 @@ export class Header {
     this.isDark() ? 'Ativar modo claro' : 'Ativar modo escuro',
   );
   protected readonly navigation: NavigationItem[] = [
-    { label: 'Buscar', href: '/buscar' },
+    { label: 'Buscar', href: '/produtos' },
     { label: 'Como funciona', href: '/#como-funciona' },
     { label: 'Favoritos', href: '/favoritos' },
   ];
