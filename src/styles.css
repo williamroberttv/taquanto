@@ -104,7 +104,7 @@ html[data-theme='dark'] {
   --tq-border70: rgb(52 57 70 / 70%);
 }
 
-html[data-theme='dark'] .btn {
+html[data-theme='dark'] .btn:not(:is(.text-primary, .text-primary-contrast)) {
   color: #fff;
 }
 
