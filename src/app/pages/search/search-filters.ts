@@ -1,9 +1,6 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { MunicipalityMap } from '../../components/municipality-map/municipality-map';
-import {
-  ALAGOAS_MUNICIPALITIES,
-  MunicipalitySelection,
-} from '../../municipalities';
+import { ALAGOAS_MUNICIPALITIES, MunicipalitySelection } from '../../municipalities';
 import { SEARCH_PERIODS } from './search.models';
 
 @Component({
@@ -11,7 +8,7 @@ import { SEARCH_PERIODS } from './search.models';
   imports: [MunicipalityMap],
   template: `
     <section class="location-filter card mt-4 bg-base-200 shadow-sm">
-      <details>
+      <details [open]="!productSearch()">
         <summary class="filter-summary">
           <span>
             <span class="filter-label">Filtros da consulta</span>
@@ -51,22 +48,25 @@ import { SEARCH_PERIODS } from './search.models';
             </div>
           </div>
 
-          <button
-            type="button"
-            class="map-selector btn btn-outline"
-            aria-controls="municipality-map-panel"
-            [attr.aria-expanded]="mapVisible()"
-            (click)="showMap()"
-          >
-            {{ mapVisible() ? 'Mapa municipal aberto' : 'Selecionar no mapa' }}
-          </button>
+          @if (productSearch()) {
+            <button
+              type="button"
+              class="map-selector btn btn-outline"
+              aria-controls="municipality-map-panel"
+              [attr.aria-expanded]="mapVisible()"
+              (click)="showMap()"
+            >
+              {{ mapVisible() ? 'Mapa municipal aberto' : 'Selecionar no mapa' }}
+            </button>
+          }
 
-          @if (mapVisible()) {
+          @if (mapVisible() || !productSearch()) {
             <div id="municipality-map-panel">
-              @defer (when mapVisible()) {
+              @defer (when mapVisible() || !productSearch()) {
                 <app-municipality-map
                   [selectedCode]="municipality().code"
                   (municipalityChange)="municipalityChange.emit($event)"
+                  (municipalityReady)="municipalityReady.emit($event)"
                 />
               } @loading {
                 <p role="status">Carregando mapa municipal...</p>
@@ -152,7 +152,9 @@ import { SEARCH_PERIODS } from './search.models';
 export class SearchFilters {
   readonly municipality = input.required<MunicipalitySelection>();
   readonly days = input.required<number>();
+  readonly productSearch = input(true);
   readonly municipalityChange = output<MunicipalitySelection>();
+  readonly municipalityReady = output<MunicipalitySelection>();
   readonly daysChange = output<number>();
 
   protected readonly mapVisible = signal(false);

@@ -49,31 +49,33 @@ import { PriceRecord } from '../../services/taquanto-api';
         <time class="card-time-slot card-secondary" [attr.datetime]="record().sold_at">
           {{ formatSaleTime(record()) }}
         </time>
-        <div class="card-actions mt-auto justify-start gap-1 pt-1">
-          <app-favorite-toggle
-            [record]="record()"
-            [favorite]="favorite()"
-            (toggled)="favoriteToggled.emit($event)"
-          />
-          <button
-            type="button"
-            class="detail-button btn btn-outline btn-primary h-10 min-h-10 px-3 text-sm"
-            (click)="detailsRequested.emit(record())"
-          >
-            Detalhes
-            <svg
-              class="h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-width="2"
-              aria-hidden="true"
+        @if (actions()) {
+          <div class="card-actions mt-auto justify-start gap-1 pt-1">
+            <app-favorite-toggle
+              [record]="record()"
+              [favorite]="favorite()"
+              (toggled)="favoriteToggled.emit($event)"
+            />
+            <button
+              type="button"
+              class="detail-button btn btn-outline btn-primary h-10 min-h-10 px-3 text-sm"
+              (click)="detailsRequested.emit(record())"
             >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </button>
-        </div>
+              Detalhes
+              <svg
+                class="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          </div>
+        }
       </div>
     </article>
   `,
@@ -110,7 +112,8 @@ import { PriceRecord } from '../../services/taquanto-api';
 export class SaleRecordCard {
   readonly record = input.required<PriceRecord>();
   readonly lowest = input.required<boolean>();
-  readonly favorite = input.required<boolean>();
+  readonly favorite = input(false);
+  readonly actions = input(true);
   readonly favoriteToggled = output<PriceRecord>();
   readonly detailsRequested = output<PriceRecord>();
   protected readonly formatAddress = formatAddress;

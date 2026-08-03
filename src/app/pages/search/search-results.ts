@@ -32,8 +32,8 @@ import { SearchPagination } from './search-pagination';
                 <button
                   type="button"
                   class="btn btn-circle btn-ghost btn-xs h-7 min-h-7 w-7 p-0 text-primary"
-                  aria-label="Como os produtos são exibidos"
-                  aria-describedby="products-info"
+                  aria-label="Como os registros são exibidos"
+                  aria-describedby="records-info"
                 >
                   <svg
                     class="h-4 w-4 fill-none stroke-current stroke-2"
@@ -48,7 +48,7 @@ import { SearchPagination } from './search-pagination';
                   </svg>
                 </button>
                 <span
-                  id="products-info"
+                  id="records-info"
                   class="tooltip-content z-10 max-w-xs text-left"
                   role="tooltip"
                 >
@@ -80,7 +80,7 @@ import { SearchPagination } from './search-pagination';
 
         @if (loading()) {
           <p class="sr-only" role="status" aria-live="polite">
-            Buscando preços. Buscas por descrição podem demorar.
+            {{ loadingAnnouncement() }}
           </p>
           <div
             class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
@@ -104,6 +104,7 @@ import { SearchPagination } from './search-pagination';
               <app-sale-record-card
                 [record]="record"
                 [lowest]="record.sale_value_cents === lowestValueCents()"
+                [actions]="actions()"
                 [favorite]="isFavorite()(record)"
                 (favoriteToggled)="favoriteToggled.emit($event)"
                 (detailsRequested)="detailsRequested.emit($event)"
@@ -116,7 +117,7 @@ import { SearchPagination } from './search-pagination';
           </p>
         } @else {
           <p class="results-message mt-5 text-sm font-medium text-[var(--tq-muted)]">
-            Busque um produto para ver os registros no município e período selecionados.
+            {{ initialMessage() }}
           </p>
         }
 
@@ -176,11 +177,23 @@ export class SearchResults {
   readonly emptyMessage = input.required<string | null>();
   readonly cacheMessage = input.required<string | null>();
   readonly cachePending = input.required<boolean>();
-  readonly isFavorite = input.required<(record: PriceRecord) => boolean>();
+  readonly kind = input<'product' | 'fuel'>('product');
+  readonly actions = input(true);
+  readonly isFavorite = input<(record: PriceRecord) => boolean>(() => false);
   readonly favoriteToggled = output<PriceRecord>();
   readonly detailsRequested = output<PriceRecord>();
   readonly pageSelected = output<number>();
   protected readonly skeletons = [1, 2, 3, 4];
+  protected readonly initialMessage = computed(() =>
+    this.kind() === 'fuel'
+      ? 'Consulte um combustível para ver os registros no município e período selecionados.'
+      : 'Busque um produto para ver os registros no município e período selecionados.',
+  );
+  protected readonly loadingAnnouncement = computed(() =>
+    this.kind() === 'fuel'
+      ? 'Buscando registros de combustível.'
+      : 'Buscando preços. Buscas por descrição podem demorar.',
+  );
   protected readonly hasResults = computed(() => this.records().length > 0);
   protected readonly lowestValueCents = computed(() =>
     Math.min(...this.records().map((record) => record.sale_value_cents)),

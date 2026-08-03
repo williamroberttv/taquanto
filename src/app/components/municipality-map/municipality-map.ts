@@ -35,6 +35,7 @@ export class MunicipalityMap {
 
   readonly selectedCode = input(DEFAULT_MUNICIPALITY.code);
   readonly municipalityChange = output<MunicipalitySelection>();
+  readonly municipalityReady = output<MunicipalitySelection>();
 
   protected readonly municipalities = signal<MunicipalitySelection[]>([]);
   protected readonly loadError = signal(false);
@@ -70,10 +71,12 @@ export class MunicipalityMap {
             .map(({ properties }) => properties)
             .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
         );
+        this.announceReady();
         void this.initializeMap(collection);
       },
       error: () => {
         this.loadError.set(true);
+        this.announceReady();
       },
     });
   }
@@ -128,6 +131,15 @@ export class MunicipalityMap {
     }
     this.updateLayerState(code);
     this.municipalityChange.emit(selection);
+  }
+
+  private announceReady(): void {
+    const resolvedCode = this.resolvedSelectedCode();
+    const selection = this.selectionFor(resolvedCode) ?? DEFAULT_MUNICIPALITY;
+    this.municipalityReady.emit(selection);
+    if (resolvedCode !== this.selectedCode()) {
+      this.municipalityChange.emit(selection);
+    }
   }
 
   private selectionFor(code: string): MunicipalitySelection | undefined {

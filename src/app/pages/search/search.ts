@@ -19,7 +19,7 @@ import {
 } from '../../municipalities';
 import { Favorites } from '../../services/favorites';
 import { PricePolling } from '../../services/price-polling';
-import { Pagination, PriceRecord, PriceSearchResponse } from '../../services/taquanto-api';
+import { CachedSearchResponse, Pagination, PriceRecord } from '../../services/taquanto-api';
 import { ProductSearchForm } from './product-search-form';
 import { RecentSearches } from './recent-searches';
 import { SaleRecordDetailDialog } from './sale-record-detail-dialog';
@@ -330,7 +330,7 @@ export class SearchPage {
     this.pricePollingSubscription = subscription.closed ? null : subscription;
   }
 
-  private applyPriceData(response: PriceSearchResponse): void {
+  private applyPriceData(response: CachedSearchResponse): void {
     this.records.set(response.data?.results ?? []);
     this.pagination.set(response.data?.pagination ?? null);
     this.emptyMessage.set(

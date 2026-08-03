@@ -1,7 +1,7 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { PriceSearchResponse, TaquantoApi } from './taquanto-api';
+import { FuelSearchResponse, PriceSearchResponse, TaquantoApi } from './taquanto-api';
 
 describe('TaquantoApi', () => {
   let api: TaquantoApi;
@@ -88,6 +88,42 @@ describe('TaquantoApi', () => {
       cacheStatus: 'MISS',
       ageSeconds: null,
     });
+  });
+
+  it('requests paginated fuels through the fuels endpoint', () => {
+    let response: FuelSearchResponse | undefined;
+
+    api.fuels(5, { municipality: '2700300', days: 7, limit: 50, page: 2 }).subscribe((value) => {
+      response = value;
+    });
+
+    const request = http.expectOne((req) => req.url === 'http://localhost:8080/v1/fuels');
+    expect(request.request.params.get('type')).toBe('5');
+    expect(request.request.params.get('municipality')).toBe('2700300');
+    expect(request.request.params.get('days')).toBe('7');
+    expect(request.request.params.get('limit')).toBe('50');
+    expect(request.request.params.get('page')).toBe('2');
+
+    request.flush(
+      {
+        type: 5,
+        source: 'test',
+        results: [],
+        pagination: {
+          page: 2,
+          page_size: 50,
+          page_records: 0,
+          total_records: 0,
+          total_pages: 2,
+          first_page: false,
+          last_page: true,
+        },
+      },
+      { headers: { 'X-TaQuanto-Cache-Status': 'HIT' } },
+    );
+
+    expect(response?.data?.type).toBe(5);
+    expect(response?.cacheStatus).toBe('HIT');
   });
 
   it('maps a successful empty response as empty data', () => {

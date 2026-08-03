@@ -18,6 +18,11 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
+    path: 'combustiveis',
+    loadComponent: () => import('./pages/fuels/fuels').then((m) => m.FuelsPage),
+    title: 'Consultar combustíveis em Alagoas | TáQuanto',
+  },
+  {
     path: 'favoritos',
     loadComponent: () => import('./pages/favorites/favorites').then((m) => m.FavoritesPage),
     title: 'Favoritos de Alagoas | TáQuanto',
