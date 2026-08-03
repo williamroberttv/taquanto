@@ -17,7 +17,7 @@ import { RecentSearch, SEARCH_PERIODS } from './search.models';
         <div class="recent-search-list">
           @for (search of searches(); track search; let last = $last) {
             <button type="button" class="recent-search-link" (click)="searchSelected.emit(search)">
-              {{ formatTitle(search.query) }} - {{ search.municipality.name }} -
+              {{ formatTitle(search.query) }} - {{ locationLabel(search) }} -
               {{ periodLabel(search.days) }}
             </button>
             @if (!last) {
@@ -72,5 +72,9 @@ export class RecentSearches {
 
   protected periodLabel(days: number): string {
     return SEARCH_PERIODS.find((period) => period.days === days)?.label ?? '';
+  }
+
+  protected locationLabel(search: RecentSearch): string {
+    return search.useLocation ? `Perto de mim (${search.radius} km)` : search.municipality.name;
   }
 }

@@ -19,7 +19,12 @@ import {
 } from '../../municipalities';
 import { Favorites } from '../../services/favorites';
 import { PricePolling } from '../../services/price-polling';
-import { CachedSearchResponse, Pagination, PriceRecord } from '../../services/taquanto-api';
+import {
+  CachedSearchResponse,
+  GeographicSearch,
+  Pagination,
+  PriceRecord,
+} from '../../services/taquanto-api';
 import { ProductSearchForm } from './product-search-form';
 import { RecentSearches } from './recent-searches';
 import { SaleRecordDetailDialog } from './sale-record-detail-dialog';
@@ -49,7 +54,7 @@ export class SearchPage {
   private readonly router = inject(Router);
   private readonly pricePolling = inject(PricePolling);
   private readonly filtersSection = viewChild(ProductSearchForm);
-  private readonly resultsSection = viewChild(SearchResults);
+  private readonly searchFilters = viewChild(SearchFilters);
 
   private readonly recentSearchesKey = 'taquanto:recent-searches';
   private readonly pageSize = 50;
@@ -59,10 +64,13 @@ export class SearchPage {
   private activeSearchKey: string | null = null;
   private currentPriceQuery = '';
   private queryFromUrl: string | null = null;
+  private pendingSearch: { query: string; updateUrl: boolean } | null = null;
 
   protected readonly query = signal('');
   protected readonly municipality = signal(DEFAULT_MUNICIPALITY);
   protected readonly days = signal(1);
+  protected readonly location = signal<GeographicSearch | null>(null);
+  protected readonly locationPending = signal(false);
   protected readonly filtersVisible = signal(true);
   protected readonly records = signal<PriceRecord[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
@@ -123,18 +131,29 @@ export class SearchPage {
   }
 
   protected submitSearch(): void {
-    void this.runSearch(this.query().trim(), true);
+    const query = this.query().trim();
+    const filters = this.searchFilters();
+    if (filters && !filters.validateLocationPermission()) {
+      this.pendingSearch = { query, updateUrl: true };
+      return;
+    }
+    this.runSearch(query, true);
   }
 
   protected repeatSearch(search: RecentSearch): void {
     this.cancelPricePolling();
     this.loadedPriceKey = null;
     this.query.set(search.query);
-    this.municipality.set(search.municipality);
     this.days.set(search.days);
+    this.location.set(null);
     this.inlineMessage.set(null);
-    void this.runSearch(search.query, true);
-    this.scrollToResults();
+    if (search.useLocation) {
+      this.pendingSearch = { query: search.query, updateUrl: true };
+      this.searchFilters()?.requestLocation(search.radius ?? 5);
+      return;
+    }
+    this.municipality.set(search.municipality);
+    this.runSearch(search.query, true);
   }
 
   protected updateQuery(query: string): void {
@@ -163,6 +182,19 @@ export class SearchPage {
     }
     this.days.set(days);
     this.filtersChanged();
+  }
+
+  protected selectLocation(location: GeographicSearch | null): void {
+    if (!location) {
+      this.pendingSearch = null;
+    }
+    if (this.sameLocation(location, this.location())) {
+      this.resumePendingSearch(location);
+      return;
+    }
+    this.location.set(location);
+    this.filtersChanged();
+    this.resumePendingSearch(location);
   }
 
   protected loadPage(page: number): void {
@@ -267,13 +299,13 @@ export class SearchPage {
   private requestPricePage(query: string, page: number): void {
     this.pricesLoading.set(true);
     const searchKey = this.priceKey(query);
-    let scrolledToResults = false;
+    const location = this.location();
     const subscription = this.pricePolling
       .poll(query, {
         days: this.days(),
         limit: this.pageSize,
-        municipality: this.municipality().code,
         page,
+        ...(location ?? { municipality: this.municipality().code }),
       })
       .subscribe({
         next: (event) => {
@@ -290,10 +322,6 @@ export class SearchPage {
           if (response.cacheStatus !== 'MISS') {
             this.loadedPriceKey = searchKey;
             this.applyPriceData(response);
-            if (!scrolledToResults) {
-              scrolledToResults = true;
-              this.scrollToResults();
-            }
             this.pricesLoading.set(false);
           }
           if (response.cacheStatus === 'HIT') {
@@ -338,12 +366,6 @@ export class SearchPage {
     );
   }
 
-  private scrollToResults(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      this.resultsSection()?.scrollIntoView();
-    }
-  }
-
   private revalidationFailureMessage(): string {
     return this.pagination()
       ? 'Não foi possível atualizar agora; exibindo dados em cache.'
@@ -363,7 +385,7 @@ export class SearchPage {
     void this.router.navigate([], {
       queryParams: {
         q: this.query().trim() || null,
-        municipality: this.municipality().code,
+        municipality: this.location() ? null : this.municipality().code,
         days: this.days(),
       },
       relativeTo: this.route,
@@ -372,7 +394,11 @@ export class SearchPage {
   }
 
   private priceKey(query: string): string {
-    return `${query}:${this.municipality().code}:${this.days()}`;
+    const location = this.location();
+    const place = location
+      ? `${location.latitude}:${location.longitude}:${location.radius}`
+      : this.municipality().code;
+    return `${query}:${place}:${this.days()}`;
   }
 
   private isGTIN(query: string): boolean {
@@ -408,6 +434,8 @@ export class SearchPage {
           }
           const search = item as Record<string, unknown>;
           const municipality = search['municipality'];
+          const useLocation = search['useLocation'];
+          const radius = search['radius'];
           return (
             typeof search['query'] === 'string' &&
             typeof search['days'] === 'number' &&
@@ -415,7 +443,9 @@ export class SearchPage {
             !!municipality &&
             typeof municipality === 'object' &&
             this.isMunicipalityCode((municipality as Record<string, unknown>)['code']) &&
-            typeof (municipality as Record<string, unknown>)['name'] === 'string'
+            typeof (municipality as Record<string, unknown>)['name'] === 'string' &&
+            (useLocation === undefined || typeof useLocation === 'boolean') &&
+            (useLocation !== true || this.isRadius(radius))
           );
         })
         .slice(0, 10);
@@ -425,10 +455,12 @@ export class SearchPage {
   }
 
   private saveRecentSearch(query: string): void {
+    const location = this.location();
     const search: RecentSearch = {
       query,
       municipality: this.municipality(),
       days: this.days(),
+      ...(location ? { useLocation: true, radius: location.radius } : {}),
     };
     const searchKey = this.recentSearchKey(search);
     const searches = [
@@ -445,6 +477,31 @@ export class SearchPage {
   }
 
   private recentSearchKey(search: RecentSearch): string {
-    return `${search.query.toLowerCase()}:${search.municipality.code}:${search.days}`;
+    const place = search.useLocation ? `nearby:${search.radius}` : search.municipality.code;
+    return `${search.query.toLowerCase()}:${place}:${search.days}`;
+  }
+
+  private isRadius(radius: unknown): radius is number {
+    return radius === 5 || radius === 10 || radius === 15;
+  }
+
+  private resumePendingSearch(location: GeographicSearch | null): void {
+    if (!location || !this.pendingSearch) {
+      return;
+    }
+    const pending = this.pendingSearch;
+    this.pendingSearch = null;
+    this.runSearch(pending.query, pending.updateUrl);
+  }
+
+  private sameLocation(first: GeographicSearch | null, second: GeographicSearch | null): boolean {
+    return (
+      first === second ||
+      (!!first &&
+        !!second &&
+        first.latitude === second.latitude &&
+        first.longitude === second.longitude &&
+        first.radius === second.radius)
+    );
   }
 }

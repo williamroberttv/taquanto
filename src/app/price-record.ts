@@ -48,6 +48,7 @@ export function recordCoordinates(record: PriceRecord): [number, number] | null 
   if (
     latitude === null ||
     longitude === null ||
+    (latitude === 0 && longitude === 0) ||
     latitude < -90 ||
     latitude > 90 ||
     longitude < -180 ||

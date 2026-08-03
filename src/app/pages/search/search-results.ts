@@ -1,11 +1,12 @@
 import { Component, ElementRef, computed, input, output, viewChild } from '@angular/core';
-import { Pagination, PriceRecord } from '../../services/taquanto-api';
+import { GeographicSearch, Pagination, PriceRecord } from '../../services/taquanto-api';
 import { SaleRecordCard } from './sale-record-card';
 import { SearchPagination } from './search-pagination';
+import { SearchResultsMap } from './search-results-map/search-results-map';
 
 @Component({
   selector: 'app-search-results',
-  imports: [SaleRecordCard, SearchPagination],
+  imports: [SaleRecordCard, SearchPagination, SearchResultsMap],
   template: `
     <section
       #section
@@ -99,6 +100,7 @@ import { SearchPagination } from './search-pagination';
             }
           </div>
         } @else if (hasResults()) {
+          <app-search-results-map [records]="records()" [searchLocation]="searchLocation()" />
           <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             @for (record of records(); track $index) {
               <app-sale-record-card
@@ -108,6 +110,7 @@ import { SearchPagination } from './search-pagination';
                 [favorite]="isFavorite()(record)"
                 (favoriteToggled)="favoriteToggled.emit($event)"
                 (detailsRequested)="detailsRequested.emit($event)"
+                (locationRequested)="showOnMap($event)"
               />
             }
           </div>
@@ -164,6 +167,7 @@ import { SearchPagination } from './search-pagination';
 })
 export class SearchResults {
   private readonly section = viewChild.required<ElementRef<HTMLElement>>('section');
+  private readonly resultsMap = viewChild(SearchResultsMap);
 
   readonly records = input.required<PriceRecord[]>();
   readonly pagination = input.required<Pagination | null>();
@@ -171,6 +175,7 @@ export class SearchResults {
   readonly emptyMessage = input.required<string | null>();
   readonly cacheMessage = input.required<string | null>();
   readonly cachePending = input.required<boolean>();
+  readonly searchLocation = input<GeographicSearch | null>(null);
   readonly kind = input<'product' | 'fuel'>('product');
   readonly actions = input(true);
   readonly isFavorite = input<(record: PriceRecord) => boolean>(() => false);
@@ -203,5 +208,9 @@ export class SearchResults {
 
   scrollIntoView(): void {
     this.section().nativeElement.scrollIntoView?.();
+  }
+
+  protected showOnMap(record: PriceRecord): void {
+    this.resultsMap()?.showRecord(record);
   }
 }

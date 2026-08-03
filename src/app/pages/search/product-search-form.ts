@@ -7,11 +7,11 @@ import { Component, ElementRef, input, output, viewChild } from '@angular/core';
       #form
       id="product-search"
       tabindex="-1"
-      class="card mt-8 grid max-w-3xl scroll-mt-20 gap-4 bg-base-100 p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+      class="search-form card mt-8 grid scroll-mt-20 gap-3 bg-transparent p-4"
       aria-labelledby="product-search-title"
       (submit)="submit($event)"
     >
-      <div class="sm:col-span-2">
+      <div class="form-heading">
         <p class="eyebrow eyebrow-with-icon">
           O que procurar
           <svg class="eyebrow-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -27,31 +27,46 @@ import { Component, ElementRef, input, output, viewChild } from '@angular/core';
           descritiva for a busca, melhor será a resposta.
         </p>
       </div>
-      <label class="sr-only" for="product-query">Produto ou código de barras</label>
-      <div class="search-input-wrap">
-        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="7" />
-          <path d="m16 16 4 4" />
-        </svg>
-        <input
-          id="product-query"
-          type="search"
-          inputmode="search"
-          autocomplete="off"
-          minlength="3"
-          maxlength="50"
-          [value]="query()"
-          (input)="updateQuery($event)"
-          class="input min-h-12 w-full bg-base-100 pl-11 text-base"
-          placeholder="Ex.: arroz, café 250g ou GTIN"
-        />
-      </div>
-      <button type="submit" class="btn btn-primary min-h-12">
+      <fieldset class="query-field fieldset">
+        <legend class="fieldset-legend">
+          Produto ou código de barras
+          <span class="text-error" aria-hidden="true">*</span>
+          <span class="sr-only">(obrigatório)</span>
+        </legend>
+        <div class="search-input-wrap">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m16 16 4 4" />
+          </svg>
+          <input
+            id="product-query"
+            type="search"
+            inputmode="search"
+            autocomplete="off"
+            name="query"
+            required
+            minlength="3"
+            maxlength="50"
+            [value]="query()"
+            (input)="updateQuery($event)"
+            class="input input-sm min-h-10 w-full bg-base-100 pl-10"
+            placeholder="Ex.: arroz, café 250g ou GTIN"
+          />
+        </div>
+      </fieldset>
+
+      <ng-content />
+
+      <button
+        type="submit"
+        class="search-submit btn btn-primary btn-sm min-h-10 self-end"
+        [disabled]="locationPending()"
+      >
         <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
           <path d="m16 16 4 4" />
         </svg>
-        {{ loading() ? 'Buscando...' : 'Buscar' }}
+        {{ locationPending() ? 'Obtendo localização...' : loading() ? 'Buscando...' : 'Buscar' }}
       </button>
     </form>
 
@@ -62,6 +77,23 @@ import { Component, ElementRef, input, output, viewChild } from '@angular/core';
   styles: `
     :host {
       display: block;
+    }
+
+    .search-form {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: end;
+    }
+
+    .form-heading {
+      grid-column: 1 / -1;
+    }
+
+    .query-field {
+      min-width: 0;
+    }
+
+    .search-submit {
+      width: 100%;
     }
 
     .search-input-wrap {
@@ -92,6 +124,18 @@ import { Component, ElementRef, input, output, viewChild } from '@angular/core';
       color: var(--color-primary);
       transform: translateY(-50%);
     }
+
+    @media (min-width: 640px) {
+      .search-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 768px) {
+      .search-form {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
   `,
 })
 export class ProductSearchForm {
@@ -99,6 +143,7 @@ export class ProductSearchForm {
 
   readonly query = input.required<string>();
   readonly loading = input.required<boolean>();
+  readonly locationPending = input(false);
   readonly message = input.required<string | null>();
   readonly queryChange = output<string>();
   readonly searchSubmitted = output<void>();

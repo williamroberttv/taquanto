@@ -19,8 +19,15 @@ import {
   type MunicipalitySelection,
 } from '../../municipalities';
 import { PricePolling } from '../../services/price-polling';
-import { CachedSearchResponse, Pagination, PriceRecord } from '../../services/taquanto-api';
+import { Favorites } from '../../services/favorites';
+import {
+  CachedSearchResponse,
+  GeographicSearch,
+  Pagination,
+  PriceRecord,
+} from '../../services/taquanto-api';
 import { SearchFilters } from '../search/search-filters';
+import { SaleRecordDetailDialog } from '../search/sale-record-detail-dialog';
 import { SEARCH_PERIODS } from '../search/search.models';
 import { SearchResults } from '../search/search-results';
 
@@ -35,7 +42,7 @@ const FUEL_TYPES = [
 
 @Component({
   selector: 'app-fuels',
-  imports: [Header, Footer, SearchFilters, SearchResults],
+  imports: [Header, Footer, SearchFilters, SearchResults, SaleRecordDetailDialog],
   templateUrl: './fuels.html',
   styleUrl: '../search/search.scss',
 })
@@ -45,21 +52,25 @@ export class FuelsPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly polling = inject(PricePolling);
+  private readonly favorites = inject(Favorites);
   private readonly form = viewChild.required<ElementRef<HTMLFormElement>>('fuelForm');
+  private readonly searchFilters = viewChild(SearchFilters);
   private readonly resultsSection = viewChild(SearchResults);
   private readonly pageSize = 50;
   private pollingSubscription: Subscription | null = null;
   private activeSearchKey: string | null = null;
   private loadedSearchKey: string | null = null;
   private searchFromUrl = false;
+  private pendingSearch = false;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly fuelTypes = FUEL_TYPES;
   protected readonly type = signal(1);
   protected readonly municipality = signal(DEFAULT_MUNICIPALITY);
   protected readonly days = signal(1);
+  protected readonly location = signal<GeographicSearch | null>(null);
+  protected readonly locationPending = signal(false);
   protected readonly filtersVisible = signal(true);
-  protected readonly filtersReady = signal(false);
   protected readonly records = signal<PriceRecord[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
   protected readonly loading = signal(false);
@@ -67,6 +78,8 @@ export class FuelsPage {
   protected readonly cacheMessage = signal<string | null>(null);
   protected readonly cachePending = signal(false);
   protected readonly toast = signal<string | null>(null);
+  protected readonly selectedRecord = signal<PriceRecord | null>(null);
+  protected readonly isFavorite = (record: PriceRecord): boolean => this.favorites.has(record);
 
   constructor() {
     afterNextRender(() => {
@@ -100,6 +113,10 @@ export class FuelsPage {
       if (this.isPeriod(initialDays)) {
         this.days.set(initialDays);
       }
+      if (this.searchFromUrl) {
+        this.searchFromUrl = false;
+        this.runSearch(false);
+      }
     });
 
     this.destroyRef.onDestroy(() => {
@@ -112,9 +129,12 @@ export class FuelsPage {
 
   protected submit(event: SubmitEvent): void {
     event.preventDefault();
-    if (this.filtersReady()) {
-      this.runSearch(true);
+    const filters = this.searchFilters();
+    if (filters && !filters.validateLocationPermission()) {
+      this.pendingSearch = true;
+      return;
     }
+    this.runSearch(true);
   }
 
   protected selectType(event: Event): void {
@@ -137,25 +157,25 @@ export class FuelsPage {
     }
   }
 
-  protected municipalityReady(selection: MunicipalitySelection): void {
-    const changed = selection.code !== this.municipality().code;
-    this.municipality.set(selection);
-    this.filtersReady.set(true);
-    if (changed) {
-      this.updateUrl();
-    }
-    if (this.searchFromUrl) {
-      this.searchFromUrl = false;
-      this.runSearch(false);
-    }
-  }
-
   protected selectPeriod(days: number): void {
     if (!this.isPeriod(days) || days === this.days()) {
       return;
     }
     this.days.set(days);
     this.filtersChanged();
+  }
+
+  protected selectLocation(location: GeographicSearch | null): void {
+    if (!location) {
+      this.pendingSearch = false;
+    }
+    if (this.sameLocation(location, this.location())) {
+      this.resumePendingSearch(location);
+      return;
+    }
+    this.location.set(location);
+    this.filtersChanged();
+    this.resumePendingSearch(location);
   }
 
   protected loadPage(page: number): void {
@@ -177,6 +197,20 @@ export class FuelsPage {
     this.form().nativeElement.scrollIntoView();
     this.form().nativeElement.focus({ preventScroll: true });
     this.filtersVisible.set(true);
+  }
+
+  protected toggleFavorite(record: PriceRecord): void {
+    if (!this.favorites.toggle(record)) {
+      this.showToast('Não foi possível atualizar os favoritos.');
+    }
+  }
+
+  protected openRecordDetail(record: PriceRecord): void {
+    this.selectedRecord.set(record);
+  }
+
+  protected closeRecordDetail(): void {
+    this.selectedRecord.set(null);
   }
 
   private filtersChanged(): void {
@@ -209,12 +243,13 @@ export class FuelsPage {
     this.loading.set(true);
     const key = this.searchKey();
     let scrolled = false;
+    const location = this.location();
     const subscription = this.polling
       .pollFuel(this.type(), {
         days: this.days(),
         limit: this.pageSize,
-        municipality: this.municipality().code,
         page,
+        ...(location ?? { municipality: this.municipality().code }),
       })
       .subscribe({
         next: (event) => {
@@ -290,7 +325,7 @@ export class FuelsPage {
     void this.router.navigate([], {
       queryParams: {
         type: this.type(),
-        municipality: this.municipality().code,
+        municipality: this.location() ? null : this.municipality().code,
         days: this.days(),
       },
       relativeTo: this.route,
@@ -299,7 +334,11 @@ export class FuelsPage {
   }
 
   private searchKey(): string {
-    return `${this.type()}:${this.municipality().code}:${this.days()}`;
+    const location = this.location();
+    const place = location
+      ? `${location.latitude}:${location.longitude}:${location.radius}`
+      : this.municipality().code;
+    return `${this.type()}:${place}:${this.days()}`;
   }
 
   private revalidationFailureMessage(): string {
@@ -326,5 +365,24 @@ export class FuelsPage {
     }
     this.toast.set(message);
     this.toastTimer = setTimeout(() => this.toast.set(null), 4500);
+  }
+
+  private sameLocation(first: GeographicSearch | null, second: GeographicSearch | null): boolean {
+    return (
+      first === second ||
+      (!!first &&
+        !!second &&
+        first.latitude === second.latitude &&
+        first.longitude === second.longitude &&
+        first.radius === second.radius)
+    );
+  }
+
+  private resumePendingSearch(location: GeographicSearch | null): void {
+    if (!location || !this.pendingSearch) {
+      return;
+    }
+    this.pendingSearch = false;
+    this.runSearch(true);
   }
 }

@@ -42,17 +42,18 @@ This repository contains the Angular frontend. A separate TáQuanto API protects
 ### Price search (`/produtos`)
 
 - Searches by a 3–50 character description or an 8, 12, 13, or 14 digit GTIN.
-- Filters by municipality and a recent period of 1, 3, 7, or 10 days.
+- Filters by municipality or the browser's current location within 5, 10, or 15 km, plus a recent period of 1, 3, 7, or 10 days.
 - Loads every Alagoas municipality from the bundled GeoJSON and supports selection by map or native `<select>`.
-- Keeps `q`, `municipality`, and `days` in the URL so a search can be revisited or shared.
+- Keeps `q`, `municipality`, and `days` in the URL for municipality searches.
 - Shows up to 50 records per page with accessible pagination.
+- Plots geolocated results on a theme-aware map and draws the selected nearby-search radius.
 - Displays sale value, unit, product, establishment, time, address, GTIN, and declared value when it differs.
 - Opens a native dialog with the full record and a map marker only when the source provides valid coordinates.
 - Preserves responsive loading, empty, validation, stale-cache, and failure states.
 
 ### Recent searches
 
-- Stores the 10 most recent unique combinations of query, municipality, and period.
+- Stores the 10 most recent unique municipality searches; precise browser locations are not saved.
 - Lets visitors repeat a complete search from its card.
 - Remains on the current browser through `localStorage`; it is not an account history.
 
@@ -67,7 +68,7 @@ This repository contains the Angular frontend. A separate TáQuanto API protects
 
 - Provides custom light and dark TáQuanto themes built with Tailwind CSS and daisyUI.
 - Uses the saved preference first, then the operating-system preference.
-- Includes semantic landmarks, labels, live status messages, native dialogs, visible focus states, 44 px interaction targets, and keyboard-operable municipality shapes.
+- Includes semantic landmarks, labels, live status messages, native dialogs, visible focus states, and keyboard-operable map markers and municipality shapes.
 - Disables nonessential motion when `prefers-reduced-motion` is enabled.
 
 ## Architecture
@@ -155,15 +156,16 @@ The search service calls:
 
 ```http
 GET /v1/prices?query=<text-or-gtin>&municipality=<ibge-code>&days=<1-10>&limit=50&page=<number>
+GET /v1/prices?query=<text-or-gtin>&latitude=<number>&longitude=<number>&radius=<1-15>&days=<1-10>&limit=50&page=<number>
 ```
 
 The response contains normalized sale records and pagination metadata. The frontend also validates the API cache protocol:
 
-| Response                                                                                   | Meaning                  | Client behavior                   |
-| ------------------------------------------------------------------------------------------ | ------------------------ | --------------------------------- |
-| `200`, `X-TaQuanto-Cache-Status: HIT`, `X-TaQuanto-Cache-Age: <seconds>`                    | Fresh result             | Render and stop polling.          |
-| `200`, `X-TaQuanto-Cache-Status: STALE`, `X-TaQuanto-Cache-Age: <seconds>`                  | Usable cached result     | Render, label it, and revalidate. |
-| `202`, `X-TaQuanto-Cache-Status: MISS`, `X-TaQuanto-Cache-Retry-After: 5`                   | Search is being prepared | Wait five seconds and retry.      |
+| Response                                                                   | Meaning                  | Client behavior                   |
+| -------------------------------------------------------------------------- | ------------------------ | --------------------------------- |
+| `200`, `X-TaQuanto-Cache-Status: HIT`, `X-TaQuanto-Cache-Age: <seconds>`   | Fresh result             | Render and stop polling.          |
+| `200`, `X-TaQuanto-Cache-Status: STALE`, `X-TaQuanto-Cache-Age: <seconds>` | Usable cached result     | Render, label it, and revalidate. |
+| `202`, `X-TaQuanto-Cache-Status: MISS`, `X-TaQuanto-Cache-Retry-After: 5`  | Search is being prepared | Wait five seconds and retry.      |
 
 Unexpected status/header combinations are rejected instead of being treated as valid data. Requests time out after five seconds.
 

@@ -12,42 +12,6 @@ import {
 } from '../../services/taquanto-api';
 import { SearchPage } from './search';
 
-const municipalityMap = {
-  type: 'FeatureCollection',
-  features: [
-    {
-      type: 'Feature',
-      properties: { code: '2700300', name: 'Arapiraca' },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [-36.7, -9.8],
-            [-36.6, -9.8],
-            [-36.6, -9.7],
-            [-36.7, -9.8],
-          ],
-        ],
-      },
-    },
-    {
-      type: 'Feature',
-      properties: { code: '2704302', name: 'Maceió' },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [-35.8, -9.7],
-            [-35.7, -9.7],
-            [-35.7, -9.6],
-            [-35.8, -9.7],
-          ],
-        ],
-      },
-    },
-  ],
-};
-
 const priceRecord: PriceRecord = {
   description: 'Arroz branco 1kg',
   gtin: '7891234567890',
@@ -184,11 +148,32 @@ describe('SearchPage', () => {
   it('coordinates the search through focused components', async () => {
     api.results = [priceRecord];
     const element = fixture.nativeElement as HTMLElement;
+    const filterLayout = () =>
+      [
+        '.query-field',
+        '.period-filter',
+        'app-municipality-select',
+        '.proximity-filter',
+        '.search-submit',
+      ].map((selector) => ({
+        order: getComputedStyle(element.querySelector<HTMLElement>(selector)!).order,
+        selector,
+      }));
+    const expectedLayout = [
+      { order: '', selector: '.query-field' },
+      { order: '', selector: '.period-filter' },
+      { order: '', selector: 'app-municipality-select' },
+      { order: '', selector: '.proximity-filter' },
+      { order: '', selector: '.search-submit' },
+    ];
 
     expect(element.querySelector('app-search-filters')).not.toBeNull();
     expect(element.querySelector('app-product-search-form')).not.toBeNull();
     expect(element.querySelector('app-recent-searches')).not.toBeNull();
     expect(element.querySelector('app-search-results')).not.toBeNull();
+    expect(filterLayout()).toEqual(expectedLayout);
+    const scrollIntoView = vi.fn();
+    element.querySelector<HTMLElement>('#search-results')!.scrollIntoView = scrollIntoView;
 
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
     input.value = 'arroz';
@@ -198,6 +183,8 @@ describe('SearchPage', () => {
       .dispatchEvent(new SubmitEvent('submit'));
     await fixture.whenStable();
 
+    expect(filterLayout()).toEqual(expectedLayout);
+    expect(scrollIntoView).not.toHaveBeenCalled();
     expect(element.querySelector('app-sale-record-card')).not.toBeNull();
     expect(element.querySelector('app-search-pagination')).not.toBeNull();
 
@@ -217,32 +204,42 @@ describe('SearchPage', () => {
     const filters = element.querySelector<HTMLElement>('.location-filter')!;
     const recentSearches = element.querySelector('app-recent-searches')!;
 
-    expect(form.compareDocumentPosition(filters) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(form.contains(filters)).toBe(true);
+    expect(form.classList).toContain('bg-transparent');
+    expect(form.classList).not.toContain('bg-base-100');
+    expect(getComputedStyle(element.querySelector<HTMLElement>('.query-field')!).order).toBe('');
+    expect(getComputedStyle(element.querySelector<HTMLElement>('.period-filter')!).order).toBe('');
+    expect(
+      getComputedStyle(element.querySelector<HTMLElement>('app-municipality-select')!).order,
+    ).toBe('');
+    expect(getComputedStyle(element.querySelector<HTMLElement>('.proximity-filter')!).order).toBe(
+      '',
+    );
+    expect(getComputedStyle(element.querySelector<HTMLElement>('.search-submit')!).order).toBe('');
     expect(
       filters.compareDocumentPosition(recentSearches) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(filters.querySelector('details')).not.toBeNull();
     expect(filters.textContent).toContain('Maceió');
     expect(filters.textContent).toContain('Últimas 24 horas');
-    expect(filters.textContent).not.toContain('Alterar filtros');
     expect(filters.querySelector('#municipality-select')?.getAttribute('data-value')).toBe(
       '2704302',
     );
-    expect(element.querySelector('app-municipality-map')).toBeNull();
-    http.expectNone('/assets/alagoas-municipios.geojson');
-
-    const details = filters.querySelector('details')!;
-    expect(details.open).toBe(true);
-    expect(details.querySelector('.filter-chevron')).not.toBeNull();
-    details.querySelector('summary')!.click();
-    await fixture.whenStable();
-    expect(details.open).toBe(false);
-    details.querySelector('summary')!.click();
-    await fixture.whenStable();
-    expect(details.open).toBe(true);
+    expect(element.querySelector('#product-query')?.classList).toContain('input-sm');
+    expect(element.querySelector<HTMLInputElement>('#product-query')?.required).toBe(true);
+    expect(filters.querySelector('#search-period')?.classList).toContain('select-sm');
+    expect(filters.querySelector<HTMLSelectElement>('#search-period')?.required).toBe(true);
+    expect(filters.querySelector('#municipality-select')?.getAttribute('aria-required')).toBe(
+      'true',
+    );
+    expect(filters.querySelector('#use-location')).not.toBeNull();
+    expect(
+      filters
+        .querySelector('#search-period')!
+        .compareDocumentPosition(filters.querySelector('#municipality-select')!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
 
     const municipalitySearch = filters.querySelector<HTMLInputElement>('#municipality-search')!;
-    expect(municipalitySearch.closest('details')).not.toBeNull();
     municipalitySearch.value = 'maceio';
     municipalitySearch.dispatchEvent(new Event('input'));
     await fixture.whenStable();
@@ -257,8 +254,9 @@ describe('SearchPage', () => {
     await fixture.whenStable();
     selectMunicipality(filters, '2700300');
     await fixture.whenStable();
-    expect(filters.querySelector('.filter-values')?.textContent).toContain('Arapiraca');
-    http.expectNone('/assets/alagoas-municipios.geojson');
+    expect(filters.querySelector('#municipality-select')?.getAttribute('data-value')).toBe(
+      '2700300',
+    );
 
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
     input.value = 'arroz';
@@ -274,25 +272,134 @@ describe('SearchPage', () => {
     ]);
   });
 
-  it('loads the municipal map only after the visitor requests it', async () => {
+  it('confirms current location once and searches with the selected radius', async () => {
+    api.results = [
+      {
+        ...priceRecord,
+        location: { ...priceRecord.location, latitude: -9.6658, longitude: -35.735 },
+      },
+    ];
+    const getCurrentPosition = vi.fn((success: PositionCallback) =>
+      success({
+        coords: {
+          accuracy: 10,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          latitude: -9.665,
+          longitude: -35.735,
+          speed: null,
+          toJSON: () => ({}),
+        },
+        timestamp: Date.now(),
+        toJSON: () => ({}),
+      }),
+    );
+    vi.stubGlobal('navigator', {
+      platform: navigator.platform,
+      userAgent: navigator.userAgent,
+      geolocation: { getCurrentPosition },
+    });
     const element = fixture.nativeElement as HTMLElement;
-    element.querySelector<HTMLDetailsElement>('.location-filter details')!.open = true;
-    const mapButton = element.querySelector<HTMLButtonElement>('.map-selector')!;
-    mapButton.focus();
-    mapButton.click();
+    const useLocation = element.querySelector<HTMLInputElement>('#use-location')!;
+
+    useLocation.checked = true;
+    useLocation.dispatchEvent(new Event('change'));
     await fixture.whenStable();
 
-    expect(document.activeElement).toBe(mapButton);
-    expect(mapButton.getAttribute('aria-expanded')).toBe('true');
-    expect(element.querySelector('app-municipality-map')).not.toBeNull();
-    http.expectOne('/assets/alagoas-municipios.geojson').flush(municipalityMap);
+    expect(element.querySelector('app-location-permission-dialog dialog')).not.toBeNull();
+    expect(element.querySelector('#municipality-select')).toBeNull();
+    element
+      .querySelector<HTMLButtonElement>('app-location-permission-dialog .btn-primary')!
+      .click();
     await fixture.whenStable();
 
-    mapButton.click();
+    expect(getCurrentPosition).toHaveBeenCalledOnce();
+    expect(localStorage.getItem('taquanto:location-consent')).toBe('true');
+    expect(element.querySelector('app-location-permission-dialog')).toBeNull();
+    const radius = element.querySelector<HTMLSelectElement>('#search-radius')!;
+    expect(radius.required).toBe(true);
+    expect([...radius.options].map(({ text }) => text)).toEqual(['5 km', '10 km', '15 km']);
+    radius.value = '15';
+    radius.dispatchEvent(new Event('change'));
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+    input.value = 'arroz';
+    input.dispatchEvent(new Event('input'));
+    element
+      .querySelector<HTMLFormElement>('#product-search')!
+      .dispatchEvent(new SubmitEvent('submit'));
     await fixture.whenStable();
-    expect(mapButton.textContent).toContain('Selecionar no mapa');
-    expect(mapButton.getAttribute('aria-expanded')).toBe('false');
-    expect(element.querySelector('app-municipality-map')).toBeNull();
+
+    expect(api.priceCalls.at(-1)).toEqual({
+      query: 'arroz',
+      params: {
+        latitude: -9.665,
+        longitude: -35.735,
+        radius: 15,
+        days: 1,
+        limit: 50,
+        page: 1,
+      },
+    });
+    await vi.waitFor(() => expect(element.querySelector('.results-sale-marker')).not.toBeNull());
+    expect(element.querySelector('.search-radius')).not.toBeNull();
+    expect(element.textContent).toContain('1 de 1 registros exibidos no mapa.');
+    const resultsMap = element.querySelector<HTMLElement>('.results-map')!;
+    resultsMap.scrollIntoView = vi.fn();
+    element.querySelector<HTMLButtonElement>('.map-record-button')!.click();
+    expect(resultsMap.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+    expect(element.querySelector('.leaflet-popup')).not.toBeNull();
+    const marker = element.querySelector<SVGElement>('.results-sale-marker')!;
+    marker.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    const popup = element.querySelector('.leaflet-popup')?.textContent;
+    expect(popup).toContain('R$ 6,29 / UN');
+    expect(popup).toContain('Arroz Branco 1kg');
+    expect(popup).toContain('Mercado Centro');
+    expect(popup).toContain('Rua Do Comércio, 10');
+    expect(element.querySelector('.recent-search-link')?.textContent).toContain(
+      'Arroz - Perto de mim (15 km) - Últimas 24 horas',
+    );
+    expect(JSON.parse(localStorage.getItem('taquanto:recent-searches') ?? '[]')[0]).toEqual({
+      query: 'arroz',
+      municipality: { code: '2704302', name: 'Maceió' },
+      days: 1,
+      useLocation: true,
+      radius: 15,
+    });
+
+    localStorage.removeItem('taquanto:location-consent');
+    input.value = 'feijão';
+    input.dispatchEvent(new Event('input'));
+    element
+      .querySelector<HTMLFormElement>('#product-search')!
+      .dispatchEvent(new SubmitEvent('submit'));
+    await fixture.whenStable();
+    expect(element.querySelector('app-location-permission-dialog dialog')).not.toBeNull();
+    expect(api.priceCalls).toHaveLength(1);
+    element
+      .querySelector<HTMLButtonElement>('app-location-permission-dialog .btn-primary')!
+      .click();
+    await fixture.whenStable();
+    expect(getCurrentPosition).toHaveBeenCalledTimes(2);
+    expect(element.querySelector('app-location-permission-dialog')).toBeNull();
+    expect(api.priceCalls.at(-1)?.query).toBe('feijão');
+
+    element.querySelector<HTMLInputElement>('#use-location')!.click();
+    localStorage.removeItem('taquanto:location-consent');
+    element.querySelector<HTMLButtonElement>('.recent-search-link')!.click();
+    await fixture.whenStable();
+    expect(element.querySelector('app-location-permission-dialog dialog')).not.toBeNull();
+    expect(api.priceCalls).toHaveLength(2);
+    element
+      .querySelector<HTMLButtonElement>('app-location-permission-dialog .btn-primary')!
+      .click();
+    await fixture.whenStable();
+    expect(getCurrentPosition).toHaveBeenCalledTimes(3);
+    expect(api.priceCalls.at(-1)?.params).toMatchObject({
+      latitude: -9.665,
+      longitude: -35.735,
+      radius: 15,
+    });
   });
 
   it('only searches when the form is submitted', async () => {
@@ -499,7 +606,7 @@ describe('SearchPage', () => {
     element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
     await fixture.whenStable();
 
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView).not.toHaveBeenCalled();
     expect(element.textContent).toContain('1-50 de 126 registros');
     expect(element.querySelector('[aria-current="page"]')?.textContent).toContain('1');
     element.querySelector<HTMLButtonElement>('.back-to-search')!.click();
@@ -521,7 +628,7 @@ describe('SearchPage', () => {
     element.querySelector<HTMLButtonElement>('[aria-label="Página 2"]')!.click();
     await fixture.whenStable();
 
-    expect(scrollIntoView).toHaveBeenCalledTimes(2);
+    expect(scrollIntoView).not.toHaveBeenCalled();
     expect(api.priceCalls.at(-1)?.params.page).toBe(2);
     expect(element.textContent).toContain('51-100 de 126 registros');
     expect(element.textContent).toContain('Feijão Carioca 1kg');
@@ -530,7 +637,7 @@ describe('SearchPage', () => {
     element.querySelector<HTMLButtonElement>('[aria-label="Página 3"]')!.click();
     await fixture.whenStable();
 
-    expect(scrollIntoView).toHaveBeenCalledTimes(3);
+    expect(scrollIntoView).not.toHaveBeenCalled();
     expect(api.priceCalls.at(-1)?.params.page).toBe(3);
     expect(element.textContent).toContain('101-126 de 126 registros');
     expect(element.querySelector('[aria-current="page"]')?.textContent).toContain('3');
@@ -677,7 +784,7 @@ describe('SearchPage', () => {
       query: 'arroz',
       params: { municipality: '2700300', days: 3, limit: 50, page: 1 },
     });
-    expect(scrollIntoView).toHaveBeenCalled();
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
   it('shows skeletons without blocking a replacement search', async () => {
@@ -726,7 +833,7 @@ describe('SearchPage', () => {
     });
     expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView).not.toHaveBeenCalled();
     expect(element.querySelector('.back-to-search')).not.toBeNull();
   });
 
@@ -815,7 +922,7 @@ describe('SearchPage', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(element.textContent).toContain('Arroz Em Cache');
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView).not.toHaveBeenCalled();
     expect(element.textContent).toContain('Exibindo dados em cache enquanto atualizamos.');
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
 
@@ -830,7 +937,7 @@ describe('SearchPage', () => {
     expect(element.textContent).toContain('Resultados atualizados.');
     expect(element.querySelector('.cache-status-dot')).not.toBeNull();
     expect(element.querySelector('.cache-status-dot-pending')).toBeNull();
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
   it('cancels stale revalidation when filters change', async () => {
