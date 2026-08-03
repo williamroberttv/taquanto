@@ -116,6 +116,7 @@ import { PriceRecord } from '../../services/taquanto-api';
   styles: `
     :host {
       display: block;
+      min-width: 0;
     }
 
     .lowest-price-tag {

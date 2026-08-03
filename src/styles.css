@@ -183,6 +183,8 @@ body {
 
 .price-card {
   height: 17.5rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
   border: 1px solid var(--tq-border70);
 }
 
@@ -196,6 +198,7 @@ body {
 .card-title-slot {
   display: -webkit-box;
   height: 2.75rem;
+  max-width: 100%;
   margin-top: 0;
   overflow: hidden;
   overflow-wrap: anywhere;
@@ -235,6 +238,15 @@ body {
 
 .card-location-slot {
   height: 1.4rem;
+}
+
+.card-location-slot .card-secondary {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-time-slot {
