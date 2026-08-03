@@ -36,7 +36,6 @@ interface RecentSearch {
   query: string;
   municipality: MunicipalitySelection;
   days: number;
-  searchedAt: number;
 }
 
 @Component({
@@ -300,26 +299,8 @@ export class SearchPage {
     return this.coordinates(record) !== null;
   }
 
-  protected formatRecentSearchTime(search: RecentSearch): string {
-    const diffMs = Date.now() - search.searchedAt;
-    const minuteMs = 60 * 1000;
-    const hourMs = 60 * minuteMs;
-    const dayMs = 24 * hourMs;
-    const dayCount = Math.floor(diffMs / dayMs);
-
-    if (diffMs < minuteMs) {
-      return 'agora';
-    }
-    if (diffMs < hourMs) {
-      return `${Math.floor(diffMs / minuteMs)}min`;
-    }
-    if (diffMs < dayMs) {
-      return `${Math.floor(diffMs / hourMs)}h`;
-    }
-    if (dayCount < 30) {
-      return `${dayCount}d`;
-    }
-    return dayCount < 365 ? `${Math.floor(dayCount / 30)}m` : `${Math.floor(dayCount / 365)}a`;
+  protected formatRecentSearchPeriod(days: number): string {
+    return this.periods.find((period) => period.days === days)?.label ?? '';
   }
 
   private runUrlSearch(): void {
@@ -591,7 +572,6 @@ export class SearchPage {
           const municipality = search['municipality'];
           return (
             typeof search['query'] === 'string' &&
-            typeof search['searchedAt'] === 'number' &&
             typeof search['days'] === 'number' &&
             this.isPeriod(search['days']) &&
             !!municipality &&
@@ -611,7 +591,6 @@ export class SearchPage {
       query,
       municipality: this.municipality(),
       days: this.days(),
-      searchedAt: Date.now(),
     };
     const searchKey = this.recentSearchKey(search);
     const searches = [

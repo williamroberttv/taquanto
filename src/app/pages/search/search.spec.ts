@@ -474,8 +474,6 @@ describe('SearchPage', () => {
   });
 
   it('saves and repeats a complete recent search from its compact link', async () => {
-    const searchedAt = new Date('2026-07-16T01:00:00Z').getTime();
-    const dateNow = vi.spyOn(Date, 'now').mockReturnValue(searchedAt);
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
     const period = element.querySelector<HTMLSelectElement>('#search-period')!;
@@ -501,17 +499,15 @@ describe('SearchPage', () => {
     ).toBeTruthy();
     expect(recentSearchesTitle?.textContent).toContain('Suas últimas pesquisas');
     expect(recentSearchesTitle?.querySelector('svg')).toBeNull();
-    expect(link?.textContent).toContain('Arroz • Arapiraca • agora');
+    expect(link?.textContent).toContain('Arroz - Arapiraca - Últimos 3 dias');
     expect(JSON.parse(localStorage.getItem('taquanto:recent-searches') ?? '[]')).toEqual([
       {
         query: 'arroz',
         municipality: { code: '2700300', name: 'Arapiraca' },
         days: 3,
-        searchedAt,
       },
     ]);
 
-    dateNow.mockReturnValue(searchedAt + 10 * 60 * 1000);
     input.value = '';
     input.dispatchEvent(new Event('input'));
     period.value = '1';
@@ -520,7 +516,7 @@ describe('SearchPage', () => {
     municipality.dispatchEvent(new Event('change'));
     await fixture.whenStable();
 
-    expect(link?.textContent).toContain('10min');
+    expect(link?.textContent).toContain('Últimos 3 dias');
     const scrollIntoView = vi.fn();
     element.querySelector<HTMLElement>('#search-results')!.scrollIntoView = scrollIntoView;
     element.querySelector<HTMLButtonElement>('.recent-search-link')!.click();
