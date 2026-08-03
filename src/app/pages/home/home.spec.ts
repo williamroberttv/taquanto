@@ -29,9 +29,10 @@ describe('Home', () => {
     expect(compiled.querySelector('.text-rotate')?.textContent).toContain('o café');
     expect(compiled.querySelector('.text-rotate')?.textContent).toContain('a gasolina');
     expect(compiled.querySelector('.text-rotate')?.textContent).toContain('o etanol');
-    expect(text).toContain('Registros oficiais e organizados para comparação');
+    expect(text).toContain('Vendas registradas em NFC-e, organizadas para consulta');
+    expect(text).toContain('Três passos para comparar registros de venda.');
     expect(text).toContain('Guarde a venda, não uma promessa de preço.');
-    expect(text).toContain('Buscar produto');
+    expect(text).toContain('Exemplo de busca por produto');
     expect(text).toContain('Prévia no mapa');
     expect(
       compiled.querySelector('summary[aria-label="Abrir menu de navegação"]')?.parentElement
@@ -49,7 +50,7 @@ describe('Home', () => {
       'Pesquisar produtos',
     );
     expect(compiled.querySelector('.hero a[href="/combustiveis"]')?.textContent).toContain(
-      'Consultar combustíveis',
+      'Buscar preços de combustíveis',
     );
     expect(compiled.querySelectorAll('[aria-label="Tipos de consulta"] article')).toHaveLength(2);
     expect(compiled.querySelector('footer a[href="/#como-funciona"]')).not.toBeNull();
