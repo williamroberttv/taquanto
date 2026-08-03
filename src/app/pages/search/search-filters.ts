@@ -1,171 +1,272 @@
-import { Component, computed, input, output, signal } from '@angular/core';
-import { MunicipalityMap } from '../../components/municipality-map/municipality-map';
+import { isPlatformBrowser } from '@angular/common';
+import { Component, PLATFORM_ID, computed, inject, input, output, signal } from '@angular/core';
+import { LocationPermissionDialog } from '../../components/location-permission-dialog/location-permission-dialog';
 import { MunicipalitySelect } from '../../components/municipality-select/municipality-select';
 import { MunicipalitySelection } from '../../municipalities';
+import { GeographicSearch } from '../../services/taquanto-api';
 import { SEARCH_PERIODS } from './search.models';
 
 @Component({
   selector: 'app-search-filters',
-  imports: [MunicipalityMap, MunicipalitySelect],
+  imports: [LocationPermissionDialog, MunicipalitySelect],
+  host: { class: 'location-filter' },
   template: `
-    <section class="location-filter card mt-4 bg-base-200 shadow-sm">
-      <details open>
-        <summary class="filter-summary">
-          <span>
-            <span class="filter-label">Filtros da consulta</span>
-            <span class="filter-values">{{ municipality().name }} · {{ periodLabel() }}</span>
-          </span>
-          <svg class="filter-chevron" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        </summary>
+    <fieldset class="period-filter fieldset">
+      <legend class="fieldset-legend">
+        Período
+        <span class="text-error" aria-hidden="true">*</span>
+        <span class="sr-only">(obrigatório)</span>
+      </legend>
+      <select
+        id="search-period"
+        class="select select-sm min-h-10 w-full"
+        aria-label="Período da consulta"
+        name="days"
+        required
+        [value]="days()"
+        (change)="selectPeriod($event)"
+      >
+        @for (period of periods; track period.days) {
+          <option [value]="period.days">{{ period.label }}{{ period.hint }}</option>
+        }
+      </select>
+    </fieldset>
 
-        <div class="filter-panel">
-          <div class="filter-fields">
-            <app-municipality-select
-              [municipality]="municipality()"
-              (municipalityChange)="municipalityChange.emit($event)"
-            />
+    @if (!locationMode()) {
+      <app-municipality-select
+        [municipality]="municipality()"
+        (municipalityChange)="municipalityChange.emit($event)"
+      />
+    }
 
-            <div class="fieldset">
-              <label class="fieldset-legend" for="search-period">Período</label>
-              <select
-                id="search-period"
-                class="select w-full"
-                [value]="days()"
-                (change)="selectPeriod($event)"
-              >
-                @for (period of periods; track period.days) {
-                  <option [value]="period.days">{{ period.label }}{{ period.hint }}</option>
-                }
-              </select>
-            </div>
-          </div>
-
-          @if (productSearch()) {
-            <button
-              type="button"
-              class="map-selector btn btn-outline"
-              aria-controls="municipality-map-panel"
-              [attr.aria-expanded]="mapVisible()"
-              (click)="toggleMap()"
-            >
-              {{ mapVisible() ? 'Recolher mapa' : 'Selecionar no mapa' }}
-            </button>
+    @if (locationMode()) {
+      <fieldset class="radius-filter fieldset">
+        <legend class="fieldset-legend">
+          Raio
+          <span class="text-error" aria-hidden="true">*</span>
+          <span class="sr-only">(obrigatório)</span>
+        </legend>
+        <select
+          id="search-radius"
+          class="select select-sm min-h-10 w-full"
+          aria-label="Raio da busca"
+          name="radius"
+          required
+          [value]="radius()"
+          (change)="selectRadius($event)"
+        >
+          @for (option of radii; track option) {
+            <option [value]="option">{{ option }} km</option>
           }
+        </select>
+      </fieldset>
+    }
 
-          @if (mapVisible() || !productSearch()) {
-            <div id="municipality-map-panel">
-              @defer (when mapVisible() || !productSearch()) {
-                <app-municipality-map
-                  [selectedCode]="municipality().code"
-                  (municipalityChange)="municipalityChange.emit($event)"
-                  (municipalityReady)="municipalityReady.emit($event)"
-                />
-              } @loading {
-                <p role="status">Carregando mapa municipal...</p>
-              }
-            </div>
-          }
-        </div>
-      </details>
-    </section>
+    <fieldset class="proximity-filter fieldset toggle-field">
+      <legend class="fieldset-legend">Proximidade</legend>
+      <label class="label min-h-10 cursor-pointer justify-start gap-2" for="use-location">
+        <input
+          id="use-location"
+          type="checkbox"
+          class="toggle toggle-primary toggle-sm"
+          [checked]="locationMode()"
+          [disabled]="locating()"
+          (change)="toggleLocation($event)"
+        />
+        Buscar perto de mim
+      </label>
+    </fieldset>
+
+    @if (locationError()) {
+      <p class="filter-message text-sm font-semibold text-error" role="alert">
+        {{ locationError() }}
+      </p>
+    }
+
+    @if (permissionDialogVisible()) {
+      <app-location-permission-dialog
+        [loading]="locating()"
+        (confirmed)="confirmLocation()"
+        (declined)="declineLocation()"
+      />
+    }
   `,
   styles: `
     :host {
-      display: block;
+      display: contents;
     }
 
-    .filter-summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: 1rem 1.25rem;
-      cursor: pointer;
-      list-style: none;
+    app-municipality-select {
+      min-width: 0;
     }
 
-    .filter-summary::-webkit-details-marker {
-      display: none;
+    .period-filter,
+    .radius-filter {
+      min-width: 0;
     }
 
-    .filter-label,
-    .filter-values {
-      display: block;
+    .toggle-field {
+      min-width: 0;
     }
 
-    .filter-label {
-      color: var(--tq-muted);
-      font-size: 0.75rem;
-      font-weight: 800;
-      text-transform: uppercase;
-    }
-
-    .filter-values {
-      margin-top: 0.25rem;
-      font-weight: 700;
-    }
-
-    .filter-chevron {
-      width: 1.25rem;
-      height: 1.25rem;
-      flex: none;
-      color: var(--color-primary);
-      fill: none;
-      stroke: currentColor;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      stroke-width: 2;
-      transition: transform 200ms ease;
-    }
-
-    details[open] .filter-chevron {
-      transform: rotate(180deg);
-    }
-
-    .filter-panel {
-      display: grid;
-      gap: 1rem;
-      border-top: 1px solid var(--tq-border);
-      padding: 1.25rem;
-    }
-
-    .filter-fields {
-      display: grid;
-      gap: 1rem;
-    }
-
-    .map-selector {
-      justify-self: start;
-    }
-
-    @media (min-width: 640px) {
-      .filter-fields {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+    .filter-message {
+      grid-column: 1 / -1;
     }
   `,
 })
 export class SearchFilters {
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly consentKey = 'taquanto:location-consent';
+
   readonly municipality = input.required<MunicipalitySelection>();
   readonly days = input.required<number>();
-  readonly productSearch = input(true);
+  readonly location = input.required<GeographicSearch | null>();
   readonly municipalityChange = output<MunicipalitySelection>();
-  readonly municipalityReady = output<MunicipalitySelection>();
   readonly daysChange = output<number>();
+  readonly locationChange = output<GeographicSearch | null>();
+  readonly locationPendingChange = output<boolean>();
 
-  protected readonly mapVisible = signal(false);
+  protected readonly locating = signal(false);
+  protected readonly locationError = signal<string | null>(null);
+  protected readonly permissionDialogVisible = signal(false);
+  protected readonly requestingLocation = signal(false);
+  protected readonly selectedRadius = signal(5);
   protected readonly periods = SEARCH_PERIODS;
-  protected readonly periodLabel = computed(
-    () => this.periods.find((period) => period.days === this.days())?.label ?? '',
+  protected readonly radii = [5, 10, 15] as const;
+  protected readonly locationMode = computed(
+    () => this.requestingLocation() || this.location() !== null,
   );
+  protected readonly radius = computed(() => this.location()?.radius ?? this.selectedRadius());
 
   protected selectPeriod(event: Event): void {
     this.daysChange.emit(Number((event.target as HTMLSelectElement).value));
   }
 
-  protected toggleMap(): void {
-    this.mapVisible.update((visible) => !visible);
+  protected toggleLocation(event: Event): void {
+    if (!(event.target as HTMLInputElement).checked) {
+      this.declineLocation();
+      return;
+    }
+
+    this.requestLocation();
+  }
+
+  requestLocation(radius = this.radius()): void {
+    if (this.radii.includes(radius as (typeof this.radii)[number])) {
+      this.selectedRadius.set(radius);
+    }
+    if (this.locating() || this.permissionDialogVisible()) {
+      return;
+    }
+    this.locationError.set(null);
+    this.requestingLocation.set(true);
+    this.locationPendingChange.emit(true);
+    if (this.hasConsent()) {
+      this.locate();
+    } else {
+      this.permissionDialogVisible.set(true);
+    }
+  }
+
+  validateLocationPermission(): boolean {
+    if (!this.locationMode()) {
+      return true;
+    }
+    if (this.hasConsent() && this.location() !== null) {
+      return true;
+    }
+    this.requestLocation();
+    return false;
+  }
+
+  protected confirmLocation(): void {
+    try {
+      localStorage.setItem(this.consentKey, 'true');
+    } catch {
+      // Consent still applies to this visit when storage is unavailable.
+    }
+    this.locate();
+  }
+
+  protected declineLocation(): void {
+    this.locating.set(false);
+    this.permissionDialogVisible.set(false);
+    this.requestingLocation.set(false);
+    this.locationPendingChange.emit(false);
+    this.locationChange.emit(null);
+  }
+
+  protected selectRadius(event: Event): void {
+    const radius = Number((event.target as HTMLSelectElement).value);
+    if (!this.radii.includes(radius as (typeof this.radii)[number])) {
+      return;
+    }
+    this.selectedRadius.set(radius);
+    const location = this.location();
+    if (location) {
+      this.locationChange.emit({ ...location, radius });
+    }
+  }
+
+  private locate(): void {
+    if (!isPlatformBrowser(this.platformId) || !navigator.geolocation) {
+      this.failLocation('A localização não está disponível neste navegador.');
+      return;
+    }
+
+    this.locating.set(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        if (!this.validCoordinates(coords.latitude, coords.longitude)) {
+          this.failLocation('O navegador retornou uma localização inválida.');
+          return;
+        }
+        this.locating.set(false);
+        this.permissionDialogVisible.set(false);
+        this.requestingLocation.set(false);
+        this.locationPendingChange.emit(false);
+        this.locationChange.emit({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          radius: this.radius(),
+        });
+      },
+      () =>
+        this.failLocation(
+          'Não foi possível obter sua localização. Verifique a permissão do navegador.',
+        ),
+      { enableHighAccuracy: false, maximumAge: 60_000, timeout: 10_000 },
+    );
+  }
+
+  private failLocation(message: string): void {
+    this.locating.set(false);
+    this.permissionDialogVisible.set(false);
+    this.requestingLocation.set(false);
+    this.locationPendingChange.emit(false);
+    this.locationError.set(message);
+    this.locationChange.emit(null);
+  }
+
+  private hasConsent(): boolean {
+    if (!isPlatformBrowser(this.platformId)) {
+      return false;
+    }
+    try {
+      return localStorage.getItem(this.consentKey) === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  private validCoordinates(latitude: number, longitude: number): boolean {
+    return (
+      Number.isFinite(latitude) &&
+      Number.isFinite(longitude) &&
+      latitude >= -90 &&
+      latitude <= 90 &&
+      longitude >= -180 &&
+      longitude <= 180
+    );
   }
 }

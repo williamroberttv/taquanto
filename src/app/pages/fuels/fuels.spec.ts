@@ -12,42 +12,6 @@ import {
 } from '../../services/taquanto-api';
 import { FuelsPage } from './fuels';
 
-const municipalityMap = {
-  type: 'FeatureCollection',
-  features: [
-    {
-      type: 'Feature',
-      properties: { code: '2700300', name: 'Arapiraca' },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [-36.7, -9.8],
-            [-36.6, -9.8],
-            [-36.6, -9.7],
-            [-36.7, -9.8],
-          ],
-        ],
-      },
-    },
-    {
-      type: 'Feature',
-      properties: { code: '2704302', name: 'Maceió' },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [-35.8, -9.7],
-            [-35.7, -9.7],
-            [-35.7, -9.6],
-            [-35.8, -9.7],
-          ],
-        ],
-      },
-    },
-  ],
-};
-
 const fuelRecord: PriceRecord = {
   description: 'Gasolina aditivada',
   gtin: '',
@@ -121,6 +85,7 @@ describe('FuelsPage', () => {
   let setFiltersPosition: (visible: boolean, top?: number) => void;
 
   beforeEach(async () => {
+    localStorage.clear();
     api = new TaquantoApiStub();
     routeParams = {};
     router = { navigate: vi.fn(() => Promise.resolve(true)) };
@@ -167,24 +132,36 @@ describe('FuelsPage', () => {
     fixture = TestBed.createComponent(FuelsPage);
     http = TestBed.inject(HttpTestingController);
     await fixture.whenStable();
-    http.expectOne('/assets/alagoas-municipios.geojson').flush(municipalityMap);
-    await fixture.whenStable();
   });
 
-  it('starts with the shared filters expanded and Maceió selected before the map loads', async () => {
-    fixture.destroy();
-    fixture = TestBed.createComponent(FuelsPage);
-    await fixture.whenStable();
-
+  it('starts with compact shared filters without the visual municipality selector', async () => {
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector<HTMLDetailsElement>('.location-filter details')?.open).toBe(true);
-    expect(element.querySelector('.filter-chevron')).not.toBeNull();
-    expect(element.textContent).not.toContain('Alterar filtros');
+    const form = element.querySelector<HTMLFormElement>('#fuel-search')!;
+    expect(form.classList).toContain('bg-transparent');
+    expect(form.classList).not.toContain('bg-base-100');
     const municipalitySearch = element.querySelector<HTMLInputElement>('#municipality-search')!;
     expect(municipalitySearch).not.toBeNull();
-    const initialMunicipality = element
-      .querySelector('#municipality-select')
-      ?.getAttribute('data-value');
+    expect(element.querySelector('#municipality-select')?.getAttribute('data-value')).toBe(
+      '2704302',
+    );
+    expect(element.querySelector('#fuel-type')?.classList).toContain('select-sm');
+    expect(element.querySelector<HTMLSelectElement>('#fuel-type')?.required).toBe(true);
+    expect(element.querySelector('#search-period')?.classList).toContain('select-sm');
+    expect(element.querySelector<HTMLSelectElement>('#search-period')?.required).toBe(true);
+    expect(getComputedStyle(element.querySelector<HTMLElement>('.period-filter')!).order).toBe('');
+    expect(getComputedStyle(element.querySelector<HTMLElement>('.fuel-type-filter')!).order).toBe(
+      '',
+    );
+    expect(
+      getComputedStyle(element.querySelector<HTMLElement>('app-municipality-select')!).order,
+    ).toBe('');
+    expect(getComputedStyle(element.querySelector<HTMLElement>('.proximity-filter')!).order).toBe(
+      '',
+    );
+    expect(getComputedStyle(element.querySelector<HTMLElement>('.search-submit')!).order).toBe('');
+    expect(element.querySelector('#municipality-select')?.getAttribute('aria-required')).toBe(
+      'true',
+    );
 
     municipalitySearch.value = 'maceio';
     municipalitySearch.dispatchEvent(new Event('input'));
@@ -193,10 +170,6 @@ describe('FuelsPage', () => {
       element.querySelectorAll<HTMLButtonElement>('.municipality-option'),
     ).map(({ value, textContent }) => [value, textContent?.trim()]);
 
-    http.expectOne('/assets/alagoas-municipios.geojson').flush(municipalityMap);
-    await fixture.whenStable();
-
-    expect(initialMunicipality).toBe('2704302');
     expect(filteredMunicipalities).toEqual([['2704302', 'Maceió']]);
   });
 
@@ -267,8 +240,83 @@ describe('FuelsPage', () => {
     expect(element.textContent).toContain('Posto Centro');
     expect(element.textContent).toContain('Rua Do Comércio, 10');
     expect(element.querySelector('time')?.getAttribute('datetime')).toBe(fuelRecord.sold_at);
-    expect(element.querySelector('.favorite-toggle')).toBeNull();
+    const favorite = element.querySelector<HTMLButtonElement>('.favorite-toggle')!;
+    expect(favorite.getAttribute('aria-pressed')).toBe('false');
+    favorite.click();
+    await fixture.whenStable();
+    expect(favorite.getAttribute('aria-pressed')).toBe('true');
+    const mapButton = element.querySelector<HTMLButtonElement>('.map-record-button')!;
+    expect(mapButton.disabled).toBe(true);
+    expect(mapButton.getAttribute('aria-label')).toBe('Localização indisponível');
+    element.querySelector<HTMLButtonElement>('.detail-button')!.click();
+    await fixture.whenStable();
+    expect(element.querySelector('app-sale-record-detail-dialog dialog')).not.toBeNull();
     expect(element.textContent).not.toContain('oferta garantida');
+  });
+
+  it('searches fuels near the confirmed browser location', async () => {
+    localStorage.setItem('taquanto:location-consent', 'true');
+    const getCurrentPosition = vi.fn((success: PositionCallback) =>
+      success({
+        coords: {
+          accuracy: 10,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          latitude: -9.665,
+          longitude: -35.735,
+          speed: null,
+          toJSON: () => ({}),
+        },
+        timestamp: Date.now(),
+        toJSON: () => ({}),
+      }),
+    );
+    vi.stubGlobal('navigator', {
+      platform: navigator.platform,
+      userAgent: navigator.userAgent,
+      geolocation: { getCurrentPosition },
+    });
+    const element = fixture.nativeElement as HTMLElement;
+
+    element.querySelector<HTMLInputElement>('#use-location')!.click();
+    await fixture.whenStable();
+    element.querySelector<HTMLSelectElement>('#search-radius')!.value = '10';
+    element.querySelector<HTMLSelectElement>('#search-radius')!.dispatchEvent(new Event('change'));
+    element
+      .querySelector<HTMLFormElement>('#fuel-search')!
+      .dispatchEvent(new SubmitEvent('submit'));
+    await fixture.whenStable();
+
+    expect(element.querySelector('#municipality-select')).toBeNull();
+    expect(element.querySelector('app-location-permission-dialog')).toBeNull();
+    expect(api.fuelCalls.at(-1)).toEqual({
+      type: 1,
+      params: {
+        latitude: -9.665,
+        longitude: -35.735,
+        radius: 10,
+        days: 1,
+        limit: 50,
+        page: 1,
+      },
+    });
+
+    localStorage.removeItem('taquanto:location-consent');
+    element.querySelector<HTMLSelectElement>('#fuel-type')!.value = '2';
+    element.querySelector<HTMLSelectElement>('#fuel-type')!.dispatchEvent(new Event('change'));
+    element
+      .querySelector<HTMLFormElement>('#fuel-search')!
+      .dispatchEvent(new SubmitEvent('submit'));
+    await fixture.whenStable();
+    expect(element.querySelector('app-location-permission-dialog dialog')).not.toBeNull();
+    expect(api.fuelCalls).toHaveLength(1);
+    element
+      .querySelector<HTMLButtonElement>('app-location-permission-dialog .btn-primary')!
+      .click();
+    await fixture.whenStable();
+    expect(getCurrentPosition).toHaveBeenCalledTimes(2);
+    expect(api.fuelCalls.at(-1)?.type).toBe(2);
   });
 
   it('loads a shared fuel URL directly', async () => {
@@ -276,8 +324,6 @@ describe('FuelsPage', () => {
     routeParams = { type: '5', municipality: '2700300', days: '7' };
 
     fixture = TestBed.createComponent(FuelsPage);
-    await fixture.whenStable();
-    http.expectOne('/assets/alagoas-municipios.geojson').flush(municipalityMap);
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -358,5 +404,7 @@ describe('FuelsPage', () => {
     http.verify();
     vi.useRealTimers();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    localStorage.clear();
   });
 });

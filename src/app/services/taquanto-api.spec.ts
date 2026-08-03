@@ -126,6 +126,31 @@ describe('TaquantoApi', () => {
     expect(response?.cacheStatus).toBe('HIT');
   });
 
+  it('uses latitude, longitude and radius instead of municipality for nearby searches', () => {
+    api
+      .prices('arroz', {
+        latitude: -9.665,
+        longitude: -35.735,
+        radius: 15,
+        days: 3,
+        limit: 50,
+        page: 1,
+      })
+      .subscribe();
+
+    const request = http.expectOne((req) => req.url === 'http://localhost:8080/v1/prices');
+    expect(request.request.params.get('latitude')).toBe('-9.665');
+    expect(request.request.params.get('longitude')).toBe('-35.735');
+    expect(request.request.params.get('radius')).toBe('15');
+    expect(request.request.params.has('municipality')).toBe(false);
+
+    request.flush(null, {
+      headers: { 'X-TaQuanto-Cache-Status': 'HIT' },
+      status: 200,
+      statusText: 'OK',
+    });
+  });
+
   it('maps a successful empty response as empty data', () => {
     let response: PriceSearchResponse | undefined;
 

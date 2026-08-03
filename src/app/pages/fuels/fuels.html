@@ -18,10 +18,8 @@
           Buscar preços dos combustíveis em Alagoas
         </h1>
         <p class="mt-4 leading-7 text-[var(--tq-muted)]">
-          Compare registros de venda NFC-e de combustíveis retornados pela API Tá<span
-            class="text-primary"
-            >Quanto</span
-          >. Os valores são históricos, não ofertas ou garantia de preço atual.
+          Compare registros de venda NFC-e de combustíveis em Alagoas. Os valores são históricos,
+          não ofertas ou garantia de preço atual.
         </p>
       </div>
 
@@ -29,17 +27,22 @@
         #fuelForm
         id="fuel-search"
         tabindex="-1"
-        class="card mt-8 grid max-w-3xl scroll-mt-20 gap-4 bg-base-100 p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+        class="filter-form card mt-8 grid scroll-mt-20 gap-3 bg-transparent p-4"
         aria-labelledby="fuel-search-title"
         (submit)="submit($event)"
       >
-        <div class="fieldset">
-          <label id="fuel-search-title" class="fieldset-legend" for="fuel-type">
+        <fieldset class="fuel-type-filter fieldset">
+          <legend id="fuel-search-title" class="fieldset-legend">
             Combustível para comparar
-          </label>
+            <span class="text-error" aria-hidden="true">*</span>
+            <span class="sr-only">(obrigatório)</span>
+          </legend>
           <select
             id="fuel-type"
-            class="select min-h-12 w-full"
+            class="select select-sm min-h-10 w-full"
+            aria-labelledby="fuel-search-title"
+            name="type"
+            required
             [value]="type()"
             (change)="selectType($event)"
           >
@@ -47,11 +50,22 @@
               <option [value]="fuel.id">{{ fuel.label }}</option>
             }
           </select>
-        </div>
+        </fieldset>
+
+        <app-search-filters
+          [municipality]="municipality()"
+          [days]="days()"
+          [location]="location()"
+          (municipalityChange)="selectMunicipality($event)"
+          (daysChange)="selectPeriod($event)"
+          (locationChange)="selectLocation($event)"
+          (locationPendingChange)="locationPending.set($event)"
+        />
+
         <button
           type="submit"
-          class="btn btn-primary min-h-12 sm:mb-1"
-          [disabled]="!filtersReady()"
+          class="search-submit btn btn-primary btn-sm min-h-10 self-end"
+          [disabled]="locationPending()"
         >
           <svg
             class="h-5 w-5 fill-none stroke-current stroke-2"
@@ -61,28 +75,22 @@
             <circle cx="11" cy="11" r="7" />
             <path d="m16 16 4 4" />
           </svg>
-          {{ !filtersReady() ? 'Carregando...' : loading() ? 'Buscando...' : 'Buscar' }}
+          {{ locationPending() ? 'Obtendo localização...' : loading() ? 'Buscando...' : 'Buscar' }}
         </button>
       </form>
 
-      <app-search-filters
-        [municipality]="municipality()"
-        [days]="days()"
-        [productSearch]="false"
-        (municipalityChange)="selectMunicipality($event)"
-        (municipalityReady)="municipalityReady($event)"
-        (daysChange)="selectPeriod($event)"
-      />
-
       <app-search-results
         kind="fuel"
-        [actions]="false"
         [records]="records()"
         [pagination]="pagination()"
         [loading]="loading()"
         [emptyMessage]="emptyMessage()"
         [cacheMessage]="cacheMessage()"
         [cachePending]="cachePending()"
+        [searchLocation]="location()"
+        [isFavorite]="isFavorite"
+        (favoriteToggled)="toggleFavorite($event)"
+        (detailsRequested)="openRecordDetail($event)"
         (pageSelected)="loadPage($event)"
       />
     </section>
@@ -108,6 +116,15 @@
     <div class="toast toast-end z-70">
       <p class="alert alert-error max-w-sm font-semibold" role="alert">{{ toast() }}</p>
     </div>
+  }
+
+  @if (selectedRecord(); as record) {
+    <app-sale-record-detail-dialog
+      [record]="record"
+      [favorite]="isFavorite(record)"
+      (favoriteToggled)="toggleFavorite($event)"
+      (closed)="closeRecordDetail()"
+    />
   }
 
   <app-footer />

@@ -104,6 +104,24 @@ html[data-theme='dark'] {
   --tq-border70: rgb(52 57 70 / 70%);
 }
 
+html[data-theme='dark'] .btn {
+  color: #fff;
+}
+
+html[data-theme='dark'] .btn-primary:not(.btn-outline) {
+  border-color: #6c47ff;
+  background-color: #6c47ff;
+  color: #fff;
+}
+
+@media (hover: hover) {
+  html[data-theme='dark'] .btn-primary:not(.btn-outline):hover {
+    border-color: #5631df;
+    background-color: #5631df;
+    color: #fff;
+  }
+}
+
 body {
   background: var(--tq-canvas);
   color: var(--tq-ink);
@@ -242,6 +260,10 @@ body {
 
 .search-sale-marker {
   filter: drop-shadow(0 4px 7px color-mix(in srgb, var(--color-primary) 42%, transparent));
+}
+
+html[data-theme='dark'] app-search-results-map .leaflet-tile {
+  filter: brightness(0.68) invert(1) contrast(1.7) hue-rotate(185deg) saturate(0.55);
 }
 
 .leaflet-popup-content-wrapper {

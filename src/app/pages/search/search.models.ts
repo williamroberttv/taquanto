@@ -4,6 +4,8 @@ export interface RecentSearch {
   query: string;
   municipality: MunicipalitySelection;
   days: number;
+  useLocation?: boolean;
+  radius?: number;
 }
 
 export const SEARCH_PERIODS = [

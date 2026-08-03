@@ -54,12 +54,19 @@ export interface Location {
   source: string;
 }
 
-export interface PricePageParams {
-  municipality: string;
+interface PageParams {
   days: number;
   limit: number;
   page: number;
 }
+
+export interface GeographicSearch {
+  latitude: number;
+  longitude: number;
+  radius: number;
+}
+
+export type PricePageParams = PageParams & ({ municipality: string } | GeographicSearch);
 
 export type CacheStatus = 'HIT' | 'STALE' | 'MISS';
 
@@ -87,9 +94,9 @@ export class TaquantoApi {
     return this.cachedSearch<SearchResponse>('prices', {
       days: String(pageParams.days),
       limit: String(pageParams.limit),
-      municipality: pageParams.municipality,
       page: String(pageParams.page),
       query,
+      ...this.locationParams(pageParams),
     });
   }
 
@@ -97,10 +104,20 @@ export class TaquantoApi {
     return this.cachedSearch<FuelResponse>('fuels', {
       days: String(pageParams.days),
       limit: String(pageParams.limit),
-      municipality: pageParams.municipality,
       page: String(pageParams.page),
       type: String(type),
+      ...this.locationParams(pageParams),
     });
+  }
+
+  private locationParams(pageParams: PricePageParams): Record<string, string> {
+    return 'municipality' in pageParams
+      ? { municipality: pageParams.municipality }
+      : {
+          latitude: String(pageParams.latitude),
+          longitude: String(pageParams.longitude),
+          radius: String(pageParams.radius),
+        };
   }
 
   private cachedSearch<T extends SearchResultData>(

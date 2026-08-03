@@ -4,14 +4,19 @@ import { ALAGOAS_MUNICIPALITIES, MunicipalitySelection } from '../../municipalit
 @Component({
   selector: 'app-municipality-select',
   template: `
-    <div class="fieldset">
-      <span id="municipality-label" class="fieldset-legend">Município</span>
+    <fieldset class="fieldset">
+      <legend id="municipality-label" class="fieldset-legend">
+        Município
+        <span class="text-error" aria-hidden="true">*</span>
+        <span class="sr-only">(obrigatório)</span>
+      </legend>
       <details #dropdown class="dropdown w-full" (toggle)="toggleDropdown(dropdown.open)">
         <summary
           #trigger
           id="municipality-select"
-          class="select min-h-11 w-full cursor-pointer list-none bg-base-100"
+          class="select select-sm min-h-10 w-full cursor-pointer list-none bg-base-100"
           aria-haspopup="listbox"
+          aria-required="true"
           aria-controls="municipality-options"
           aria-labelledby="municipality-label municipality-value"
           [attr.aria-expanded]="open()"
@@ -28,7 +33,7 @@ import { ALAGOAS_MUNICIPALITIES, MunicipalitySelection } from '../../municipalit
             #searchInput
             id="municipality-search"
             type="search"
-            class="input w-full"
+            class="input input-sm min-h-10 w-full"
             autocomplete="off"
             placeholder="Buscar município"
             aria-controls="municipality-options"
@@ -66,7 +71,7 @@ import { ALAGOAS_MUNICIPALITIES, MunicipalitySelection } from '../../municipalit
           </div>
         </div>
       </details>
-    </div>
+    </fieldset>
   `,
   styles: `
     :host {
