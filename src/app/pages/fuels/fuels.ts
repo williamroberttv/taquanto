@@ -13,7 +13,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Footer } from '../../components/footer/footer';
 import { Header } from '../../components/header/header';
-import type { MunicipalitySelection } from '../../municipalities';
+import {
+  ALAGOAS_MUNICIPALITIES,
+  DEFAULT_MUNICIPALITY,
+  type MunicipalitySelection,
+} from '../../municipalities';
 import { PricePolling } from '../../services/price-polling';
 import { CachedSearchResponse, Pagination, PriceRecord } from '../../services/taquanto-api';
 import { SearchFilters } from '../search/search-filters';
@@ -43,10 +47,6 @@ export class FuelsPage {
   private readonly polling = inject(PricePolling);
   private readonly form = viewChild.required<ElementRef<HTMLFormElement>>('fuelForm');
   private readonly resultsSection = viewChild(SearchResults);
-  private readonly defaultMunicipality: MunicipalitySelection = {
-    code: '2704302',
-    name: 'Maceió',
-  };
   private readonly pageSize = 50;
   private pollingSubscription: Subscription | null = null;
   private activeSearchKey: string | null = null;
@@ -56,8 +56,9 @@ export class FuelsPage {
 
   protected readonly fuelTypes = FUEL_TYPES;
   protected readonly type = signal(1);
-  protected readonly municipality = signal(this.defaultMunicipality);
+  protected readonly municipality = signal(DEFAULT_MUNICIPALITY);
   protected readonly days = signal(1);
+  protected readonly filtersVisible = signal(true);
   protected readonly filtersReady = signal(false);
   protected readonly records = signal<PriceRecord[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
@@ -73,6 +74,15 @@ export class FuelsPage {
         return;
       }
 
+      const form = this.form().nativeElement;
+      const observer = new IntersectionObserver(
+        ([entry]) =>
+          this.filtersVisible.set(entry.isIntersecting || entry.boundingClientRect.top >= 0),
+        { threshold: 0.01 },
+      );
+      observer.observe(form);
+      this.destroyRef.onDestroy(() => observer.disconnect());
+
       const params = this.route.snapshot.queryParamMap;
       const initialType = Number(params.get('type'));
       const initialMunicipality = params.get('municipality');
@@ -82,7 +92,10 @@ export class FuelsPage {
         this.type.set(initialType);
       }
       if (this.isMunicipalityCode(initialMunicipality)) {
-        this.municipality.set({ code: initialMunicipality, name: '' });
+        this.municipality.set(
+          ALAGOAS_MUNICIPALITIES.find(({ code }) => code === initialMunicipality) ??
+            DEFAULT_MUNICIPALITY,
+        );
       }
       if (this.isPeriod(initialDays)) {
         this.days.set(initialDays);
@@ -163,6 +176,7 @@ export class FuelsPage {
   protected scrollToForm(): void {
     this.form().nativeElement.scrollIntoView();
     this.form().nativeElement.focus({ preventScroll: true });
+    this.filtersVisible.set(true);
   }
 
   private filtersChanged(): void {

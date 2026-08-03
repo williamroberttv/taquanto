@@ -76,7 +76,7 @@
     </section>
   </main>
 
-  @if (pagination()) {
+  @if (pagination() && !filtersVisible()) {
     <div class="fab">
       <button
         type="button"

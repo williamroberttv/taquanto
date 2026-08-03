@@ -7,12 +7,12 @@ import { RecentSearch, SEARCH_PERIODS } from './search.models';
   template: `
     @if (searches().length > 0) {
       <section class="recent-searches" aria-labelledby="recent-searches-title">
-        <h2 id="recent-searches-title" class="recent-searches-title">
+        <h2 id="recent-searches-title" class="recent-searches-title eyebrow eyebrow-with-icon">
+          <span>Suas últimas pesquisas</span>
           <svg class="eyebrow-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
             <path d="m16 16 4 4" />
           </svg>
-          <span>Suas últimas pesquisas</span>
         </h2>
         <div class="recent-search-list">
           @for (search of searches(); track search; let last = $last) {
@@ -35,16 +35,6 @@ import { RecentSearch, SEARCH_PERIODS } from './search.models';
 
     .recent-searches {
       margin-top: 24px;
-    }
-
-    .recent-searches-title {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--tq-muted);
-      font-size: 0.78rem;
-      font-weight: 800;
-      text-transform: uppercase;
     }
 
     .recent-search-list {
