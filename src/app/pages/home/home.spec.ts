@@ -21,6 +21,14 @@ describe('Home', () => {
     expect(component).toBeTruthy();
   });
 
+  it('uses the same tiles as the product map', async () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    await vi.waitFor(() => expect(compiled.querySelector('.leaflet-tile')).not.toBeNull());
+
+    const tile = compiled.querySelector<HTMLImageElement>('.leaflet-tile')!;
+    expect(tile.src).toContain('tile.openstreetmap.org');
+  });
+
   it('should present the landing page content', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const text = compiled.textContent ?? '';
