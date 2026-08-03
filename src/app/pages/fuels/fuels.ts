@@ -13,7 +13,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Footer } from '../../components/footer/footer';
 import { Header } from '../../components/header/header';
-import type { MunicipalitySelection } from '../../components/municipality-map/municipality-map';
+import type { MunicipalitySelection } from '../../municipalities';
 import { PricePolling } from '../../services/price-polling';
 import { CachedSearchResponse, Pagination, PriceRecord } from '../../services/taquanto-api';
 import { SearchFilters } from '../search/search-filters';

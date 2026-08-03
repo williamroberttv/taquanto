@@ -46,12 +46,12 @@ import { Component, ElementRef, input, output, viewChild } from '@angular/core';
           placeholder="Ex.: arroz, café 250g ou GTIN"
         />
       </div>
-      <button type="submit" class="btn btn-primary min-h-12" [disabled]="!ready()">
+      <button type="submit" class="btn btn-primary min-h-12">
         <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
           <path d="m16 16 4 4" />
         </svg>
-        {{ !ready() ? 'Carregando mapa...' : loading() ? 'Buscando...' : 'Buscar' }}
+        {{ loading() ? 'Buscando...' : 'Buscar' }}
       </button>
     </form>
 
@@ -98,7 +98,6 @@ export class ProductSearchForm {
   private readonly form = viewChild.required<ElementRef<HTMLFormElement>>('form');
 
   readonly query = input.required<string>();
-  readonly ready = input.required<boolean>();
   readonly loading = input.required<boolean>();
   readonly message = input.required<string | null>();
   readonly queryChange = output<string>();

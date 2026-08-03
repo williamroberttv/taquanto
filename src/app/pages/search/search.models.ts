@@ -1,4 +1,4 @@
-import { MunicipalitySelection } from '../../components/municipality-map/municipality-map';
+import { MunicipalitySelection } from '../../municipalities';
 
 export interface RecentSearch {
   query: string;

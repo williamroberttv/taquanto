@@ -175,8 +175,6 @@ describe('SearchPage', () => {
     fixture = TestBed.createComponent(SearchPage);
     http = TestBed.inject(HttpTestingController);
     await fixture.whenStable();
-    http.expectOne('/assets/alagoas-municipios.geojson').flush(municipalityMap);
-    await fixture.whenStable();
   });
 
   it('coordinates the search through focused components', async () => {
@@ -205,13 +203,75 @@ describe('SearchPage', () => {
     expect(element.querySelector('app-sale-record-detail-dialog dialog')).not.toBeNull();
   });
 
+  it('prioritizes search and keeps the map lazy', async () => {
+    fixture.destroy();
+    fixture = TestBed.createComponent(SearchPage);
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const form = element.querySelector<HTMLFormElement>('#product-search')!;
+    const filters = element.querySelector<HTMLElement>('.location-filter')!;
+    const recentSearches = element.querySelector('app-recent-searches')!;
+
+    expect(form.compareDocumentPosition(filters) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      filters.compareDocumentPosition(recentSearches) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(filters.querySelector('details')).not.toBeNull();
+    expect(filters.textContent).toContain('Maceió');
+    expect(filters.textContent).toContain('Últimas 24 horas');
+    expect(filters.textContent).toContain('Alterar filtros');
+    expect(element.querySelector('app-municipality-map')).toBeNull();
+    http.expectNone('/assets/alagoas-municipios.geojson');
+
+    const details = filters.querySelector('details')!;
+    details.querySelector('summary')!.click();
+    await fixture.whenStable();
+    expect(details.open).toBe(true);
+
+    const municipality = filters.querySelector<HTMLSelectElement>('#municipality-select')!;
+    municipality.value = '2700300';
+    municipality.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    expect(filters.querySelector('.filter-values')?.textContent).toContain('Arapiraca');
+    http.expectNone('/assets/alagoas-municipios.geojson');
+
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+    input.value = 'arroz';
+    input.dispatchEvent(new Event('input'));
+    form.dispatchEvent(new SubmitEvent('submit'));
+    await fixture.whenStable();
+
+    expect(api.priceCalls).toEqual([
+      {
+        query: 'arroz',
+        params: { municipality: '2700300', days: 1, limit: 50, page: 1 },
+      },
+    ]);
+  });
+
+  it('loads the municipal map only after the visitor requests it', async () => {
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLDetailsElement>('.location-filter details')!.open = true;
+    const mapButton = element.querySelector<HTMLButtonElement>('.map-selector')!;
+    mapButton.focus();
+    mapButton.click();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(mapButton);
+    expect(mapButton.getAttribute('aria-expanded')).toBe('true');
+    expect(element.querySelector('app-municipality-map')).not.toBeNull();
+    http.expectOne('/assets/alagoas-municipios.geojson').flush(municipalityMap);
+    await fixture.whenStable();
+  });
+
   it('only searches when the form is submitted', async () => {
     const element = fixture.nativeElement as HTMLElement;
     const input = element.querySelector<HTMLInputElement>('#product-query')!;
     const form = element.querySelector<HTMLFormElement>('form')!;
 
     expect(
-      element.querySelector('.location-filter')!.compareDocumentPosition(form) &
+      form.compareDocumentPosition(element.querySelector('.location-filter')!) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
@@ -256,8 +316,6 @@ describe('SearchPage', () => {
     routeParams = { q: 'arroz', municipality: '2700300', days: '3' };
 
     fixture = TestBed.createComponent(SearchPage);
-    await fixture.whenStable();
-    http.expectOne('/assets/alagoas-municipios.geojson').flush(municipalityMap);
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -545,7 +603,7 @@ describe('SearchPage', () => {
     const recentSearches = element.querySelector('.recent-searches')!;
     const locationFilter = element.querySelector('.location-filter')!;
     expect(
-      recentSearches.compareDocumentPosition(locationFilter) & Node.DOCUMENT_POSITION_FOLLOWING,
+      locationFilter.compareDocumentPosition(recentSearches) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(recentSearchesTitle?.textContent).toContain('Suas últimas pesquisas');
     expect(recentSearchesTitle?.querySelector('svg')).not.toBeNull();
