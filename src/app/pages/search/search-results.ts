@@ -136,7 +136,6 @@ import { SearchPagination } from './search-pagination';
       display: block;
     }
 
-    .results-heading,
     .results-message,
     .cache-status {
       padding-inline: 1.25rem;

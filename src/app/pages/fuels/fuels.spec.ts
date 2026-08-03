@@ -114,11 +114,35 @@ describe('FuelsPage', () => {
   let http: HttpTestingController;
   let routeParams: Record<string, string>;
   let router: { navigate: ReturnType<typeof vi.fn> };
+  let setFiltersPosition: (visible: boolean, top?: number) => void;
 
   beforeEach(async () => {
     api = new TaquantoApiStub();
     routeParams = {};
     router = { navigate: vi.fn(() => Promise.resolve(true)) };
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          setFiltersPosition = (visible, top = visible ? 0 : -1) =>
+            callback(
+              [
+                {
+                  isIntersecting: visible,
+                  boundingClientRect: { top },
+                } as IntersectionObserverEntry,
+              ],
+              this as unknown as IntersectionObserver,
+            );
+        }
+
+        observe(): void {
+          setFiltersPosition(true);
+        }
+
+        disconnect = vi.fn();
+      },
+    );
 
     await TestBed.configureTestingModule({
       imports: [FuelsPage],
@@ -141,6 +165,64 @@ describe('FuelsPage', () => {
     await fixture.whenStable();
     http.expectOne('/assets/alagoas-municipios.geojson').flush(municipalityMap);
     await fixture.whenStable();
+  });
+
+  it('starts with the shared filters expanded and Maceió selected before the map loads', async () => {
+    fixture.destroy();
+    fixture = TestBed.createComponent(FuelsPage);
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector<HTMLDetailsElement>('.location-filter details')?.open).toBe(true);
+    expect(element.querySelector('.filter-chevron')).not.toBeNull();
+    expect(element.textContent).not.toContain('Alterar filtros');
+    const municipalitySearch = element.querySelector<HTMLInputElement>('#municipality-search')!;
+    expect(municipalitySearch).not.toBeNull();
+    const initialMunicipality = element.querySelector<HTMLSelectElement>(
+      '#municipality-select',
+    )!.value;
+
+    municipalitySearch.value = 'maceio';
+    municipalitySearch.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    const filteredMunicipalities = Array.from(
+      element.querySelectorAll<HTMLOptionElement>('#municipality-select option'),
+    ).map(({ value, textContent }) => [value, textContent]);
+
+    http.expectOne('/assets/alagoas-municipios.geojson').flush(municipalityMap);
+    await fixture.whenStable();
+
+    expect(initialMunicipality).toBe('2704302');
+    expect(filteredMunicipalities).toEqual([
+      ['', 'Selecione um município'],
+      ['2704302', 'Maceió'],
+    ]);
+  });
+
+  it('shows the return button only after the form leaves the viewport', async () => {
+    api.results = [fuelRecord];
+    const element = fixture.nativeElement as HTMLElement;
+    const scrollIntoView = vi.fn();
+    element.querySelector<HTMLFormElement>('#fuel-search')!.scrollIntoView = scrollIntoView;
+
+    element
+      .querySelector<HTMLFormElement>('#fuel-search')!
+      .dispatchEvent(new SubmitEvent('submit'));
+    await fixture.whenStable();
+
+    expect(element.querySelector('.back-to-search')).toBeNull();
+    setFiltersPosition(false);
+    await fixture.whenStable();
+    expect(element.querySelector('.back-to-search')).not.toBeNull();
+
+    element.querySelector<HTMLButtonElement>('.back-to-search')!.click();
+    await fixture.whenStable();
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+    expect(element.querySelector('.back-to-search')).toBeNull();
+
+    setFiltersPosition(false, 1);
+    await fixture.whenStable();
+    expect(element.querySelector('.back-to-search')).toBeNull();
   });
 
   it('offers the six official fuel types and searches with URL-backed filters', async () => {

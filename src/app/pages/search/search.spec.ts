@@ -220,16 +220,39 @@ describe('SearchPage', () => {
     expect(filters.querySelector('details')).not.toBeNull();
     expect(filters.textContent).toContain('Maceió');
     expect(filters.textContent).toContain('Últimas 24 horas');
-    expect(filters.textContent).toContain('Alterar filtros');
+    expect(filters.textContent).not.toContain('Alterar filtros');
+    expect(filters.querySelector<HTMLSelectElement>('#municipality-select')?.value).toBe('2704302');
     expect(element.querySelector('app-municipality-map')).toBeNull();
     http.expectNone('/assets/alagoas-municipios.geojson');
 
     const details = filters.querySelector('details')!;
+    expect(details.open).toBe(true);
+    expect(details.querySelector('.filter-chevron')).not.toBeNull();
+    details.querySelector('summary')!.click();
+    await fixture.whenStable();
+    expect(details.open).toBe(false);
     details.querySelector('summary')!.click();
     await fixture.whenStable();
     expect(details.open).toBe(true);
 
+    const municipalitySearch = filters.querySelector<HTMLInputElement>('#municipality-search')!;
+    municipalitySearch.value = 'maceio';
+    municipalitySearch.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect(
+      Array.from(filters.querySelectorAll<HTMLOptionElement>('#municipality-select option')).map(
+        ({ value, textContent }) => [value, textContent],
+      ),
+    ).toEqual([
+      ['', 'Selecione um município'],
+      ['2704302', 'Maceió'],
+    ]);
+
+    municipalitySearch.value = 'arapiraca';
+    municipalitySearch.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
     const municipality = filters.querySelector<HTMLSelectElement>('#municipality-select')!;
+    expect(municipality.value).toBe('');
     municipality.value = '2700300';
     municipality.dispatchEvent(new Event('change'));
     await fixture.whenStable();
@@ -607,6 +630,8 @@ describe('SearchPage', () => {
     ).toBeTruthy();
     expect(recentSearchesTitle?.textContent).toContain('Suas últimas pesquisas');
     expect(recentSearchesTitle?.querySelector('svg')).not.toBeNull();
+    expect(recentSearchesTitle?.firstElementChild?.tagName).toBe('SPAN');
+    expect(recentSearchesTitle?.classList).toContain('eyebrow');
     expect(link?.textContent).toContain('Arroz - Arapiraca - Últimos 3 dias');
     expect(JSON.parse(localStorage.getItem('taquanto:recent-searches') ?? '[]')).toEqual([
       {

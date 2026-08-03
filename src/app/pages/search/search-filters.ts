@@ -8,27 +8,45 @@ import { SEARCH_PERIODS } from './search.models';
   imports: [MunicipalityMap],
   template: `
     <section class="location-filter card mt-4 bg-base-200 shadow-sm">
-      <details [open]="!productSearch()">
+      <details open>
         <summary class="filter-summary">
           <span>
             <span class="filter-label">Filtros da consulta</span>
             <span class="filter-values">{{ municipality().name }} · {{ periodLabel() }}</span>
           </span>
-          <span class="filter-action">Alterar filtros</span>
+          <svg class="filter-chevron" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
         </summary>
 
         <div class="filter-panel">
           <div class="filter-fields">
             <div class="fieldset">
               <label class="fieldset-legend" for="municipality-select">Município</label>
+              <label class="sr-only" for="municipality-search">Buscar município</label>
+              <input
+                id="municipality-search"
+                type="search"
+                class="input mb-2 w-full"
+                autocomplete="off"
+                placeholder="Buscar município"
+                aria-controls="municipality-select"
+                (input)="filterMunicipalities($event)"
+              />
               <select
                 id="municipality-select"
                 class="select w-full"
-                [value]="municipality().code"
                 (change)="selectMunicipality($event)"
               >
-                @for (option of municipalities; track option.code) {
-                  <option [value]="option.code">{{ option.name }}</option>
+                <option value="" disabled [selected]="!municipalitySelectValue()">Selecione um município</option>
+                @for (option of filteredMunicipalities(); track option.code) {
+                  <option
+                    [value]="option.code"
+                    [selected]="option.code === municipalitySelectValue()"
+                  >{{ option.name }}</option>
+                }
+                @if (filteredMunicipalities().length === 0) {
+                  <option disabled>Nenhum município encontrado</option>
                 }
               </select>
             </div>
@@ -113,10 +131,21 @@ import { SEARCH_PERIODS } from './search.models';
       font-weight: 700;
     }
 
-    .filter-action {
+    .filter-chevron {
+      width: 1.25rem;
+      height: 1.25rem;
       flex: none;
       color: var(--color-primary);
-      font-weight: 800;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 2;
+      transition: transform 200ms ease;
+    }
+
+    details[open] .filter-chevron {
+      transform: rotate(180deg);
     }
 
     .filter-panel {
@@ -140,13 +169,6 @@ import { SEARCH_PERIODS } from './search.models';
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
-
-    @media (max-width: 420px) {
-      .filter-summary {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-    }
   `,
 })
 export class SearchFilters {
@@ -158,7 +180,17 @@ export class SearchFilters {
   readonly daysChange = output<number>();
 
   protected readonly mapVisible = signal(false);
+  protected readonly municipalityFilter = signal('');
   protected readonly municipalities = ALAGOAS_MUNICIPALITIES;
+  protected readonly filteredMunicipalities = computed(() => {
+    const query = this.normalize(this.municipalityFilter());
+    return this.municipalities.filter(({ name }) => this.normalize(name).includes(query));
+  });
+  protected readonly municipalitySelectValue = computed(() =>
+    this.filteredMunicipalities().some(({ code }) => code === this.municipality().code)
+      ? this.municipality().code
+      : '',
+  );
   protected readonly periods = SEARCH_PERIODS;
   protected readonly periodLabel = computed(
     () => this.periods.find((period) => period.days === this.days())?.label ?? '',
@@ -176,7 +208,15 @@ export class SearchFilters {
     this.daysChange.emit(Number((event.target as HTMLSelectElement).value));
   }
 
+  protected filterMunicipalities(event: Event): void {
+    this.municipalityFilter.set((event.target as HTMLInputElement).value);
+  }
+
   protected showMap(): void {
     this.mapVisible.set(true);
+  }
+
+  private normalize(value: string): string {
+    return value.trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{M}/gu, '');
   }
 }
