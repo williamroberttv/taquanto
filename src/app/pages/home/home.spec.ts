@@ -50,7 +50,7 @@ describe('Home', () => {
       'Pesquisar produtos',
     );
     expect(compiled.querySelector('.hero a[href="/combustiveis"]')?.textContent).toContain(
-      'Buscar preços de combustíveis',
+      'Pesquisar combustíveis',
     );
     expect(compiled.querySelectorAll('[aria-label="Tipos de consulta"] article')).toHaveLength(2);
     expect(compiled.querySelector('footer a[href="/#como-funciona"]')).not.toBeNull();
