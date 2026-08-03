@@ -44,7 +44,7 @@ import { PriceRecord } from '../../services/taquanto-api';
             />
             <button
               type="button"
-              class="close-button btn btn-square btn-ghost min-h-11"
+              class="close-button text-primary btn btn-square btn-ghost min-h-11"
               aria-label="Fechar detalhes"
               (click)="dismiss()"
             >
