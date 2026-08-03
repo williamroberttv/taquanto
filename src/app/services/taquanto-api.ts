@@ -3,11 +3,18 @@ import { Service, inject } from '@angular/core';
 import { map, timeout } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-export interface SearchResponse {
-  query: string;
+export interface SearchResultData {
   source: string;
   results: PriceRecord[];
   pagination: Pagination;
+}
+
+export interface SearchResponse extends SearchResultData {
+  query: string;
+}
+
+export interface FuelResponse extends SearchResultData {
+  type: number;
 }
 
 export interface Pagination {
@@ -56,10 +63,18 @@ export interface PricePageParams {
 
 export type CacheStatus = 'HIT' | 'STALE' | 'MISS';
 
-export interface PriceSearchResponse {
-  data: SearchResponse | null;
+export interface CachedSearchResponse {
+  data: SearchResultData | null;
   cacheStatus: CacheStatus;
   ageSeconds: number | null;
+}
+
+export interface PriceSearchResponse extends CachedSearchResponse {
+  data: SearchResponse | null;
+}
+
+export interface FuelSearchResponse extends CachedSearchResponse {
+  data: FuelResponse | null;
 }
 
 @Service()
@@ -69,39 +84,51 @@ export class TaquantoApi {
   private readonly priceTimeoutMs = 5000;
 
   prices(query: string, pageParams: PricePageParams) {
-    return this.http
-      .get<SearchResponse>(`${this.baseUrl}/v1/prices`, {
-        observe: 'response',
-        params: {
-          days: String(pageParams.days),
-          limit: String(pageParams.limit),
-          municipality: pageParams.municipality,
-          page: String(pageParams.page),
-          query,
-        },
-      })
-      .pipe(
-        timeout(this.priceTimeoutMs),
-        map((response): PriceSearchResponse => {
-          const cacheStatus = response.headers.get('X-TaQuanto-Cache-Status');
-          const age = response.headers.get('X-TaQuanto-Cache-Age');
-          const retryAfter = response.headers.get('X-TaQuanto-Cache-Retry-After');
-          const ageSeconds = age !== null && /^\d+$/.test(age) ? Number(age) : null;
+    return this.cachedSearch<SearchResponse>('prices', {
+      days: String(pageParams.days),
+      limit: String(pageParams.limit),
+      municipality: pageParams.municipality,
+      page: String(pageParams.page),
+      query,
+    });
+  }
 
-          if (
-            response.status === 202 &&
-            cacheStatus === 'MISS' &&
-            retryAfter === '5' &&
-            !response.body
-          ) {
-            return { data: null, cacheStatus, ageSeconds };
-          }
-          if (response.status === 200 && (cacheStatus === 'HIT' || cacheStatus === 'STALE')) {
-            return { data: response.body, cacheStatus, ageSeconds };
-          }
+  fuels(type: number, pageParams: PricePageParams) {
+    return this.cachedSearch<FuelResponse>('fuels', {
+      days: String(pageParams.days),
+      limit: String(pageParams.limit),
+      municipality: pageParams.municipality,
+      page: String(pageParams.page),
+      type: String(type),
+    });
+  }
 
-          throw new Error('Invalid prices cache response');
-        }),
-      );
+  private cachedSearch<T extends SearchResultData>(
+    resource: 'prices' | 'fuels',
+    params: Record<string, string>,
+  ) {
+    return this.http.get<T>(`${this.baseUrl}/v1/${resource}`, { observe: 'response', params }).pipe(
+      timeout(this.priceTimeoutMs),
+      map((response): CachedSearchResponse & { data: T | null } => {
+        const cacheStatus = response.headers.get('X-TaQuanto-Cache-Status');
+        const age = response.headers.get('X-TaQuanto-Cache-Age');
+        const retryAfter = response.headers.get('X-TaQuanto-Cache-Retry-After');
+        const ageSeconds = age !== null && /^\d+$/.test(age) ? Number(age) : null;
+
+        if (
+          response.status === 202 &&
+          cacheStatus === 'MISS' &&
+          retryAfter === '5' &&
+          !response.body
+        ) {
+          return { data: null, cacheStatus, ageSeconds };
+        }
+        if (response.status === 200 && (cacheStatus === 'HIT' || cacheStatus === 'STALE')) {
+          return { data: response.body, cacheStatus, ageSeconds };
+        }
+
+        throw new Error(`Invalid ${resource} cache response`);
+      }),
+    );
   }
 }

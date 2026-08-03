@@ -12,11 +12,22 @@ describe('app routes', () => {
 
   beforeEach(async () => {
     const testRoutes = routes.map((route) =>
-      route.path === 'produtos' ? { path: route.path, component: RouteTarget } : route,
+      route.path === 'produtos' || route.path === 'combustiveis'
+        ? { path: route.path, component: RouteTarget }
+        : route,
     );
 
     TestBed.configureTestingModule({ providers: [provideRouter(testRoutes)] });
     harness = await RouterTestingHarness.create();
+  });
+
+  it('loads the fuel search lazily at /combustiveis', async () => {
+    const page = await harness.navigateByUrl('/combustiveis', RouteTarget);
+
+    expect(page).toBeInstanceOf(RouteTarget);
+    expect(routes.find((route) => route.path === 'combustiveis')?.loadComponent).toEqual(
+      expect.any(Function),
+    );
   });
 
   it('loads the product search lazily at /produtos', async () => {

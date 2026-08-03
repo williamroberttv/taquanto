@@ -1,10 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
 import { Observable, Subscription, TimeoutError } from 'rxjs';
-import { PricePageParams, PriceSearchResponse, TaquantoApi } from './taquanto-api';
+import { CachedSearchResponse, PricePageParams, TaquantoApi } from './taquanto-api';
 
 export type PricePollingEvent =
-  | { kind: 'response'; response: PriceSearchResponse; revalidation: boolean }
+  | { kind: 'response'; response: CachedSearchResponse; revalidation: boolean }
   | { kind: 'exhausted' };
 
 @Service()
@@ -15,7 +15,17 @@ export class PricePolling {
   private readonly maxRevalidations = this.durationMs / this.intervalMs;
 
   poll(query: string, params: PricePageParams): Observable<PricePollingEvent> {
-    return new Observable((subscriber) => {
+    return this.pollRequest(() => this.api.prices(query, params));
+  }
+
+  pollFuel(type: number, params: PricePageParams): Observable<PricePollingEvent> {
+    return this.pollRequest(() => this.api.fuels(type, params));
+  }
+
+  private pollRequest(
+    requestSearch: () => Observable<CachedSearchResponse>,
+  ): Observable<PricePollingEvent> {
+    return new Observable<PricePollingEvent>((subscriber) => {
       const deadline = Date.now() + this.durationMs;
       let request: Subscription | null = null;
       let timer: ReturnType<typeof setTimeout> | null = null;
@@ -42,7 +52,7 @@ export class PricePolling {
         );
       };
       const fetch = () => {
-        request = this.api.prices(query, params).subscribe({
+        request = requestSearch().subscribe({
           next: (response) => {
             subscriber.next({ kind: 'response', response, revalidation });
             if (response.cacheStatus === 'HIT') {

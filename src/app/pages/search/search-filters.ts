@@ -25,8 +25,10 @@ import { SEARCH_PERIODS } from './search.models';
           Escolha um município de Alagoas
         </h2>
         <p class="mt-2 text-sm leading-6 text-[var(--tq-muted)]">
-          Cada consulta usa um município e o período recente selecionado. Use 24 horas ou GTIN para
-          respostas mais rápidas.
+          Cada consulta usa um município e o período recente selecionado.
+          @if (productSearch()) {
+            Use 24 horas ou GTIN para respostas mais rápidas.
+          }
         </p>
       </div>
 
@@ -78,6 +80,7 @@ import { SEARCH_PERIODS } from './search.models';
 export class SearchFilters {
   readonly municipality = input.required<MunicipalitySelection>();
   readonly days = input.required<number>();
+  readonly productSearch = input(true);
   readonly municipalityChange = output<MunicipalitySelection>();
   readonly municipalityReady = output<MunicipalitySelection>();
   readonly daysChange = output<number>();

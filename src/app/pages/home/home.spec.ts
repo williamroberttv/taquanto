@@ -41,10 +41,18 @@ describe('Home', () => {
       [...compiled.querySelectorAll<HTMLElement>('header nav.hidden a')].map((link) =>
         link.textContent?.trim(),
       ),
-    ).toEqual(['Buscar', 'Como funciona', 'Favoritos']);
+    ).toEqual(['Produtos', 'Combustíveis', 'Favoritos']);
     expect(compiled.querySelector('.theme-controller')).not.toBeNull();
     expect(compiled.querySelectorAll('.mask-squircle')).toHaveLength(3);
     expect(compiled.querySelector('a[href="/favoritos"]')?.textContent).toContain('Favoritos');
+    expect(compiled.querySelector('.hero a[href="/produtos"]')?.textContent).toContain(
+      'Pesquisar produtos',
+    );
+    expect(compiled.querySelector('.hero a[href="/combustiveis"]')?.textContent).toContain(
+      'Consultar combustíveis',
+    );
+    expect(compiled.querySelectorAll('[aria-label="Tipos de consulta"] article')).toHaveLength(2);
+    expect(compiled.querySelector('footer a[href="/#como-funciona"]')).not.toBeNull();
     expect(
       [...compiled.querySelectorAll<HTMLImageElement>('img')].map((image) => image.src),
     ).toEqual(

@@ -24,25 +24,40 @@
             <span class="block">em Alagoas.</span>
           </h1>
           <p class="mt-6 max-w-xl text-lg leading-8 text-[var(--tq-muted)]">
-            O Tá<span class="text-primary">Quanto</span> organiza registros reais de vendas
-            emitidos em NFC-e exclusivamente em Alagoas para você comparar valor, estabelecimento,
-            data e município.
+            O Tá<span class="text-primary">Quanto</span> organiza registros reais de vendas emitidos
+            em NFC-e exclusivamente em Alagoas para você comparar valor, estabelecimento, data e
+            município.
           </p>
 
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
             <a href="/produtos" class="btn btn-primary min-h-12">
-              Começar uma consulta
+              Pesquisar produtos
               <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 12h14" />
                 <path d="m13 6 6 6-6 6" />
               </svg>
             </a>
-            <a href="/favoritos" class="btn btn-outline min-h-12">Ver favoritos</a>
+            <a href="/combustiveis" class="btn btn-outline min-h-12">Consultar combustíveis</a>
           </div>
 
           <p class="mt-5 max-w-lg text-sm leading-6 text-[var(--tq-muted)]">
             Sem cadastro. Os valores são históricos e podem mudar no estabelecimento.
           </p>
+
+          <div class="mt-7 grid gap-3 sm:grid-cols-2" aria-label="Tipos de consulta">
+            <article class="rounded-box border border-[var(--tq-border)] bg-base-100/80 p-4">
+              <h2 class="font-bold">Produtos</h2>
+              <p class="mt-2 text-sm leading-6 text-[var(--tq-muted)]">
+                Pesquise por descrição ou código de barras nos registros de venda NFC-e.
+              </p>
+            </article>
+            <article class="rounded-box border border-[var(--tq-border)] bg-base-100/80 p-4">
+              <h2 class="font-bold">Combustíveis</h2>
+              <p class="mt-2 text-sm leading-6 text-[var(--tq-muted)]">
+                Escolha um tipo oficial e compare as últimas vendas encontradas no período.
+              </p>
+            </article>
+          </div>
         </div>
 
         <figure class="brand-banner mask mask-squircle">
