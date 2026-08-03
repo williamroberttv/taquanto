@@ -36,8 +36,8 @@
           <div class="recent-search-list">
             @for (search of recentSearches(); track search; let last = $last) {
               <button type="button" class="recent-search-link" (click)="repeatSearch(search)">
-                {{ formatTitle(search.query) }} • {{ search.municipality.name }} •
-                {{ formatRecentSearchTime(search) }}
+                {{ formatTitle(search.query) }} - {{ search.municipality.name }} -
+                {{ formatRecentSearchPeriod(search.days) }}
               </button>
               @if (!last) {
                 <span aria-hidden="true">, </span>
