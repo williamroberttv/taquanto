@@ -16,11 +16,7 @@ import {
 } from '@angular/core';
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type * as Leaflet from 'leaflet';
-
-export interface MunicipalitySelection {
-  code: string;
-  name: string;
-}
+import { DEFAULT_MUNICIPALITY, type MunicipalitySelection } from '../../municipalities';
 
 type MunicipalityCollection = FeatureCollection<Geometry, MunicipalitySelection>;
 type MunicipalityFeature = Feature<Geometry, MunicipalitySelection>;
@@ -32,25 +28,20 @@ type MunicipalityPath = Leaflet.Path & { feature?: MunicipalityFeature };
   styleUrl: './municipality-map.scss',
 })
 export class MunicipalityMap {
-  private readonly defaultMunicipality: MunicipalitySelection = {
-    code: '2704302',
-    name: 'Maceió',
-  };
   private readonly destroyRef = inject(DestroyRef);
   private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly mapContainer = viewChild<ElementRef<HTMLElement>>('mapContainer');
 
-  readonly selectedCode = input('2704302');
+  readonly selectedCode = input(DEFAULT_MUNICIPALITY.code);
   readonly municipalityChange = output<MunicipalitySelection>();
-  readonly municipalityReady = output<MunicipalitySelection>();
 
   protected readonly municipalities = signal<MunicipalitySelection[]>([]);
   protected readonly loadError = signal(false);
   protected readonly resolvedSelectedCode = computed(() =>
     this.municipalities().some(({ code }) => code === this.selectedCode())
       ? this.selectedCode()
-      : this.defaultMunicipality.code,
+      : DEFAULT_MUNICIPALITY.code,
   );
 
   private leaflet?: typeof Leaflet;
@@ -71,10 +62,6 @@ export class MunicipalityMap {
     this.destroyRef.onDestroy(() => this.map?.remove());
   }
 
-  protected selectFromControl(event: Event): void {
-    this.selectMunicipality((event.target as HTMLSelectElement).value);
-  }
-
   private loadMunicipalities(): void {
     this.http.get<MunicipalityCollection>('/assets/alagoas-municipios.geojson').subscribe({
       next: (collection) => {
@@ -83,12 +70,10 @@ export class MunicipalityMap {
             .map(({ properties }) => properties)
             .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
         );
-        this.announceReady();
         void this.initializeMap(collection);
       },
       error: () => {
         this.loadError.set(true);
-        this.announceReady();
       },
     });
   }
@@ -145,19 +130,10 @@ export class MunicipalityMap {
     this.municipalityChange.emit(selection);
   }
 
-  private announceReady(): void {
-    const resolvedCode = this.resolvedSelectedCode();
-    const selection = this.selectionFor(resolvedCode) ?? this.defaultMunicipality;
-    this.municipalityReady.emit(selection);
-    if (resolvedCode !== this.selectedCode()) {
-      this.municipalityChange.emit(selection);
-    }
-  }
-
   private selectionFor(code: string): MunicipalitySelection | undefined {
     return (
       this.municipalities().find((municipality) => municipality.code === code) ??
-      (code === this.defaultMunicipality.code ? this.defaultMunicipality : undefined)
+      (code === DEFAULT_MUNICIPALITY.code ? DEFAULT_MUNICIPALITY : undefined)
     );
   }
 
