@@ -34,6 +34,17 @@
   stroke-width: 2;
 }
 
+.fuel-button {
+  border-color: #145a3a;
+  background: #145a3a;
+  color: #fff;
+}
+
+.fuel-button:hover {
+  border-color: #0f452d;
+  background: #0f452d;
+}
+
 .brand-banner {
   overflow: hidden;
   margin: 0;

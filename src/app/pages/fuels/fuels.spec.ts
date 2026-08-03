@@ -68,6 +68,10 @@ const fuelRecord: PriceRecord = {
   },
 };
 
+function selectMunicipality(root: HTMLElement, code: string): void {
+  root.querySelector<HTMLButtonElement>(`.municipality-option[value="${code}"]`)!.click();
+}
+
 class TaquantoApiStub {
   readonly fuelCalls: { type: number; params: PricePageParams }[] = [];
   results: PriceRecord[] = [];
@@ -178,25 +182,22 @@ describe('FuelsPage', () => {
     expect(element.textContent).not.toContain('Alterar filtros');
     const municipalitySearch = element.querySelector<HTMLInputElement>('#municipality-search')!;
     expect(municipalitySearch).not.toBeNull();
-    const initialMunicipality = element.querySelector<HTMLSelectElement>(
-      '#municipality-select',
-    )!.value;
+    const initialMunicipality = element
+      .querySelector('#municipality-select')
+      ?.getAttribute('data-value');
 
     municipalitySearch.value = 'maceio';
     municipalitySearch.dispatchEvent(new Event('input'));
     await fixture.whenStable();
     const filteredMunicipalities = Array.from(
-      element.querySelectorAll<HTMLOptionElement>('#municipality-select option'),
-    ).map(({ value, textContent }) => [value, textContent]);
+      element.querySelectorAll<HTMLButtonElement>('.municipality-option'),
+    ).map(({ value, textContent }) => [value, textContent?.trim()]);
 
     http.expectOne('/assets/alagoas-municipios.geojson').flush(municipalityMap);
     await fixture.whenStable();
 
     expect(initialMunicipality).toBe('2704302');
-    expect(filteredMunicipalities).toEqual([
-      ['', 'Selecione um município'],
-      ['2704302', 'Maceió'],
-    ]);
+    expect(filteredMunicipalities).toEqual([['2704302', 'Maceió']]);
   });
 
   it('shows the return button only after the form leaves the viewport', async () => {
@@ -229,7 +230,6 @@ describe('FuelsPage', () => {
     api.results = [fuelRecord];
     const element = fixture.nativeElement as HTMLElement;
     const type = element.querySelector<HTMLSelectElement>('#fuel-type')!;
-    const municipality = element.querySelector<HTMLSelectElement>('#municipality-select')!;
     const period = element.querySelector<HTMLSelectElement>('#search-period')!;
 
     expect([...type.options].map((option) => option.text)).toEqual([
@@ -243,8 +243,7 @@ describe('FuelsPage', () => {
 
     type.value = '2';
     type.dispatchEvent(new Event('change'));
-    municipality.value = '2700300';
-    municipality.dispatchEvent(new Event('change'));
+    selectMunicipality(element, '2700300');
     period.value = '3';
     period.dispatchEvent(new Event('change'));
     element
@@ -283,7 +282,9 @@ describe('FuelsPage', () => {
 
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector<HTMLSelectElement>('#fuel-type')?.value).toBe('5');
-    expect(element.querySelector<HTMLSelectElement>('#municipality-select')?.value).toBe('2700300');
+    expect(element.querySelector('#municipality-select')?.getAttribute('data-value')).toBe(
+      '2700300',
+    );
     expect(element.querySelector<HTMLSelectElement>('#search-period')?.value).toBe('7');
     expect(api.fuelCalls).toEqual([
       {

@@ -44,16 +44,18 @@ export class Home {
 
   protected readonly steps: Step[] = [
     {
-      title: 'Procure o produto',
-      description: 'Digite uma descrição ou o GTIN da embalagem e escolha município e período.',
+      title: 'Escolha a consulta',
+      description:
+        'Pesquise um produto por descrição ou GTIN, ou selecione uma categoria de combustível.',
     },
     {
-      title: 'Compare registros oficiais',
-      description: 'Veja valor, estabelecimento, data e localização informados pela fonte pública.',
+      title: 'Defina município e período',
+      description: 'Use o mesmo contexto geográfico e uma janela recente para comparar os dados.',
     },
     {
-      title: 'Guarde para consultar depois',
-      description: 'Favorite o retrato da venda neste dispositivo e use os dados como referência.',
+      title: 'Compare os registros',
+      description:
+        'Confira valor, estabelecimento e data; são vendas históricas, não ofertas garantidas.',
     },
   ];
 
@@ -85,15 +87,24 @@ export class Home {
   ];
 
   constructor() {
+    const description =
+      'Consulte registros reais de vendas NFC-e de produtos e combustíveis em Alagoas. Compare valor, estabelecimento, data e município.';
+
     this.title.setTitle('Preços em Alagoas | TáQuanto');
-    this.meta.updateTag({ name: 'description', content: 'Consulte registros reais de vendas NFC-e em Alagoas. Compare valor, estabelecimento, data e município.' });
+    this.meta.updateTag({ name: 'description', content: description });
     this.meta.updateTag({ property: 'og:title', content: 'Preços em Alagoas | TáQuanto' });
-    this.meta.updateTag({ property: 'og:description', content: 'Consulte registros reais de vendas NFC-e em Alagoas. Compare valor, estabelecimento, data e município.' });
+    this.meta.updateTag({ property: 'og:description', content: description });
     this.meta.updateTag({ property: 'og:url', content: `${environment.siteUrl}/` });
-    this.meta.updateTag({ property: 'og:image', content: `${environment.siteUrl}/images/elephant-3.png` });
+    this.meta.updateTag({
+      property: 'og:image',
+      content: `${environment.siteUrl}/images/elephant-3.png`,
+    });
     this.meta.updateTag({ name: 'twitter:title', content: 'Preços em Alagoas | TáQuanto' });
-    this.meta.updateTag({ name: 'twitter:description', content: 'Consulte registros reais de vendas NFC-e em Alagoas. Compare valor, estabelecimento, data e município.' });
-    this.meta.updateTag({ name: 'twitter:image', content: `${environment.siteUrl}/images/elephant-3.png` });
+    this.meta.updateTag({ name: 'twitter:description', content: description });
+    this.meta.updateTag({
+      name: 'twitter:image',
+      content: `${environment.siteUrl}/images/elephant-3.png`,
+    });
     this.meta.updateTag({ rel: 'canonical', href: `${environment.siteUrl}/` });
 
     afterNextRender(() => {

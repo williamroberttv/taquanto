@@ -25,8 +25,8 @@
           </h1>
           <p class="mt-6 max-w-xl text-lg leading-8 text-[var(--tq-muted)]">
             O Tá<span class="text-primary">Quanto</span> organiza registros reais de vendas emitidos
-            em NFC-e exclusivamente em Alagoas para você comparar valor, estabelecimento, data e
-            município.
+            em NFC-e de produtos e combustíveis em Alagoas para você comparar valor,
+            estabelecimento, data e município.
           </p>
 
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -37,7 +37,13 @@
                 <path d="m13 6 6 6-6 6" />
               </svg>
             </a>
-            <a href="/combustiveis" class="btn btn-outline min-h-12">Consultar combustíveis</a>
+            <a href="/combustiveis" class="fuel-button btn min-h-12">
+              <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18" />
+                <path d="M3 22h16M8 6h6v5H8zM17 7h2l2 2v8a2 2 0 0 1-4 0v-3" />
+              </svg>
+              Buscar preços de combustíveis
+            </a>
           </div>
 
           <p class="mt-5 max-w-lg text-sm leading-6 text-[var(--tq-muted)]">
@@ -54,7 +60,7 @@
             <article class="rounded-box border border-[var(--tq-border)] bg-base-100/80 p-4">
               <h2 class="font-bold">Combustíveis</h2>
               <p class="mt-2 text-sm leading-6 text-[var(--tq-muted)]">
-                Escolha um tipo oficial e compare as últimas vendas encontradas no período.
+                Escolha uma categoria oficial e compare as vendas encontradas no período.
               </p>
             </article>
           </div>
@@ -80,33 +86,38 @@
     >
       <div class="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.72fr_1.28fr]">
         <div>
-          <p class="eyebrow">Economiza Alagoas / SEFAZ-AL</p>
+          <p class="eyebrow">Origem dos dados</p>
           <h2 id="experience-title" class="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
-            Registros oficiais e organizados para comparação
+            Vendas registradas em NFC-e, organizadas para consulta
           </h2>
           <p class="mt-4 leading-7 text-[var(--tq-muted)]">
-            Escolha um município e um período recente. A busca reúne os registros retornados pela
-            fonte pública sem chamar preço histórico de promoção ou oferta garantida.
+            A API TáQuanto organiza registros públicos disponibilizados pelo Economiza Alagoas /
+            SEFAZ-AL e os apresenta com contexto para comparação. O navegador não acessa a SEFAZ
+            diretamente.
           </p>
           <dl class="fact-list mt-7">
             <div>
-              <dt>Consulta</dt>
-              <dd>Por nome ou código de barras</dd>
+              <dt>Fonte</dt>
+              <dd>Economiza Alagoas / SEFAZ-AL</dd>
+            </div>
+            <div>
+              <dt>Consultas</dt>
+              <dd>Produtos e combustíveis</dd>
             </div>
             <div>
               <dt>Contexto</dt>
-              <dd>Município, período e estabelecimento</dd>
+              <dd>Município e período recente</dd>
             </div>
             <div>
-              <dt>Acesso</dt>
-              <dd>Público e sem cadastro</dd>
+              <dt>Limite</dt>
+              <dd>Histórico, não preço atual</dd>
             </div>
           </dl>
         </div>
 
-        <div class="experience-preview" aria-label="Prévia visual de uma consulta de preços">
+        <div class="experience-preview" aria-label="Prévia visual de uma consulta de produtos">
           <div class="search-card card bg-base-100/95 shadow-md" id="pesquisa">
-            <p class="text-sm font-semibold text-[var(--tq-muted)]">Buscar produto</p>
+            <p class="text-sm font-semibold text-[var(--tq-muted)]">Exemplo de busca por produto</p>
             <div class="input mt-3 flex h-12 w-full items-center gap-3 bg-base-100">
               <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="11" cy="11" r="7" />
@@ -154,9 +165,9 @@
     >
       <div class="guide-banner mx-auto max-w-6xl overflow-hidden">
         <div class="guide-copy">
-          <p class="guide-eyebrow">Do produto ao contexto</p>
+          <p class="guide-eyebrow">Da consulta ao contexto</p>
           <h2 id="steps-title" class="mt-3 text-3xl font-bold leading-tight sm:text-4xl">
-            Três passos para entender um preço registrado.
+            Três passos para comparar registros de venda.
           </h2>
           <div class="mt-7 grid gap-3">
             @for (step of steps; track step.title) {
@@ -197,8 +208,7 @@
             consultar depois neste dispositivo.
           </p>
           <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-            <a href="/produtos" class="btn btn-primary min-h-12">Encontrar registros</a>
-            <a href="/favoritos" class="btn btn-ghost min-h-12">Abrir favoritos</a>
+            <a href="/favoritos" class="btn btn-primary min-h-12">Abrir favoritos</a>
           </div>
         </div>
       </div>
