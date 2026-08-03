@@ -26,24 +26,22 @@
         </p>
       </div>
 
-      <app-recent-searches [searches]="recentSearches()" (searchSelected)="repeatSearch($event)" />
-
-      <app-search-filters
-        [municipality]="municipality()"
-        [days]="days()"
-        (municipalityChange)="selectMunicipality($event)"
-        (municipalityReady)="municipalityMapReady($event)"
-        (daysChange)="selectPeriod($event)"
-      />
-
       <app-product-search-form
         [query]="query()"
-        [ready]="filtersReady()"
         [loading]="pricesLoading()"
         [message]="inlineMessage()"
         (queryChange)="updateQuery($event)"
         (searchSubmitted)="submitSearch()"
       />
+
+      <app-search-filters
+        [municipality]="municipality()"
+        [days]="days()"
+        (municipalityChange)="selectMunicipality($event)"
+        (daysChange)="selectPeriod($event)"
+      />
+
+      <app-recent-searches [searches]="recentSearches()" (searchSelected)="repeatSearch($event)" />
 
       <app-search-results
         [records]="records()"

@@ -12,7 +12,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Footer } from '../../components/footer/footer';
 import { Header } from '../../components/header/header';
-import type { MunicipalitySelection } from '../../components/municipality-map/municipality-map';
+import {
+  ALAGOAS_MUNICIPALITIES,
+  DEFAULT_MUNICIPALITY,
+  MunicipalitySelection,
+} from '../../municipalities';
 import { Favorites } from '../../services/favorites';
 import { PricePolling } from '../../services/price-polling';
 import { Pagination, PriceRecord, PriceSearchResponse } from '../../services/taquanto-api';
@@ -47,10 +51,6 @@ export class SearchPage {
   private readonly filtersSection = viewChild(ProductSearchForm);
   private readonly resultsSection = viewChild(SearchResults);
 
-  private readonly defaultMunicipality: MunicipalitySelection = {
-    code: '2704302',
-    name: 'Maceió',
-  };
   private readonly recentSearchesKey = 'taquanto:recent-searches';
   private readonly pageSize = 50;
   private pricePollingSubscription: Subscription | null = null;
@@ -61,10 +61,9 @@ export class SearchPage {
   private queryFromUrl: string | null = null;
 
   protected readonly query = signal('');
-  protected readonly municipality = signal(this.defaultMunicipality);
+  protected readonly municipality = signal(DEFAULT_MUNICIPALITY);
   protected readonly days = signal(1);
   protected readonly filtersVisible = signal(true);
-  protected readonly filtersReady = signal(false);
   protected readonly records = signal<PriceRecord[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
   protected readonly pricesLoading = signal(false);
@@ -98,7 +97,10 @@ export class SearchPage {
       const initialMunicipality = queryParams.get('municipality');
       const initialDays = Number(queryParams.get('days'));
       if (this.isMunicipalityCode(initialMunicipality)) {
-        this.municipality.set({ code: initialMunicipality, name: '' });
+        this.municipality.set(
+          ALAGOAS_MUNICIPALITIES.find(({ code }) => code === initialMunicipality) ??
+            DEFAULT_MUNICIPALITY,
+        );
       }
       if (this.isPeriod(initialDays)) {
         this.days.set(initialDays);
@@ -121,9 +123,6 @@ export class SearchPage {
   }
 
   protected submitSearch(): void {
-    if (!this.filtersReady()) {
-      return;
-    }
     void this.runSearch(this.query().trim(), true);
   }
 
@@ -164,16 +163,6 @@ export class SearchPage {
     }
     this.days.set(days);
     this.filtersChanged();
-  }
-
-  protected municipalityMapReady(selection: MunicipalitySelection): void {
-    const changed = selection.code !== this.municipality().code;
-    this.municipality.set(selection);
-    if (changed) {
-      this.updateUrl();
-    }
-    this.filtersReady.set(true);
-    this.runUrlSearch();
   }
 
   protected loadPage(page: number): void {
@@ -217,7 +206,7 @@ export class SearchPage {
   }
 
   private runUrlSearch(): void {
-    if (!this.filtersReady() || !this.queryFromUrl) {
+    if (!this.queryFromUrl) {
       return;
     }
     const query = this.queryFromUrl;
