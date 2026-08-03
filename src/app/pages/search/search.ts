@@ -96,6 +96,13 @@ export class SearchPage {
   protected readonly skeletons = [1, 2, 3, 4];
 
   protected readonly hasResults = computed(() => this.records().length > 0);
+  protected readonly lowestValueCents = computed(() => {
+    const records = this.records();
+    if (records.length === 0) {
+      return null;
+    }
+    return Math.min(...records.map((record) => record.sale_value_cents));
+  });
   protected readonly recordsSummary = computed(() => {
     const pagination = this.pagination();
     if (!pagination) {

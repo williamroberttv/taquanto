@@ -260,7 +260,7 @@ describe('SearchPage', () => {
     const description = element.querySelector<HTMLElement>('.card-title-tooltip');
     const detailButton = element.querySelector<HTMLButtonElement>('.detail-button')!;
     const address = element.querySelector<HTMLElement>('.card-location-slot .tooltip');
-    expect(lowestPrice?.dataset['tip']).toBe('Menor preço');
+    expect(lowestPrice?.dataset['tip']).toBe('Menor valor entre os registros desta página');
     expect(description?.dataset['tip']).toBe('Arroz Branco 1kg');
     expect(address?.dataset['tip']).toBe('Rua Do Comércio, 10');
     expect(detailButton.textContent?.trim()).toBe('Detalhes');
@@ -278,6 +278,32 @@ describe('SearchPage', () => {
     expect(dialog?.textContent).toContain('Horário da venda');
     expect(dialog?.textContent).not.toContain('57000-000');
     expect(dialog?.textContent).toContain('Localização no mapa não informada pela fonte');
+  });
+
+  it('highlights the lowest sale value of the page, not the first record', async () => {
+    api.results = [
+      { ...priceRecord, description: 'Arroz premium', gtin: '7891234567890', sale_value_cents: 799 },
+      { ...priceRecord, description: 'Arroz econômico', gtin: '7891234567891', sale_value_cents: 599 },
+      { ...priceRecord, description: 'Arroz comum', gtin: '7891234567892', sale_value_cents: 699 },
+    ];
+    const element = fixture.nativeElement as HTMLElement;
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+
+    input.value = priceRecord.gtin;
+    input.dispatchEvent(new Event('input'));
+    element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
+    await fixture.whenStable();
+
+    const tags = element.querySelectorAll<HTMLElement>('.lowest-price-tag');
+    expect(tags).toHaveLength(1);
+    expect(tags[0].closest('.price-card')?.textContent).toContain('Arroz Econômico');
+    expect(tags[0].dataset['tip']).toBe('Menor valor entre os registros desta página');
+    expect(tags[0].getAttribute('aria-label')).toBe(
+      'Menor valor entre os registros desta página',
+    );
+    expect(
+      element.querySelectorAll('.price-card')[0].querySelector('.lowest-price-tag'),
+    ).toBeNull();
   });
 
   it('favorites the same sale record from the result card and its details', async () => {

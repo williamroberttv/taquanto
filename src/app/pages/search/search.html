@@ -245,14 +245,14 @@
             </div>
           } @else if (hasResults()) {
             <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              @for (record of records(); track $index; let first = $first) {
+              @for (record of records(); track $index) {
                 <article class="price-card card bg-base-100 shadow-sm">
-                  @if (first) {
+                  @if (record.sale_value_cents === lowestValueCents()) {
                     <span
                       class="lowest-price-tag tooltip tooltip-left"
-                      data-tip="Menor preço"
+                      data-tip="Menor valor entre os registros desta página"
                       role="img"
-                      aria-label="Menor preço"
+                      aria-label="Menor valor entre os registros desta página"
                     >
                       <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M20 13 13 20 4 11V4h7Z" />
