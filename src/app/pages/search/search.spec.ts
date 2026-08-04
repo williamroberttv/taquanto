@@ -1029,10 +1029,13 @@ describe('SearchPage', () => {
     expect(submit.disabled).toBe(true);
     const error = element.querySelector<HTMLElement>('#product-query-error');
     expect(error).not.toBeNull();
-    expect(error?.textContent).toContain('100 caracteres');
-    expect(error?.textContent).toContain('101');
+    expect(error?.textContent?.trim()).toBe('O campo aceita no máximo 100 caracteres.');
+    expect(error?.classList).toContain('text-xs');
+    expect(error?.classList).toContain('mb-2');
+    expect(input.classList).toContain('input-error');
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(input.getAttribute('aria-describedby')).toBe('product-query-error');
+    expect(getComputedStyle(submit).backgroundColor).toBe('rgb(107, 114, 128)');
     expect(api.priceCalls).toHaveLength(0);
   });
 
