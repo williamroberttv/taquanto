@@ -49,14 +49,15 @@ import { Component, ElementRef, computed, input, output, viewChild } from '@angu
             [value]="query()"
             [attr.aria-invalid]="queryOverLimit()"
             [attr.aria-describedby]="queryOverLimit() ? 'product-query-error' : null"
+            [class.input-error]="queryOverLimit()"
             (input)="updateQuery($event)"
             class="input input-sm min-h-10 w-full bg-base-100 pl-10"
             placeholder="Ex.: arroz, café 250g ou GTIN"
           />
         </div>
         @if (queryOverLimit()) {
-          <p id="product-query-error" class="text-error mt-2 text-sm" role="alert">
-            O campo aceita no máximo 100 caracteres (atualmente {{ query().length }}).
+          <p id="product-query-error" class="mt-1 mb-2 text-xs leading-4 text-error" role="alert">
+            O campo aceita no máximo 100 caracteres.
           </p>
         }
       </fieldset>
@@ -87,7 +88,7 @@ import { Component, ElementRef, computed, input, output, viewChild } from '@angu
 
     .search-form {
       grid-template-columns: minmax(0, 1fr);
-      align-items: end;
+      align-items: start;
     }
 
     .form-heading {
@@ -100,6 +101,13 @@ import { Component, ElementRef, computed, input, output, viewChild } from '@angu
 
     .search-submit {
       width: 100%;
+    }
+
+    .search-submit:disabled {
+      border-color: #6b7280 !important;
+      background-color: #6b7280 !important;
+      color: #fff !important;
+      opacity: 1;
     }
 
     .search-input-wrap {
