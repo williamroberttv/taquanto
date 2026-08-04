@@ -1,4 +1,4 @@
-import { Component, ElementRef, input, output, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, input, output, viewChild } from '@angular/core';
 
 @Component({
   selector: 'app-product-search-form',
@@ -46,13 +46,19 @@ import { Component, ElementRef, input, output, viewChild } from '@angular/core';
             name="query"
             required
             minlength="3"
-            maxlength="50"
             [value]="query()"
+            [attr.aria-invalid]="queryOverLimit()"
+            [attr.aria-describedby]="queryOverLimit() ? 'product-query-error' : null"
             (input)="updateQuery($event)"
             class="input input-sm min-h-10 w-full bg-base-100 pl-10"
             placeholder="Ex.: arroz, café 250g ou GTIN"
           />
         </div>
+        @if (queryOverLimit()) {
+          <p id="product-query-error" class="text-error mt-2 text-sm" role="alert">
+            O campo aceita no máximo 100 caracteres (atualmente {{ query().length }}).
+          </p>
+        }
       </fieldset>
 
       <ng-content />
@@ -60,7 +66,7 @@ import { Component, ElementRef, input, output, viewChild } from '@angular/core';
       <button
         type="submit"
         class="search-submit btn btn-primary btn-sm min-h-10 self-end"
-        [disabled]="locationPending()"
+        [disabled]="locationPending() || queryOverLimit()"
       >
         <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
@@ -151,6 +157,10 @@ export class ProductSearchForm {
   readonly message = input.required<string | null>();
   readonly queryChange = output<string>();
   readonly searchSubmitted = output<void>();
+
+  protected readonly MAX_QUERY_LENGTH = 100;
+
+  protected readonly queryOverLimit = computed(() => this.query().length > this.MAX_QUERY_LENGTH);
 
   get nativeElement(): HTMLFormElement {
     return this.form().nativeElement;

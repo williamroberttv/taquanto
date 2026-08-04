@@ -258,9 +258,9 @@ export class SearchPage {
   }
 
   private runSearch(query: string, updateUrl: boolean): void {
-    if (!this.isGTIN(query) && (query.length < 3 || query.length > 50)) {
+    if (!this.isGTIN(query) && (query.length < 3 || query.length > 100)) {
       this.emptyMessage.set(null);
-      this.inlineMessage.set('Digite uma descrição de 3 a 50 caracteres ou um GTIN válido.');
+      this.inlineMessage.set('Digite uma descrição de 3 a 100 caracteres ou um GTIN válido.');
       return;
     }
     const searchKey = this.priceKey(query);

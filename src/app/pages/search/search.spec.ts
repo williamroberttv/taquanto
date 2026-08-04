@@ -995,7 +995,7 @@ describe('SearchPage', () => {
     form.dispatchEvent(new SubmitEvent('submit'));
     await fixture.whenStable();
 
-    expect(element.querySelector('.text-warning')?.textContent).toContain('3 a 50 caracteres');
+    expect(element.querySelector('.text-warning')?.textContent).toContain('3 a 100 caracteres');
     expect(element.querySelector('.toast')).toBeNull();
 
     api.fail = true;
@@ -1008,6 +1008,32 @@ describe('SearchPage', () => {
       'Não foi possível concluir a busca. Tente novamente em instantes.',
     );
     expect(element.querySelector('.text-warning')).toBeNull();
+  });
+
+  it('warns and disables the button when the query exceeds 100 characters', async () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const input = element.querySelector<HTMLInputElement>('#product-query')!;
+    const submit = element.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+
+    input.value = 'x'.repeat(100);
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    expect(submit.disabled).toBe(false);
+    expect(element.querySelector('#product-query-error')).toBeNull();
+
+    input.value = 'x'.repeat(101);
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    expect(submit.disabled).toBe(true);
+    const error = element.querySelector<HTMLElement>('#product-query-error');
+    expect(error).not.toBeNull();
+    expect(error?.textContent).toContain('100 caracteres');
+    expect(error?.textContent).toContain('101');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toBe('product-query-error');
+    expect(api.priceCalls).toHaveLength(0);
   });
 
   afterEach(() => {
