@@ -120,14 +120,12 @@ export class SearchResultsMap {
     this.markers.clearLayers();
     this.markerByRecord.clear();
     this.radiusCircle?.remove();
-    const bounds = this.leaflet.latLngBounds([]);
 
     for (const record of records) {
       const coordinates = recordCoordinates(record);
       if (!coordinates) {
         continue;
       }
-      bounds.extend(coordinates);
       const marker = this.leaflet
         .circleMarker(coordinates, {
           className: 'results-sale-marker search-sale-marker',
@@ -155,14 +153,8 @@ export class SearchResultsMap {
           weight: 2,
         })
         .addTo(this.map);
-      bounds.extend(this.radiusCircle.getBounds());
     }
 
-    if (bounds.isValid()) {
-      this.map.fitBounds(bounds, { maxZoom: 15, padding: [24, 24] });
-    } else {
-      this.map.setView([-9.653, -35.716], 8);
-    }
     requestAnimationFrame(() => this.map?.invalidateSize());
     if (this.pendingRecord) {
       this.revealRecord(this.pendingRecord);
