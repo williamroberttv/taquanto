@@ -1,10 +1,10 @@
 ---
-name: TáQuanto
+name: TaQuanto
 status: implemented
 description: 'A trustworthy, approachable public-price interface for Alagoas. Clean neutral surfaces and a restrained violet accent keep dense sale data readable, while the elephant mascot gives the product a recognizable local personality.'
 ---
 
-# TáQuanto design system
+# TaQuanto design system
 
 This document is the visual and interaction source of truth. It describes the design implemented by the custom daisyUI themes in `src/styles.css` and the feature styles beside each Angular component.
 
@@ -72,7 +72,7 @@ Both themes must preserve the same hierarchy and semantics. Dark mode is not a c
 
 ### Header
 
-Contains the TáQuanto wordmark, primary navigation, mobile disclosure, and theme toggle. The home link has an explicit accessible name. Navigation labels remain short and task-oriented.
+Contains the TaQuanto wordmark, primary navigation, mobile disclosure, and theme toggle. The home link has an explicit accessible name. Navigation labels remain short and task-oriented.
 
 ### Landing page
 
@@ -149,7 +149,7 @@ Motion clarifies state but is not required to understand content. The global red
 ## Implementation boundaries
 
 - Tailwind CSS 4 provides layout and utility styling through `@import 'tailwindcss'`.
-- daisyUI supplies compatible controls through the two custom TáQuanto themes.
+- daisyUI supplies compatible controls through the two custom TaQuanto themes.
 - Application-specific layout, searchable location controls, and Leaflet presentation stay in local component styles or the documented global map overrides.
 - Prefer native elements such as `dialog`, `details`, `button`, `select`, and `input`.
 - Do not introduce a parallel token system or a default daisyUI theme.

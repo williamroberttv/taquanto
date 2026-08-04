@@ -1,11 +1,11 @@
-# Linguagem de domínio do TáQuanto
+# Linguagem de domínio do TaQuanto
 
 Este documento mantém o vocabulário usado no produto, no código e na documentação. Os termos estão em português porque descrevem o domínio atendido pela interface. A linha _Evitar_ registra palavras que alteram o significado ou criam promessas que o produto não pode cumprir.
 
 ## Limites fundamentais
 
-- O TáQuanto apresenta registros públicos de vendas emitidas em NFC-e em Alagoas.
-- Este frontend conversa apenas com a API TáQuanto; credenciais e integração com a fonte oficial pertencem ao backend.
+- O TaQuanto apresenta registros públicos de vendas emitidas em NFC-e em Alagoas.
+- Este frontend conversa apenas com a API TaQuanto; credenciais e integração com a fonte oficial pertencem ao backend.
 - Um registro histórico não é uma oferta, promoção ou garantia de preço atual.
 - Coordenadas são opcionais e nunca devem ser inferidas quando a fonte não as fornece.
 - A localização atual do visitante só é solicitada após consentimento, é enviada à API para a consulta e não é salva no navegador.
@@ -13,19 +13,19 @@ Este documento mantém o vocabulário usado no produto, no código e na document
 
 ## Termos
 
-**TáQuanto**
+**TaQuanto**
 
 Produto de consulta pública de preços em Alagoas, composto por este frontend e por uma API separada que integra com o Economiza Alagoas/SEFAZ-AL.
 
 _Evitar_: substituto da SEFAZ, scraper do Economiza Alagoas, loja
 
-**Frontend TáQuanto**
+**Frontend TaQuanto**
 
 Este repositório: a aplicação Angular responsável pela interface pública, pelo estado do navegador e por futuras experiências autenticadas. Não chama a SEFAZ-AL diretamente.
 
 _Evitar_: backend, proxy SEFAZ, token SEFAZ no navegador
 
-**API TáQuanto**
+**API TaQuanto**
 
 Serviço separado que protege credenciais, integra com o Economiza Alagoas/SEFAZ-AL e expõe dados normalizados e paginados ao frontend.
 
@@ -35,7 +35,7 @@ _Evitar_: frontend, chamada direta do Angular para a SEFAZ
 
 Plataforma oficial da SEFAZ-AL que disponibiliza consulta de informações de vendas reais registradas em NFC-e no estado.
 
-_Evitar_: base própria do TáQuanto, fornecedor privado de preços
+_Evitar_: base própria do TaQuanto, fornecedor privado de preços
 
 **Registro de Venda NFC-e**
 
@@ -81,7 +81,7 @@ _Evitar_: SKU interno, código inventado, código sempre disponível
 
 **SKU de Origem**
 
-Identificador do produto fornecido pela fonte quando existir. O TáQuanto não o cria a partir da descrição.
+Identificador do produto fornecido pela fonte quando existir. O TaQuanto não o cria a partir da descrição.
 
 _Evitar_: GTIN, código interno inventado
 
@@ -141,7 +141,7 @@ _Evitar_: cobertura completa, mapa de ofertas, localização inferida
 
 **Dados em Cache**
 
-Resultado reutilizável fornecido pela API TáQuanto. Pode estar fresco (`HIT`) ou disponível enquanto a API prepara uma atualização (`STALE`). A interface informa quando exibe dados antigos.
+Resultado reutilizável fornecido pela API TaQuanto. Pode estar fresco (`HIT`) ou disponível enquanto a API prepara uma atualização (`STALE`). A interface informa quando exibe dados antigos.
 
 _Evitar_: dado necessariamente atual, resultado fabricado pelo frontend
 
@@ -153,7 +153,7 @@ _Evitar_: atualização contínua infinita, cache mantido pelo navegador
 
 **Promoção**
 
-Rótulo comercial de oferta ou desconto que o TáQuanto não infere a partir de Registros de Venda NFC-e.
+Rótulo comercial de oferta ou desconto que o TaQuanto não infere a partir de Registros de Venda NFC-e.
 
 _Evitar_: sinônimo de menor preço, venda recente ou diferença de valor
 
