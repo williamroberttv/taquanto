@@ -11,6 +11,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.taquantoal.com.br/combustiveis</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://www.taquantoal.com.br/favoritos</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

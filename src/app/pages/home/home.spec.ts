@@ -39,7 +39,9 @@ describe('Home', () => {
     expect(compiled.querySelector('.text-rotate')?.textContent).toContain('o etanol');
     expect(text).toContain('Vendas registradas em NFC-e, organizadas para consulta');
     expect(text).toContain('Três passos para comparar registros de venda.');
-    expect(text).toContain('Guarde a venda, não uma promessa de preço.');
+    expect(text).toContain('Busque por município ou perto de você.');
+    expect(text).toContain('raio de 5, 10 ou 15 km');
+    expect(text).toContain('Retome pesquisas e guarde vendas, não promessas de preço.');
     expect(text).toContain('Exemplo de busca por produto');
     expect(text).toContain('Prévia no mapa');
     expect(

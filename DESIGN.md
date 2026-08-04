@@ -12,7 +12,7 @@ This document is the visual and interaction source of truth. It describes the de
 
 1. **Evidence before promotion.** Lead with the sale value, establishment, date, and location. Never style a historical record like a guaranteed offer.
 2. **Useful without an account.** Search, recent searches, favorites, and theme selection work in the browser without sign-up friction.
-3. **Alagoas is the context.** Municipality selection and maps make geography understandable without implying visitor tracking.
+3. **Alagoas is the context.** Municipality selection, optional consent-based proximity, and maps make geography understandable without implying visitor tracking.
 4. **Quiet structure, memorable brand.** Neutral cards hold dense information; violet actions and the elephant mascot provide recognition.
 5. **Accessible by default.** Semantic HTML, keyboard operation, readable contrast, and reduced motion are part of every component definition.
 
@@ -63,7 +63,7 @@ Both themes must preserve the same hierarchy and semantics. Dark mode is not a c
 
 - Start mobile-first with one readable column.
 - At wider breakpoints, results expand from one to two, three, and four columns.
-- Search filters keep map selection and native form controls together.
+- Search filters keep the product or fuel input, location controls, period, and submit action together.
 - Page headings and explanatory copy use narrower reading widths inside the main grid.
 - Header navigation remains sticky; mobile navigation uses a native `<details>` disclosure.
 - Dialogs fit the viewport and keep their close action easy to reach.
@@ -76,24 +76,28 @@ Contains the TáQuanto wordmark, primary navigation, mobile disclosure, and them
 
 ### Landing page
 
-Uses a direct product statement, clear calls to search and favorites, source context, a three-step explanation, and illustrative mascot assets. The sales and map content here is a labeled preview, not live data.
+Uses a direct product statement, clear calls to product and fuel searches, source context, a three-step explanation, local browser features, and illustrative mascot assets. The sales and map content here is a labeled preview, not live data.
 
 Static images use Angular's `NgOptimizedImage`. Meaningful images have descriptive Portuguese alternative text; decorative elements are hidden from assistive technology.
 
 ### Search filters
 
-The search journey is ordered as:
+The product-search journey is ordered as:
 
-1. Select a municipality by accessible map or native `<select>`.
+1. Enter a product description or GTIN.
 2. Select a supported period.
-3. Enter a product description or GTIN.
+3. Select a municipality or enable nearby search and choose a radius.
 4. Submit explicitly.
+
+Fuel search replaces the text query with one of the six source-defined categories and otherwise reuses the same location, period, result, and cache patterns.
 
 Fields use visible labels or a screen-reader label, helper text, native input constraints, and an adjacent action. Validation is specific enough to recover from the error.
 
-### Municipality map
+### Municipality and proximity controls
 
-The GeoJSON map and native select are equivalent controls. Municipality paths expose `role="button"`, `tabindex="0"`, an accessible label, and `aria-pressed`; Enter and Space select a shape. A data-load failure is announced with `role="alert"`.
+The municipality control is a searchable native disclosure containing every Alagoas municipality and its IBGE code. Filtering ignores case and accents, returns focus to the trigger after selection, and exposes listbox semantics.
+
+Nearby search is an explicit alternative to municipality selection. Before requesting browser geolocation, a native dialog explains that coordinates are sent to the API and not stored. Radius choices are 5, 10, and 15 km; permission or geolocation failures are announced next to the filters.
 
 ### Sale record cards
 
@@ -107,13 +111,13 @@ The information hierarchy is value, product, establishment, address, sale time, 
 
 ### Dialogs and maps
 
-Use native `<dialog>` through daisyUI's modal styling. A visible close button and backdrop close action are both provided. Map markers appear only for valid source coordinates. A map without coordinates is presented as regional context and states that no precise location was supplied.
+Use native `<dialog>` through daisyUI's modal styling. A visible close button and backdrop close action are both provided. Result and detail map markers appear only for valid source coordinates. Result maps state how many records could be positioned and show the selected radius for nearby searches.
 
 Leaflet is imported only in the browser and only when a map is needed. OpenStreetMap attribution remains visible.
 
 ### Recent searches and favorites
 
-Recent-search cards show the full query context and relative time. Favorites preserve the sale snapshot rather than representing a live product. Empty states explain the next useful action.
+Recent product searches use a compact list that shows query, municipality or nearby radius, and period. Precise coordinates are never stored. Favorites preserve the sale snapshot rather than representing a live product. Empty states explain the next useful action.
 
 ### Feedback states
 
@@ -131,7 +135,7 @@ Every change must continue to meet WCAG AA and pass automated AXE checks.
 - Use semantic landmarks and one descriptive `h1` per page.
 - Associate inputs with labels and group related controls under headings.
 - Preserve a visible 2 px primary focus outline with 2 px offset.
-- Do not create pointer-only actions; maps, menus, dialogs, pagination, and favorites require keyboard support.
+- Do not create pointer-only actions; result-map markers, menus, dialogs, pagination, and favorites require keyboard support.
 - Use `aria-live="polite"` for asynchronous progress and `role="alert"` for actionable failures.
 - Keep decorative SVGs and previews at `aria-hidden="true"`.
 - Name icon-only buttons with an action and object.
@@ -146,6 +150,6 @@ Motion clarifies state but is not required to understand content. The global red
 
 - Tailwind CSS 4 provides layout and utility styling through `@import 'tailwindcss'`.
 - daisyUI supplies compatible controls through the two custom TáQuanto themes.
-- Application-specific layout and Leaflet presentation stay in local component styles or the documented global map overrides.
+- Application-specific layout, searchable location controls, and Leaflet presentation stay in local component styles or the documented global map overrides.
 - Prefer native elements such as `dialog`, `details`, `button`, `select`, and `input`.
 - Do not introduce a parallel token system or a default daisyUI theme.
