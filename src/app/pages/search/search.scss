@@ -17,13 +17,17 @@
 
 @media (min-width: 640px) {
   .filter-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .fuel-type-filter {
+    grid-column: span 2;
   }
 }
 
 @media (min-width: 768px) {
   .filter-form {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 

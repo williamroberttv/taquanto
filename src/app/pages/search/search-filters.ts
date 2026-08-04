@@ -112,6 +112,14 @@ import { SEARCH_PERIODS } from './search.models';
     .filter-message {
       grid-column: 1 / -1;
     }
+
+    @media (min-width: 640px) {
+      app-municipality-select,
+      .period-filter,
+      .radius-filter {
+        grid-column: span 2;
+      }
+    }
   `,
 })
 export class SearchFilters {
