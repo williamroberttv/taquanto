@@ -91,16 +91,16 @@ export class Home {
     const description =
       'Consulte registros reais de vendas NFC-e de produtos e combustíveis em Alagoas por município ou perto de você.';
 
-    this.title.setTitle('Preços em Alagoas | TáQuanto');
+    this.title.setTitle('Preços em Alagoas | TaQuanto');
     this.meta.updateTag({ name: 'description', content: description });
-    this.meta.updateTag({ property: 'og:title', content: 'Preços em Alagoas | TáQuanto' });
+    this.meta.updateTag({ property: 'og:title', content: 'Preços em Alagoas | TaQuanto' });
     this.meta.updateTag({ property: 'og:description', content: description });
     this.meta.updateTag({ property: 'og:url', content: `${environment.siteUrl}/` });
     this.meta.updateTag({
       property: 'og:image',
       content: `${environment.siteUrl}/images/elephant-3.png`,
     });
-    this.meta.updateTag({ name: 'twitter:title', content: 'Preços em Alagoas | TáQuanto' });
+    this.meta.updateTag({ name: 'twitter:title', content: 'Preços em Alagoas | TaQuanto' });
     this.meta.updateTag({ name: 'twitter:description', content: description });
     this.meta.updateTag({
       name: 'twitter:image',

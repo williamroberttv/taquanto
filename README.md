@@ -1,7 +1,7 @@
-# TáQuanto
+# TaQuanto
 
 <p align="center">
-  <img src="public/images/elephant-3.png" width="240" alt="TáQuanto mascot holding a calculator and price tags" />
+  <img src="public/images/elephant-3.png" width="240" alt="TaQuanto mascot holding a calculator and price tags" />
 </p>
 
 <p align="center">
@@ -14,9 +14,9 @@
   <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript" alt="TypeScript strict mode" />
 </p>
 
-TáQuanto turns public price data from Economiza Alagoas/SEFAZ-AL into a focused comparison interface. Visitors can search for products or fuel sale records by municipality or near their current location, inspect results on a map, and save useful records locally without creating an account.
+TaQuanto turns public price data from Economiza Alagoas/SEFAZ-AL into a focused comparison interface. Visitors can search for products or fuel sale records by municipality or near their current location, inspect results on a map, and save useful records locally without creating an account.
 
-This repository contains the Angular frontend. A separate TáQuanto API protects source credentials, integrates with the official data source, and normalizes its responses. The browser never calls SEFAZ-AL directly.
+This repository contains the Angular frontend. A separate TaQuanto API protects source credentials, integrates with the official data source, and normalizes its responses. The browser never calls SEFAZ-AL directly.
 
 > Sale records are historical evidence from NFC-e documents. They are not advertisements, guaranteed offers, or current shelf prices.
 
@@ -73,7 +73,7 @@ This repository contains the Angular frontend. A separate TáQuanto API protects
 
 ### Theme and accessibility
 
-- Provides custom light and dark TáQuanto themes built with Tailwind CSS and daisyUI.
+- Provides custom light and dark TaQuanto themes built with Tailwind CSS and daisyUI.
 - Uses the saved preference first, then the operating-system preference.
 - Includes semantic landmarks, labels, live status messages, native dialogs, visible focus states, and keyboard-operable result-map markers.
 - Disables nonessential motion when `prefers-reduced-motion` is enabled.
@@ -84,7 +84,7 @@ This repository contains the Angular frontend. A separate TáQuanto API protects
 flowchart LR
     Visitor[Browser] --> App[Angular frontend]
     App -->|GET /v1/prices or /v1/fuels| Gateway[Same-origin /api route]
-    Gateway --> API[Separate TáQuanto API]
+    Gateway --> API[Separate TaQuanto API]
     API --> Source[Economiza Alagoas / SEFAZ-AL]
     App --> Storage[(localStorage)]
     Visitor -->|Optional geolocation permission| App
@@ -104,7 +104,7 @@ The production build uses Angular's static output mode. CloudFront serves the ge
 
 ### Search and cache flow
 
-1. The UI validates the product query or fuel category and sends the period, pagination, and either the selected municipality or permitted coordinates and radius to the TáQuanto API.
+1. The UI validates the product query or fuel category and sends the period, pagination, and either the selected municipality or permitted coordinates and radius to the TaQuanto API.
 2. A fresh cache hit is rendered immediately.
 3. A stale response remains visible while the client revalidates every five seconds.
 4. An accepted cache miss is polled without blocking the interface.
@@ -132,7 +132,7 @@ Transient timeouts and gateway failures are retried during that window. Other fa
 
 - Node.js 22
 - npm 11
-- The separate TáQuanto API running at `http://localhost:8080` for live searches
+- The separate TaQuanto API running at `http://localhost:8080` for live searches
 
 Install the locked dependency tree and start the development server:
 
@@ -191,7 +191,7 @@ Pushes to `main` deploy `dist/taquanto/browser` through GitHub Actions. The
 
 The workflow authenticates with AWS through GitHub OIDC, synchronizes the build
 with S3, removes stale files, and waits for the CloudFront invalidation to
-complete. CloudFront is responsible for routing `/api/*` to the TáQuanto API and
+complete. CloudFront is responsible for routing `/api/*` to the TaQuanto API and
 falling back to `index.csr.html` for client-rendered routes.
 
 ## Optional production container
@@ -203,7 +203,7 @@ docker build -f ci/prod/Dockerfile -t taquanto-frontend .
 docker run --rm -p 8080:80 taquanto-frontend
 ```
 
-Open `http://localhost:8080/`. A production deployment must route the same-origin `/api` prefix to the TáQuanto API before requests reach this static frontend container.
+Open `http://localhost:8080/`. A production deployment must route the same-origin `/api` prefix to the TaQuanto API before requests reach this static frontend container.
 
 ## Project structure
 
@@ -215,7 +215,7 @@ src/app/
 ├── app.routes.ts     Browser routes and lazy-loading boundaries
 └── app.routes.server.ts  Route-level prerender/CSR policy
 public/
-└── images/           TáQuanto visual assets
+└── images/           TaQuanto visual assets
 ci/prod/              Production Dockerfile and Nginx configuration
 ```
 
