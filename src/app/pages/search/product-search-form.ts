@@ -127,13 +127,17 @@ import { Component, ElementRef, input, output, viewChild } from '@angular/core';
 
     @media (min-width: 640px) {
       .search-form {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .query-field {
+        grid-column: span 2;
       }
     }
 
     @media (min-width: 768px) {
       .search-form {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
       }
     }
   `,
