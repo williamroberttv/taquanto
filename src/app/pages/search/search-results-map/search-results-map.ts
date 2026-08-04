@@ -150,6 +150,7 @@ export class SearchResultsMap {
           color: 'var(--color-primary)',
           fillColor: 'var(--color-primary)',
           fillOpacity: 0.12,
+          interactive: false,
           radius: searchLocation.radius * 1000,
           weight: 2,
         })
