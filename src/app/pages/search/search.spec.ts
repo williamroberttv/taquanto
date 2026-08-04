@@ -342,6 +342,7 @@ describe('SearchPage', () => {
       },
     });
     await vi.waitFor(() => expect(element.querySelector('.results-sale-marker')).not.toBeNull());
+    expect(element.querySelector<HTMLImageElement>('.leaflet-tile')?.src).toContain('/8/');
     expect(element.querySelector('.search-radius')).not.toBeNull();
     expect(element.textContent).toContain('1 de 1 registros exibidos no mapa.');
     const resultsMap = element.querySelector<HTMLElement>('.results-map')!;

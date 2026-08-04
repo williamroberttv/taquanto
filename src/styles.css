@@ -274,7 +274,7 @@ body {
   filter: drop-shadow(0 4px 7px color-mix(in srgb, var(--color-primary) 42%, transparent));
 }
 
-html[data-theme='dark'] .leaflet-tile {
+html[data-theme='dark'] .leaflet-tile-pane {
   filter: brightness(0.68) invert(1) contrast(1.7) hue-rotate(185deg) saturate(0.55);
 }
 
