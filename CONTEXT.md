@@ -8,6 +8,7 @@ Este documento mantém o vocabulário usado no produto, no código e na document
 - Este frontend conversa apenas com a API TáQuanto; credenciais e integração com a fonte oficial pertencem ao backend.
 - Um registro histórico não é uma oferta, promoção ou garantia de preço atual.
 - Coordenadas são opcionais e nunca devem ser inferidas quando a fonte não as fornece.
+- A localização atual do visitante só é solicitada após consentimento, é enviada à API para a consulta e não é salva no navegador.
 - A consulta pública e os recursos locais não exigem autenticação.
 
 ## Termos
@@ -50,15 +51,27 @@ _Evitar_: página de produto, ficha de oferta, detalhe de promoção
 
 **Consulta Pública**
 
-Experiência sem login para pesquisar e comparar Registros de Venda NFC-e recentes.
+Experiência sem login para pesquisar e comparar Registros de Venda NFC-e recentes de produtos ou combustíveis.
 
 _Evitar_: área autenticada, histórico pessoal
 
 **Consulta de Produto**
 
-Busca por uma descrição de 3 a 50 caracteres ou por um GTIN válido, combinada com município e período.
+Busca por uma descrição de 3 a 50 caracteres ou por um GTIN válido, combinada com período e município ou Busca por Proximidade.
 
 _Evitar_: busca de oferta, pesquisa genérica sem filtros
+
+**Consulta de Combustível**
+
+Busca por uma das seis categorias fornecidas pela fonte, combinada com período e município ou Busca por Proximidade. Usa um endpoint próprio e não transforma a categoria em descrição de produto.
+
+_Evitar_: busca textual de combustível, cotação da ANP, preço garantido no posto
+
+**Categoria de Combustível**
+
+Classificação aceita pela fonte: gasolina comum, gasolina aditivada, álcool, diesel comum, diesel aditivado/S10 ou GNV.
+
+_Evitar_: categoria criada pelo frontend, nome comercial inventado
 
 **GTIN**
 
@@ -74,9 +87,21 @@ _Evitar_: GTIN, código interno inventado
 
 **Município da Consulta**
 
-Município de Alagoas selecionado pelo visitante por meio do mapa ou do campo de seleção. A API recebe seu código IBGE. Maceió é a seleção inicial e o fallback para códigos inválidos.
+Município de Alagoas escolhido em um seletor pesquisável. A API recebe seu código IBGE. Maceió é a seleção inicial e o fallback para códigos ausentes ou não reconhecidos.
 
 _Evitar_: localização do visitante, geolocalização automática
+
+**Busca por Proximidade**
+
+Alternativa opcional ao Município da Consulta. Após consentimento, usa as coordenadas fornecidas pelo navegador e um Raio da Consulta para pedir à API registros próximos. As coordenadas não entram na URL nem no armazenamento local.
+
+_Evitar_: rastreamento, localização automática, endereço exato do visitante
+
+**Raio da Consulta**
+
+Distância de 5, 10 ou 15 km ao redor da localização atual, usada apenas na Busca por Proximidade e desenhada no mapa de resultados.
+
+_Evitar_: limite municipal, distância garantida entre visitante e estabelecimento
 
 **Período da Consulta**
 
@@ -86,7 +111,7 @@ _Evitar_: validade da oferta, período promocional
 
 **Pesquisa Recente**
 
-Combinação de consulta, município e período salva no navegador depois de uma busca. As dez combinações mais recentes podem ser repetidas no mesmo dispositivo.
+Combinação de Consulta de Produto, período e município ou raio salva no navegador depois de uma busca. As dez combinações mais recentes podem ser repetidas no mesmo dispositivo; em buscas próximas, a localização é solicitada novamente.
 
 _Evitar_: histórico da conta, pesquisa sincronizada, consulta salva no servidor
 
@@ -102,11 +127,17 @@ Coleção local de Registros de Venda Favoritos, ordenada do mais recentemente s
 
 _Evitar_: lista de produtos, ofertas favoritas, sincronização entre dispositivos
 
-**Localização Aproximada**
+**Localização do Registro de Venda**
 
 Contexto geográfico opcional da venda. Quando coordenadas válidas existem, a interface pode mostrar um marcador; sem elas, mostra apenas o texto disponível e um mapa de referência sem ponto inventado.
 
 _Evitar_: localização exata do comprador, rastreamento, coordenada inferida
+
+**Mapa de Resultados**
+
+Mapa que reúne os Registros de Venda NFC-e da página atual que possuem coordenadas válidas. Na Busca por Proximidade, também mostra o Raio da Consulta. Informa quantos registros puderam ser posicionados e não inventa pontos ausentes.
+
+_Evitar_: cobertura completa, mapa de ofertas, localização inferida
 
 **Dados em Cache**
 
@@ -134,6 +165,6 @@ _Evitar_: requisito para a Consulta Pública
 
 ## Escopo atual
 
-Estão implementados: landing page pública, Consulta de Produto, seleção dos municípios de Alagoas, períodos recentes, paginação, detalhe do registro, mapas condicionais, pesquisas recentes, favoritos locais e temas claro/escuro.
+Estão implementados: landing page pública, Consulta de Produto, Consulta de Combustível, seleção pesquisável dos municípios de Alagoas, Busca por Proximidade, períodos recentes, paginação, Mapa de Resultados, detalhe do registro, pesquisas recentes de produtos, favoritos locais e temas claro/escuro.
 
 Permanecem fora do escopo atual: autenticação, sincronização entre dispositivos, alertas, páginas de consumidor e histórico pessoal no servidor.

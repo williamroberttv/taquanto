@@ -50,12 +50,13 @@ export class Home {
     },
     {
       title: 'Defina município e período',
-      description: 'Use o mesmo contexto geográfico e uma janela recente para comparar os dados.',
+      description:
+        'Escolha um município ou, com sua permissão, busque em um raio de 5, 10 ou 15 km.',
     },
     {
       title: 'Compare os registros',
       description:
-        'Confira valor, estabelecimento e data; são vendas históricas, não ofertas garantidas.',
+        'Confira valor, estabelecimento, data e mapa; são vendas históricas, não ofertas garantidas.',
     },
   ];
 
@@ -88,7 +89,7 @@ export class Home {
 
   constructor() {
     const description =
-      'Consulte registros reais de vendas NFC-e de produtos e combustíveis em Alagoas. Compare valor, estabelecimento, data e município.';
+      'Consulte registros reais de vendas NFC-e de produtos e combustíveis em Alagoas por município ou perto de você.';
 
     this.title.setTitle('Preços em Alagoas | TáQuanto');
     this.meta.updateTag({ name: 'description', content: description });
