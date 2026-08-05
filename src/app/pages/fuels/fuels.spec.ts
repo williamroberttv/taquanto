@@ -247,6 +247,7 @@ describe('FuelsPage', () => {
     expect(favorite.getAttribute('aria-pressed')).toBe('true');
     const mapButton = element.querySelector<HTMLButtonElement>('.map-record-button')!;
     expect(mapButton.disabled).toBe(true);
+    expect(mapButton.style.color).toBe('var(--tq-muted)');
     expect(mapButton.getAttribute('aria-label')).toBe('Localização indisponível');
     element.querySelector<HTMLButtonElement>('.detail-button')!.click();
     await fixture.whenStable();

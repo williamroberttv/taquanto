@@ -199,13 +199,25 @@ export class SearchResultsMap {
   }
 
   private popupContent(record: PriceRecord): string {
-    return [
-      `<strong>${this.escapeHtml(formatSaleValue(record))}</strong>`,
-      this.escapeHtml(formatTitle(record.description)),
-      this.escapeHtml(formatTitle(record.store.name)),
-      this.escapeHtml(formatAddress(record.location.address)),
-      this.escapeHtml(formatSaleTime(record)),
-    ].join('<br>');
+    const address = record.location.address
+      ? formatAddress(record.location.address)
+      : 'Endereço não informado';
+
+    return `
+      <article class="map-record-card">
+        <p class="card-price-slot price-value">${this.escapeHtml(formatSaleValue(record))}</p>
+        <h4 class="card-title-slot">${this.escapeHtml(formatTitle(record.description))}</h4>
+        <div class="card-store-slot">
+          <p class="card-store-name">${this.escapeHtml(formatTitle(record.store.name))}</p>
+        </div>
+        <div class="card-location-slot">
+          <p class="card-secondary">${this.escapeHtml(address)}</p>
+        </div>
+        <time class="card-time-slot card-secondary" datetime="${this.escapeHtml(record.sold_at)}">
+          ${this.escapeHtml(formatSaleTime(record))}
+        </time>
+      </article>
+    `;
   }
 
   private escapeHtml(value: string): string {

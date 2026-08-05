@@ -68,8 +68,11 @@ import { PriceRecord } from '../../services/taquanto-api';
             >
               <button
                 type="button"
-                class="map-record-button text-primary btn btn-square btn-ghost h-10 min-h-10 w-10 p-0"
+                class="map-record-button btn btn-square btn-ghost h-10 min-h-10 w-10 p-0"
                 [disabled]="!hasCoordinates()"
+                [style.color]="
+                  hasCoordinates() ? 'var(--color-primary)' : 'var(--tq-muted)'
+                "
                 [attr.aria-label]="
                   hasCoordinates() ? 'Mostrar venda no mapa' : 'Localização indisponível'
                 "

@@ -351,7 +351,11 @@ describe('SearchPage', () => {
     expect(element.querySelector('.leaflet-popup')).not.toBeNull();
     const marker = element.querySelector<SVGElement>('.results-sale-marker')!;
     marker.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-    const popup = element.querySelector('.leaflet-popup')?.textContent;
+    const popupElement = element.querySelector('.leaflet-popup');
+    const popup = popupElement?.textContent;
+    expect(popupElement?.querySelector('.map-record-card')).not.toBeNull();
+    expect(popupElement?.querySelector('.price-value')).not.toBeNull();
+    expect(popupElement?.querySelector('.card-title-slot')).not.toBeNull();
     expect(popup).toContain('R$ 6,29 / UN');
     expect(popup).toContain('Arroz Branco 1kg');
     expect(popup).toContain('Mercado Centro');

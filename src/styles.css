@@ -288,6 +288,59 @@ html[data-theme='dark'] .leaflet-tile-pane {
   background: var(--tq-card);
 }
 
+.map-record-card {
+  width: 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.results-map .leaflet-popup-content-wrapper {
+  border: 1px solid var(--tq-border70);
+  box-shadow: 0 1px 3px var(--tq-shadow);
+}
+
+.map-record-card p {
+  margin: 0;
+}
+
+.map-record-card .card-price-slot {
+  height: 1.65rem;
+  padding-right: 1.5rem;
+  font-size: 1.05rem;
+}
+
+.map-record-card .card-title-slot {
+  height: 2.15rem;
+  margin-top: 0.15rem;
+  color: var(--tq-ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.map-record-card .card-store-slot {
+  height: 1.25rem;
+  margin-top: 0.2rem;
+}
+
+.map-record-card .card-store-name {
+  font-size: 0.7rem;
+}
+
+.map-record-card .card-location-slot {
+  height: 1.1rem;
+}
+
+.map-record-card .card-secondary {
+  margin: 0.1rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.map-record-card .card-time-slot {
+  height: auto;
+}
+
 .detail-label {
   color: var(--tq-muted);
   font-size: 0.78rem;
