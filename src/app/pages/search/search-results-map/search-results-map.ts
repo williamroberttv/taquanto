@@ -71,6 +71,7 @@ export class SearchResultsMap {
   private radiusCircle?: Leaflet.Circle;
   private readonly markerByRecord = new Map<PriceRecord, Leaflet.CircleMarker>();
   private pendingRecord?: PriceRecord;
+  private initialViewSet = false;
 
   readonly records = input.required<PriceRecord[]>();
   readonly searchLocation = input<GeographicSearch | null>(null);
@@ -120,12 +121,14 @@ export class SearchResultsMap {
     this.markers.clearLayers();
     this.markerByRecord.clear();
     this.radiusCircle?.remove();
+    const initialBounds = this.initialViewSet ? undefined : this.leaflet.latLngBounds([]);
 
     for (const record of records) {
       const coordinates = recordCoordinates(record);
       if (!coordinates) {
         continue;
       }
+      initialBounds?.extend(coordinates);
       const marker = this.leaflet
         .circleMarker(coordinates, {
           className: 'results-sale-marker search-sale-marker',
@@ -155,6 +158,12 @@ export class SearchResultsMap {
         .addTo(this.map);
     }
 
+    if (!this.initialViewSet) {
+      this.initialViewSet = true;
+      if (initialBounds?.isValid()) {
+        this.map.fitBounds(initialBounds, { maxZoom: 15, padding: [24, 24] });
+      }
+    }
     requestAnimationFrame(() => this.map?.invalidateSize());
     if (this.pendingRecord) {
       this.revealRecord(this.pendingRecord);
