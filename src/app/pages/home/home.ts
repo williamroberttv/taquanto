@@ -88,23 +88,24 @@ export class Home {
   ];
 
   constructor() {
+    const pageTitle = 'Preços de Produtos e Combustíveis em Alagoas | TaQuanto';
     const description =
       'Consulte registros reais de vendas NFC-e de produtos e combustíveis em Alagoas por município ou perto de você.';
 
-    this.title.setTitle('Preços em Alagoas | TaQuanto');
+    this.title.setTitle(pageTitle);
     this.meta.updateTag({ name: 'description', content: description });
-    this.meta.updateTag({ property: 'og:title', content: 'Preços em Alagoas | TaQuanto' });
+    this.meta.updateTag({ property: 'og:title', content: pageTitle });
     this.meta.updateTag({ property: 'og:description', content: description });
     this.meta.updateTag({ property: 'og:url', content: `${environment.siteUrl}/` });
     this.meta.updateTag({
       property: 'og:image',
-      content: `${environment.siteUrl}/images/elephant-3.png`,
+      content: `${environment.siteUrl}/images/og-image.png`,
     });
-    this.meta.updateTag({ name: 'twitter:title', content: 'Preços em Alagoas | TaQuanto' });
+    this.meta.updateTag({ name: 'twitter:title', content: pageTitle });
     this.meta.updateTag({ name: 'twitter:description', content: description });
     this.meta.updateTag({
       name: 'twitter:image',
-      content: `${environment.siteUrl}/images/elephant-3.png`,
+      content: `${environment.siteUrl}/images/og-image.png`,
     });
     this.meta.updateTag({ rel: 'canonical', href: `${environment.siteUrl}/` });
 

@@ -5,7 +5,7 @@ export const routes: Routes = [
   {
     path: '',
     component: Home,
-    title: 'Preços em Alagoas | TaQuanto',
+    title: 'Preços de Produtos e Combustíveis em Alagoas | TaQuanto',
   },
   {
     path: 'produtos',
