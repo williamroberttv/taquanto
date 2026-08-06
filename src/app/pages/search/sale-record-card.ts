@@ -62,37 +62,37 @@ import { PriceRecord } from '../../services/taquanto-api';
               [favorite]="favorite()"
               (toggled)="favoriteToggled.emit($event)"
             />
-            <span
-              class="tooltip tooltip-top"
-              [attr.data-tip]="hasCoordinates() ? 'Mostrar no mapa' : 'Localização indisponível'"
-            >
-              <button
-                type="button"
-                class="map-record-button btn btn-square btn-ghost h-10 min-h-10 w-10 p-0"
-                [disabled]="!hasCoordinates()"
-                [style.color]="
-                  hasCoordinates() ? 'var(--color-primary)' : 'var(--tq-muted)'
-                "
-                [attr.aria-label]="
-                  hasCoordinates() ? 'Mostrar venda no mapa' : 'Localização indisponível'
-                "
-                (click)="locationRequested.emit(record())"
+            @if (showMapAction()) {
+              <span
+                class="tooltip tooltip-top"
+                [attr.data-tip]="hasCoordinates() ? 'Mostrar no mapa' : 'Localização indisponível'"
               >
-                <svg
-                  class="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  aria-hidden="true"
+                <button
+                  type="button"
+                  class="map-record-button btn btn-square btn-ghost h-10 min-h-10 w-10 p-0"
+                  [disabled]="!hasCoordinates()"
+                  [style.color]="hasCoordinates() ? 'var(--color-primary)' : 'var(--tq-muted)'"
+                  [attr.aria-label]="
+                    hasCoordinates() ? 'Mostrar venda no mapa' : 'Localização indisponível'
+                  "
+                  (click)="locationRequested.emit(record())"
                 >
-                  <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
-                  <circle cx="12" cy="10" r="2.5" />
-                </svg>
-              </button>
-            </span>
+                  <svg
+                    class="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+                    <circle cx="12" cy="10" r="2.5" />
+                  </svg>
+                </button>
+              </span>
+            }
             <button
               type="button"
               class="detail-button btn btn-outline btn-primary h-10 min-h-10 px-3 text-sm"
@@ -152,6 +152,7 @@ export class SaleRecordCard {
   readonly lowest = input.required<boolean>();
   readonly favorite = input(false);
   readonly actions = input(true);
+  readonly showMapAction = input(true);
   readonly favoriteToggled = output<PriceRecord>();
   readonly detailsRequested = output<PriceRecord>();
   readonly locationRequested = output<PriceRecord>();

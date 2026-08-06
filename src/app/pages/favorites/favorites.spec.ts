@@ -33,7 +33,7 @@ describe('FavoritesPage', () => {
     }).compileComponents();
   });
 
-  it('lists favorite sale details newest first and removes them in place', async () => {
+  it('uses search cards and confirms before removing a favorite', async () => {
     vi.spyOn(Date, 'now').mockReturnValueOnce(100).mockReturnValueOnce(200);
     const favorites = TestBed.inject(FavoritesStore);
     favorites.toggle(favoriteRecord);
@@ -54,17 +54,25 @@ describe('FavoritesPage', () => {
       'Feijão Carioca 1kg',
     );
     expect(records[0].textContent).toContain('R$ 5,99');
-    expect(records[0].querySelector('.map-button')).toBeNull();
-    expect(records[1].querySelector<HTMLButtonElement>('.map-button')?.textContent).toContain(
-      'Abrir no mapa',
+    expect(records[0].querySelector('.map-record-button')).toBeNull();
+    expect(records[0].querySelector<HTMLButtonElement>('.detail-button')?.textContent).toContain(
+      'Detalhes',
     );
-    expect(records[1].querySelector('a[href*="openstreetmap"]')).toBeNull();
 
-    records[1].querySelector<HTMLButtonElement>('.map-button')?.click();
+    records[1].querySelector<HTMLButtonElement>('.detail-button')?.click();
     await fixture.whenStable();
-    expect(element.querySelector('dialog')?.textContent).toContain('Mercado Centro');
+    expect(element.querySelector('app-sale-record-detail-dialog')?.textContent).toContain(
+      'Mercado Centro',
+    );
 
     records[0].querySelector<HTMLButtonElement>('.favorite-toggle')?.click();
+    await fixture.whenStable();
+    expect(element.querySelectorAll('.favorite-record')).toHaveLength(2);
+    expect(element.querySelector('.remove-confirmation')?.textContent).toContain(
+      'Feijão carioca 1kg',
+    );
+
+    element.querySelector<HTMLButtonElement>('.remove-confirm')?.click();
     await fixture.whenStable();
 
     expect(element.querySelectorAll('.favorite-record')).toHaveLength(1);

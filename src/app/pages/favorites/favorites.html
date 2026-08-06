@@ -22,63 +22,15 @@
           aria-label="Lista de favoritos"
         >
           @for (favorite of records(); track favorite.savedAt) {
-            <article class="favorite-record price-card card bg-base-100 shadow-sm">
-              <div class="card-body h-full gap-0 p-5">
-                <p class="card-price-slot price-value">{{ formatSaleValue(favorite.record) }}</p>
-                <div
-                  class="card-title-tooltip tooltip tooltip-bottom"
-                  [attr.data-tip]="formatTitle(favorite.record.description)"
-                >
-                  <h2
-                    class="card-title-slot text-base font-semibold leading-snug text-[var(--tq-ink)]"
-                  >
-                    {{ formatTitle(favorite.record.description) }}
-                  </h2>
-                </div>
-                <div class="card-store-slot">
-                  <p class="card-store-name">{{ formatTitle(favorite.record.store.name) }}</p>
-                </div>
-                <div class="card-location-slot">
-                  @if (favorite.record.location.address) {
-                    <p
-                      class="card-secondary tooltip tooltip-bottom"
-                      [attr.data-tip]="formatAddress(favorite.record.location.address)"
-                    >
-                      {{ formatAddress(favorite.record.location.address) }}
-                    </p>
-                  } @else {
-                    <p class="card-secondary">Endereço não informado</p>
-                  }
-                </div>
-                <time
-                  class="card-time-slot card-secondary"
-                  [attr.datetime]="favorite.record.sold_at"
-                >
-                  {{ formatSaleTime(favorite.record) }}
-                </time>
-                <div class="card-actions mt-auto justify-start gap-1 pt-1">
-                  <app-favorite-toggle
-                    [record]="favorite.record"
-                    [favorite]="true"
-                    (toggled)="toggle($event)"
-                  />
-                  @if (hasCoordinates(favorite.record)) {
-                    <button
-                      type="button"
-                      class="map-button btn btn-outline btn-primary h-10 min-h-10 px-3 text-sm"
-                      (click)="openMap(favorite.record)"
-                    >
-                      Abrir no mapa
-                      <svg class="map-link-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z" />
-                        <path d="M9 3v15" />
-                        <path d="M15 6v15" />
-                      </svg>
-                    </button>
-                  }
-                </div>
-              </div>
-            </article>
+            <app-sale-record-card
+              class="favorite-record"
+              [record]="favorite.record"
+              [lowest]="false"
+              [favorite]="true"
+              [showMapAction]="false"
+              (favoriteToggled)="requestRemoval($event)"
+              (detailsRequested)="openRecordDetail($event)"
+            />
           }
         </section>
       } @else {
@@ -94,39 +46,38 @@
   </main>
 
   @if (selectedRecord(); as record) {
-    <dialog #mapDialog class="modal" aria-labelledby="map-title" (close)="closeMap()">
-      <section class="modal-box max-w-4xl">
-        <div class="detail-modal-header">
-          <div>
-            <p class="eyebrow">Localização da venda em Alagoas</p>
-            <h2 id="map-title" class="mt-2 text-2xl font-bold">{{ record.store.name }}</h2>
-            <p class="mt-2 text-sm leading-6 text-[var(--tq-muted)]">
-              {{ formatAddress(record.location.address || record.location.district) }}
-            </p>
-          </div>
-          <button
-            type="button"
-            class="close-button text-primary btn btn-square btn-ghost min-h-11"
-            aria-label="Fechar mapa"
-            (click)="dismissMap()"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
+    <app-sale-record-detail-dialog
+      [record]="record"
+      [favorite]="true"
+      (favoriteToggled)="requestRemoval($event)"
+      (closed)="closeRecordDetail()"
+    />
+  }
+
+  @if (pendingRemoval(); as record) {
+    <dialog
+      #removeDialog
+      class="remove-confirmation modal"
+      aria-labelledby="remove-favorite-title"
+      aria-describedby="remove-favorite-description"
+      (close)="cancelRemoval()"
+    >
+      <section class="modal-box max-w-md">
+        <h2 id="remove-favorite-title" class="text-xl font-bold">Remover dos favoritos?</h2>
+        <p id="remove-favorite-description" class="mt-3 text-sm leading-6 text-[var(--tq-muted)]">
+          O registro de {{ record.description }} será removido deste dispositivo.
+        </p>
+        <div class="modal-action">
+          <button type="button" class="remove-cancel btn btn-ghost" (click)="cancelRemoval()">
+            Cancelar
           </button>
-        </div>
-        <div class="detail-map-wrap">
-          <div
-            #mapContainer
-            class="detail-map"
-            role="region"
-            [attr.aria-label]="'Mapa da localização de ' + record.store.name"
-          ></div>
+          <button type="button" class="remove-confirm btn btn-error" (click)="confirmRemoval()">
+            Remover favorito
+          </button>
         </div>
       </section>
       <form method="dialog" class="modal-backdrop">
-        <button aria-label="Fechar mapa">Fechar mapa</button>
+        <button aria-label="Cancelar remoção do favorito">Cancelar</button>
       </form>
     </dialog>
   }
