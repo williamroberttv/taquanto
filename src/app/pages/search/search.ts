@@ -280,7 +280,7 @@ export class SearchPage {
     this.loadedPriceKey = null;
     this.saveRecentSearch(query);
     const location = this.location();
-    this.analytics.capture('product search submitted', {
+    this.analytics.capture('product_search_submitted', {
       query: query.toLocaleLowerCase('pt-BR'),
       query_type: this.isGTIN(query) ? 'gtin' : 'description',
       days: this.days(),

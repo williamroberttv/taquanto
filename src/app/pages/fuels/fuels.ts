@@ -236,7 +236,7 @@ export class FuelsPage {
     this.pagination.set(null);
     this.emptyMessage.set(null);
     const location = this.location();
-    this.analytics.capture('fuel search submitted', {
+    this.analytics.capture('fuel_search_submitted', {
       fuel: FUEL_TYPES.find(({ id }) => id === this.type())?.label,
       fuel_id: this.type(),
       days: this.days(),

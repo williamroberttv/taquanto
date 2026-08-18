@@ -29,7 +29,7 @@ describe('Analytics', () => {
   it('initializes privacy-conscious browser analytics and captures events', async () => {
     const analytics = TestBed.inject(Analytics);
 
-    analytics.capture('product search submitted', { query: 'arroz' });
+    analytics.capture('product_search_submitted', { query: 'arroz' });
 
     await vi.waitFor(() => expect(posthog.capture).toHaveBeenCalled());
     expect(posthog.init).toHaveBeenCalledWith('phc_test', {
@@ -40,7 +40,7 @@ describe('Analytics', () => {
       disable_session_recording: true,
       person_profiles: 'never',
     });
-    expect(posthog.capture).toHaveBeenCalledWith('product search submitted', {
+    expect(posthog.capture).toHaveBeenCalledWith('product_search_submitted', {
       query: 'arroz',
     });
   });
@@ -50,7 +50,7 @@ describe('Analytics', () => {
       providers: [{ provide: PLATFORM_ID, useValue: 'server' }],
     });
 
-    TestBed.inject(Analytics).capture('landing cta clicked');
+    TestBed.inject(Analytics).capture('landing_cta_clicked');
     await Promise.resolve();
 
     expect(posthog.init).not.toHaveBeenCalled();

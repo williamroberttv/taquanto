@@ -234,7 +234,7 @@ describe('FuelsPage', () => {
         params: { municipality: '2700300', days: 3, limit: 50, page: 1 },
       },
     ]);
-    expect(analytics.capture).toHaveBeenCalledWith('fuel search submitted', {
+    expect(analytics.capture).toHaveBeenCalledWith('fuel_search_submitted', {
       fuel: 'Gasolina aditivada',
       fuel_id: 2,
       days: 3,
@@ -313,7 +313,7 @@ describe('FuelsPage', () => {
         page: 1,
       },
     });
-    expect(analytics.capture).toHaveBeenCalledWith('fuel search submitted', {
+    expect(analytics.capture).toHaveBeenCalledWith('fuel_search_submitted', {
       fuel: 'Gasolina comum',
       fuel_id: 1,
       days: 1,

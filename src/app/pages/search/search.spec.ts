@@ -191,7 +191,7 @@ describe('SearchPage', () => {
     expect(scrollIntoView).not.toHaveBeenCalled();
     expect(element.querySelector('app-sale-record-card')).not.toBeNull();
     expect(element.querySelector('app-search-pagination')).not.toBeNull();
-    expect(analytics.capture).toHaveBeenCalledWith('product search submitted', {
+    expect(analytics.capture).toHaveBeenCalledWith('product_search_submitted', {
       query: 'arroz',
       query_type: 'description',
       days: 1,
@@ -352,7 +352,7 @@ describe('SearchPage', () => {
         page: 1,
       },
     });
-    expect(analytics.capture).toHaveBeenCalledWith('product search submitted', {
+    expect(analytics.capture).toHaveBeenCalledWith('product_search_submitted', {
       query: 'arroz',
       query_type: 'description',
       days: 1,

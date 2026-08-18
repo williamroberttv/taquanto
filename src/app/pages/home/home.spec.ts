@@ -89,9 +89,9 @@ describe('Home', () => {
     trackCta.trackCta('favorites', '/favoritos');
 
     expect(analytics.capture.mock.calls).toEqual([
-      ['landing cta clicked', { cta: 'products', destination: '/produtos' }],
-      ['landing cta clicked', { cta: 'fuels', destination: '/combustiveis' }],
-      ['landing cta clicked', { cta: 'favorites', destination: '/favoritos' }],
+      ['landing_cta_clicked', { cta: 'products', destination: '/produtos' }],
+      ['landing_cta_clicked', { cta: 'fuels', destination: '/combustiveis' }],
+      ['landing_cta_clicked', { cta: 'favorites', destination: '/favoritos' }],
     ]);
   });
 });

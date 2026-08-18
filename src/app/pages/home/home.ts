@@ -124,7 +124,7 @@ export class Home {
   }
 
   protected trackCta(cta: string, destination: string): void {
-    this.analytics.capture('landing cta clicked', { cta, destination });
+    this.analytics.capture('landing_cta_clicked', { cta, destination });
   }
 
   private async initializeMap(): Promise<void> {
