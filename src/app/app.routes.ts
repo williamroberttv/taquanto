@@ -5,12 +5,20 @@ export const routes: Routes = [
   {
     path: '',
     component: Home,
-    title: 'Preços de Produtos e Combustíveis em Alagoas | TaQuanto',
+    title: 'TaQuanto | Compare preços em Alagoas e economize',
+    data: {
+      description:
+        'Compare preços de produtos e combustíveis em Alagoas. Descubra onde pagar menos e economize nas suas compras.',
+    },
   },
   {
     path: 'produtos',
     loadComponent: () => import('./pages/search/search').then((m) => m.SearchPage),
-    title: 'Buscar preços em Alagoas | TaQuanto',
+    title: 'Preços de Produtos em Alagoas | TaQuanto',
+    data: {
+      description:
+        'Compare preços de produtos em estabelecimentos de Alagoas e encontre as melhores opções para economizar.',
+    },
   },
   {
     path: 'buscar',
@@ -20,7 +28,11 @@ export const routes: Routes = [
   {
     path: 'combustiveis',
     loadComponent: () => import('./pages/fuels/fuels').then((m) => m.FuelsPage),
-    title: 'Buscar preços dos combustíveis em Alagoas | TaQuanto',
+    title: 'Preços de Combustíveis em Alagoas | TaQuanto',
+    data: {
+      description:
+        'Compare preços de gasolina, etanol, diesel e GNV em Alagoas e encontre combustível mais barato perto de você.',
+    },
   },
   {
     path: 'favoritos',

@@ -28,7 +28,7 @@ import { SearchResultsMap } from './search-results-map/search-results-map';
               </svg>
             </p>
             <div class="mt-2 flex items-center gap-2">
-              <h2 class="text-2xl font-bold text-[var(--tq-ink)]">Registros encontrados</h2>
+              <h2 class="text-2xl font-bold text-[var(--tq-ink)]">Preços encontrados</h2>
               <span class="tooltip tooltip-left tooltip-primary">
                 <button
                   type="button"

@@ -25,12 +25,12 @@ import { GeographicSearch, PriceRecord } from '../../../services/taquanto-api';
   selector: 'app-search-results-map',
   template: `
     <section class="results-map-wrap" aria-labelledby="results-map-title">
-      <h3 id="results-map-title" class="sr-only">Mapa dos registros encontrados</h3>
+      <h3 id="results-map-title" class="sr-only">Mapa dos preços encontrados</h3>
       <div
         #mapContainer
         class="results-map"
         role="region"
-        aria-label="Mapa dos registros encontrados"
+        aria-label="Mapa dos preços encontrados"
       ></div>
       <p class="mt-2 text-xs text-[var(--tq-muted)]">
         {{ mappedRecords() }} de {{ records().length }} registros exibidos no mapa.

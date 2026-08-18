@@ -8,10 +8,8 @@ import {
   inject,
   viewChild,
 } from '@angular/core';
-import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import type * as Leaflet from 'leaflet';
-import { environment } from '../../../environments/environment';
 import { Footer } from '../../components/footer/footer';
 import { Header } from '../../components/header/header';
 import { Analytics } from '../../services/analytics';
@@ -41,8 +39,6 @@ export class Home {
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly mapContainer = viewChild<ElementRef<HTMLElement>>('mapContainer');
-  private readonly meta = inject(Meta);
-  private readonly title = inject(Title);
   private map?: Leaflet.Map;
 
   protected readonly steps: Step[] = [
@@ -91,27 +87,6 @@ export class Home {
   ];
 
   constructor() {
-    const pageTitle = 'Preços de Produtos e Combustíveis em Alagoas | TaQuanto';
-    const description =
-      'Consulte registros reais de vendas NFC-e de produtos e combustíveis em Alagoas por município ou perto de você.';
-
-    this.title.setTitle(pageTitle);
-    this.meta.updateTag({ name: 'description', content: description });
-    this.meta.updateTag({ property: 'og:title', content: pageTitle });
-    this.meta.updateTag({ property: 'og:description', content: description });
-    this.meta.updateTag({ property: 'og:url', content: `${environment.siteUrl}/` });
-    this.meta.updateTag({
-      property: 'og:image',
-      content: `${environment.siteUrl}/images/og-image.png`,
-    });
-    this.meta.updateTag({ name: 'twitter:title', content: pageTitle });
-    this.meta.updateTag({ name: 'twitter:description', content: description });
-    this.meta.updateTag({
-      name: 'twitter:image',
-      content: `${environment.siteUrl}/images/og-image.png`,
-    });
-    this.meta.updateTag({ rel: 'canonical', href: `${environment.siteUrl}/` });
-
     afterNextRender(() => {
       if (isPlatformBrowser(this.platformId)) {
         void this.initializeMap();

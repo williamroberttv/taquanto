@@ -68,6 +68,8 @@ describe('Home', () => {
       'Pesquisar combustíveis',
     );
     expect(compiled.querySelectorAll('[aria-label="Tipos de consulta"] article')).toHaveLength(2);
+    expect(text).toContain('Compare preços de combustíveis perto de você.');
+    expect(text).not.toContain('nos registros encontrados');
     expect(compiled.querySelector('footer a[href="/#como-funciona"]')).not.toBeNull();
     expect(
       [...compiled.querySelectorAll<HTMLImageElement>('img')].map((image) => image.src),
@@ -77,6 +79,11 @@ describe('Home', () => {
         expect.stringContaining('/images/elephant-3.png'),
       ]),
     );
+    for (const mascot of compiled.querySelectorAll<HTMLImageElement>(
+      'img[src*="/images/elephant-"]',
+    )) {
+      expect(mascot.alt).toBe('');
+    }
   });
 
   it('tracks the landing page calls to action', () => {
