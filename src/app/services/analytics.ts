@@ -1,11 +1,11 @@
 import { isPlatformBrowser } from '@angular/common';
 import { NgZone, PLATFORM_ID, Service, inject } from '@angular/core';
-import type { PostHog, Properties } from 'posthog-js';
+import posthog, { type PostHog, type Properties } from 'posthog-js';
 import { environment } from '../../environments/environment';
 
 @Service()
 export class Analytics {
-  private readonly client: Promise<PostHog | null>;
+  private readonly client: PostHog | null;
 
   constructor() {
     const platformId = inject(PLATFORM_ID);
@@ -15,16 +15,15 @@ export class Analytics {
       environment.posthogHost.startsWith('https://');
 
     this.client = enabled
-      ? inject(NgZone).runOutsideAngular(() => this.initialize().catch(() => null))
-      : Promise.resolve(null);
+      ? inject(NgZone).runOutsideAngular(() => this.initialize())
+      : null;
   }
 
   capture(event: string, properties?: Properties): void {
-    void this.client.then((client) => client?.capture(event, properties));
+    this.client?.capture(event, properties);
   }
 
-  private async initialize(): Promise<PostHog> {
-    const { default: posthog } = await import('posthog-js');
+  private initialize(): PostHog {
     posthog.init(environment.posthogKey, {
       api_host: environment.posthogHost,
       defaults: '2026-05-30',
