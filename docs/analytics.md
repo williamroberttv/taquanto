@@ -2,13 +2,15 @@
 
 TaQuanto uses PostHog for anonymous page and product analytics. The browser SDK
 is loaded only when a valid production project token is configured. Autocapture
-and session recording are disabled, and person profiles are never created.
+and session recording are enabled, all replayed inputs are masked, and person
+profiles are never created.
 
 ## Events
 
 | Event                      | When                                          | Properties                                                               |
 | -------------------------- | --------------------------------------------- | ------------------------------------------------------------------------ |
 | `$pageview`                | Initial load and every browser history change | PostHog page properties, including `$pathname`                           |
+| `posthog_init_test`        | Temporarily, when the PostHog SDK loads        | `source`                                                                 |
 | `landing_cta_clicked`      | A landing-page call to action is selected     | `cta`, `destination`                                                     |
 | `product_search_submitted` | A valid, non-duplicate product search starts  | `query`, `query_type`, `days`, `location_mode`, `municipality`, `radius` |
 | `fuel_search_submitted`    | A valid, non-duplicate fuel search starts     | `fuel`, `fuel_id`, `days`, `location_mode`, `municipality`, `radius`     |
