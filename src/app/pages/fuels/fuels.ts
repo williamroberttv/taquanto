@@ -202,13 +202,19 @@ export class FuelsPage {
   }
 
   protected toggleFavorite(record: PriceRecord): void {
+    const wasFavorite = this.favorites.has(record);
     if (!this.favorites.toggle(record)) {
       this.showToast('Não foi possível atualizar os favoritos.');
+      return;
     }
+    this.analytics.capture(wasFavorite ? 'favorite_removed' : 'favorite_added', {
+      search_type: 'fuel',
+    });
   }
 
   protected openRecordDetail(record: PriceRecord): void {
     this.selectedRecord.set(record);
+    this.analytics.capture('result_detail_opened', { search_type: 'fuel' });
   }
 
   protected closeRecordDetail(): void {
@@ -236,7 +242,8 @@ export class FuelsPage {
     this.pagination.set(null);
     this.emptyMessage.set(null);
     const location = this.location();
-    this.analytics.capture('fuel_search_submitted', {
+    this.analytics.capture('search_submitted', {
+      search_type: 'fuel',
       fuel: FUEL_TYPES.find(({ id }) => id === this.type())?.label,
       fuel_id: this.type(),
       days: this.days(),
@@ -273,6 +280,18 @@ export class FuelsPage {
             return;
           }
           if (event.response.cacheStatus !== 'MISS') {
+            if (page === 1 && this.loadedSearchKey !== key) {
+              this.analytics.capture('search_results_loaded', {
+                search_type: 'fuel',
+                fuel_id: this.type(),
+                result_count: event.response.data?.pagination.total_records ?? 0,
+                days: this.days(),
+                location_mode: location ? 'nearby' : 'municipality',
+                ...(location
+                  ? { radius: location.radius }
+                  : { municipality: this.municipality().name }),
+              });
+            }
             this.loadedSearchKey = key;
             this.applyData(event.response);
             if (!scrolled) {
