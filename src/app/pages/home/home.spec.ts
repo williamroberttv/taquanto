@@ -1,14 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { Analytics } from '../../services/analytics';
 import { Home } from './home';
 
 describe('Home', () => {
   let component: Home;
   let fixture: ComponentFixture<Home>;
+  let analytics: { capture: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
+    analytics = { capture: vi.fn() };
     await TestBed.configureTestingModule({
       imports: [Home],
+      providers: [{ provide: Analytics, useValue: analytics }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Home);
@@ -72,5 +76,23 @@ describe('Home', () => {
         expect.stringContaining('/images/elephant-3.png'),
       ]),
     );
+  });
+
+  it('tracks the landing page calls to action', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const links = [
+      compiled.querySelector<HTMLAnchorElement>('.hero a[href="/produtos"]')!,
+      compiled.querySelector<HTMLAnchorElement>('.hero a[href="/combustiveis"]')!,
+      compiled.querySelector<HTMLAnchorElement>('main a[href="/favoritos"]')!,
+    ];
+    links.forEach((link) => link.addEventListener('click', (event) => event.preventDefault()));
+
+    links.forEach((link) => link.click());
+
+    expect(analytics.capture.mock.calls).toEqual([
+      ['landing cta clicked', { cta: 'products', destination: '/produtos' }],
+      ['landing cta clicked', { cta: 'fuels', destination: '/combustiveis' }],
+      ['landing cta clicked', { cta: 'favorites', destination: '/favoritos' }],
+    ]);
   });
 });

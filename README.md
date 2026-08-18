@@ -122,6 +122,7 @@ Transient timeouts and gateway failures are retried during that window. Other fa
 | Async data | Angular `HttpClient` and RxJS                         |
 | Styling    | Tailwind CSS 4 and daisyUI 5 with custom themes       |
 | Maps       | Leaflet and OpenStreetMap                             |
+| Analytics  | PostHog page views and explicit product events        |
 | Testing    | Angular unit-test builder, Vitest, jsdom, V8 coverage |
 | Quality    | ESLint, Prettier, Angular production budgets          |
 | Delivery   | GitHub Actions, Amazon S3, CloudFront, optional Nginx |
@@ -144,6 +145,11 @@ npm start
 Open `http://localhost:4200/`. The landing page and browser-only features work without the API; price searches require the backend.
 
 The development API base URL lives in `src/environments/environment.development.ts`. Production uses the same-origin `/api` path from `src/environments/environment.ts`.
+
+PostHog stays disabled locally by default. Set a temporary `posthogKey` in the
+development environment only when you intentionally want to validate events.
+The tracked events and suggested dashboard are documented in
+[`docs/analytics.md`](docs/analytics.md).
 
 ## Commands
 
@@ -188,6 +194,10 @@ Pushes to `main` deploy `dist/taquanto/browser` through GitHub Actions. The
 - `AWS_DEPLOY_ROLE_ARN`
 - `S3_BUCKET`
 - `CLOUDFRONT_DISTRIBUTION_ID`
+- `POSTHOG_PROJECT_TOKEN`
+
+Set the optional `POSTHOG_HOST` production environment variable when the project
+does not use the default US ingestion host (`https://us.i.posthog.com`).
 
 The workflow authenticates with AWS through GitHub OIDC, synchronizes the build
 with S3, removes stale files, and waits for the CloudFront invalidation to
@@ -199,7 +209,10 @@ falling back to `index.csr.html` for client-rendered routes.
 Build and run the static Nginx image:
 
 ```bash
-docker build -f ci/prod/Dockerfile -t taquanto-frontend .
+docker build -f ci/prod/Dockerfile \
+  --build-arg POSTHOG_PROJECT_TOKEN=phc_your_project_token \
+  --build-arg POSTHOG_HOST=https://us.i.posthog.com \
+  -t taquanto-frontend .
 docker run --rm -p 8080:80 taquanto-frontend
 ```
 

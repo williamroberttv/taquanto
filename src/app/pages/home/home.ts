@@ -13,6 +13,7 @@ import type * as Leaflet from 'leaflet';
 import { environment } from '../../../environments/environment';
 import { Footer } from '../../components/footer/footer';
 import { Header } from '../../components/header/header';
+import { Analytics } from '../../services/analytics';
 
 interface Step {
   title: string;
@@ -35,6 +36,7 @@ interface SalePreview {
   styleUrl: './home.css',
 })
 export class Home {
+  private readonly analytics = inject(Analytics);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly mapContainer = viewChild<ElementRef<HTMLElement>>('mapContainer');
@@ -118,6 +120,10 @@ export class Home {
     this.destroyRef.onDestroy(() => {
       this.map?.remove();
     });
+  }
+
+  protected trackCta(cta: string, destination: string): void {
+    this.analytics.capture('landing cta clicked', { cta, destination });
   }
 
   private async initializeMap(): Promise<void> {

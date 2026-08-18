@@ -30,14 +30,22 @@
           </p>
 
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a href="/produtos" class="btn btn-primary min-h-12">
+            <a
+              href="/produtos"
+              class="btn btn-primary min-h-12"
+              (click)="trackCta('products', '/produtos')"
+            >
               Pesquisar produtos
               <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 12h14" />
                 <path d="m13 6 6 6-6 6" />
               </svg>
             </a>
-            <a href="/combustiveis" class="fuel-button btn min-h-12">
+            <a
+              href="/combustiveis"
+              class="fuel-button btn min-h-12"
+              (click)="trackCta('fuels', '/combustiveis')"
+            >
               <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18" />
                 <path d="M3 22h16M8 6h6v5H8zM17 7h2l2 2v8a2 2 0 0 1-4 0v-3" />
@@ -208,7 +216,12 @@
             salvar os dados de uma venda para consultar depois neste dispositivo.
           </p>
           <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-            <a href="/favoritos" class="btn btn-primary min-h-12">Abrir favoritos</a>
+            <a
+              href="/favoritos"
+              class="btn btn-primary min-h-12"
+              (click)="trackCta('favorites', '/favoritos')"
+              >Abrir favoritos</a
+            >
           </div>
         </div>
       </div>

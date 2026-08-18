@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
+import { Analytics } from '../../services/analytics';
 import {
   CacheStatus,
   PricePageParams,
@@ -94,12 +95,14 @@ describe('SearchPage', () => {
   let router: { navigate: ReturnType<typeof vi.fn> };
   let routeParams: Record<string, string>;
   let setFiltersPosition: (visible: boolean, top?: number) => void;
+  let analytics: { capture: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     localStorage.clear();
     api = new TaquantoApiStub();
     router = { navigate: vi.fn(() => Promise.resolve(true)) };
     routeParams = {};
+    analytics = { capture: vi.fn() };
     vi.stubGlobal(
       'IntersectionObserver',
       class {
@@ -129,6 +132,7 @@ describe('SearchPage', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: Analytics, useValue: analytics },
         { provide: TaquantoApi, useValue: api },
         {
           provide: ActivatedRoute,
@@ -187,6 +191,13 @@ describe('SearchPage', () => {
     expect(scrollIntoView).not.toHaveBeenCalled();
     expect(element.querySelector('app-sale-record-card')).not.toBeNull();
     expect(element.querySelector('app-search-pagination')).not.toBeNull();
+    expect(analytics.capture).toHaveBeenCalledWith('product search submitted', {
+      query: 'arroz',
+      query_type: 'description',
+      days: 1,
+      location_mode: 'municipality',
+      municipality: 'Maceió',
+    });
 
     element.querySelector<HTMLButtonElement>('.detail-button')!.click();
     await fixture.whenStable();
@@ -340,6 +351,13 @@ describe('SearchPage', () => {
         limit: 50,
         page: 1,
       },
+    });
+    expect(analytics.capture).toHaveBeenCalledWith('product search submitted', {
+      query: 'arroz',
+      query_type: 'description',
+      days: 1,
+      location_mode: 'nearby',
+      radius: 15,
     });
     await vi.waitFor(() => expect(element.querySelector('.results-sale-marker')).not.toBeNull());
     expect(element.querySelector('.search-radius')).not.toBeNull();

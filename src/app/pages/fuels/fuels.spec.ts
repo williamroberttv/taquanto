@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
+import { Analytics } from '../../services/analytics';
 import {
   CacheStatus,
   FuelSearchResponse,
@@ -83,12 +84,14 @@ describe('FuelsPage', () => {
   let routeParams: Record<string, string>;
   let router: { navigate: ReturnType<typeof vi.fn> };
   let setFiltersPosition: (visible: boolean, top?: number) => void;
+  let analytics: { capture: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     localStorage.clear();
     api = new TaquantoApiStub();
     routeParams = {};
     router = { navigate: vi.fn(() => Promise.resolve(true)) };
+    analytics = { capture: vi.fn() };
     vi.stubGlobal(
       'IntersectionObserver',
       class {
@@ -118,6 +121,7 @@ describe('FuelsPage', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: Analytics, useValue: analytics },
         { provide: TaquantoApi, useValue: api },
         {
           provide: ActivatedRoute,
@@ -230,6 +234,13 @@ describe('FuelsPage', () => {
         params: { municipality: '2700300', days: 3, limit: 50, page: 1 },
       },
     ]);
+    expect(analytics.capture).toHaveBeenCalledWith('fuel search submitted', {
+      fuel: 'Gasolina aditivada',
+      fuel_id: 2,
+      days: 3,
+      location_mode: 'municipality',
+      municipality: 'Arapiraca',
+    });
     expect(router.navigate).toHaveBeenLastCalledWith([], {
       queryParams: { type: 2, municipality: '2700300', days: 3 },
       relativeTo: expect.anything(),
@@ -301,6 +312,13 @@ describe('FuelsPage', () => {
         limit: 50,
         page: 1,
       },
+    });
+    expect(analytics.capture).toHaveBeenCalledWith('fuel search submitted', {
+      fuel: 'Gasolina comum',
+      fuel_id: 1,
+      days: 1,
+      location_mode: 'nearby',
+      radius: 10,
     });
 
     localStorage.removeItem('taquanto:location-consent');
