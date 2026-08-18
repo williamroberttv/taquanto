@@ -89,9 +89,10 @@ flowchart LR
     App --> Storage[(localStorage)]
     Visitor -->|Optional geolocation permission| App
     App --> OSM[OpenStreetMap tiles]
+    App -->|Anonymous page and product events| PostHog[PostHog ingestion]
 ```
 
-The frontend owns presentation and ephemeral browser state. The API owns source integration, credentials, normalization, and cache policy.
+The frontend owns presentation, ephemeral browser state, and anonymous usage events. The API owns source integration, credentials, normalization, and cache policy. Coordinates used for nearby searches are sent only to the API and never to PostHog.
 
 | Route           | Loading | Rendering                 | Reason                                                         |
 | --------------- | ------- | ------------------------- | -------------------------------------------------------------- |

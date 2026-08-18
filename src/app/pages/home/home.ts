@@ -9,6 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
+import { RouterLink } from '@angular/router';
 import type * as Leaflet from 'leaflet';
 import { environment } from '../../../environments/environment';
 import { Footer } from '../../components/footer/footer';
@@ -31,7 +32,7 @@ interface SalePreview {
 
 @Component({
   selector: 'app-home',
-  imports: [Header, Footer, NgOptimizedImage],
+  imports: [Header, Footer, NgOptimizedImage, RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
