@@ -221,9 +221,11 @@ export class SearchPage {
 
   protected openRecordDetail(record: PriceRecord): void {
     this.selectedRecord.set(record);
+    this.analytics.capture('result_detail_opened', { search_type: 'product' });
   }
 
   protected toggleFavorite(record: PriceRecord): void {
+    const wasFavorite = this.favorites.has(record);
     if (
       !this.favorites.toggle(record, {
         query: this.currentPriceQuery,
@@ -232,7 +234,11 @@ export class SearchPage {
       })
     ) {
       this.showToast('Não foi possível atualizar os favoritos.');
+      return;
     }
+    this.analytics.capture(wasFavorite ? 'favorite_removed' : 'favorite_added', {
+      search_type: 'product',
+    });
   }
 
   protected closeRecordDetail(): void {
@@ -280,7 +286,8 @@ export class SearchPage {
     this.loadedPriceKey = null;
     this.saveRecentSearch(query);
     const location = this.location();
-    this.analytics.capture('product_search_submitted', {
+    this.analytics.capture('search_submitted', {
+      search_type: 'product',
       query: query.toLocaleLowerCase('pt-BR'),
       query_type: this.isGTIN(query) ? 'gtin' : 'description',
       days: this.days(),
@@ -330,6 +337,17 @@ export class SearchPage {
           }
           const { response } = event;
           if (response.cacheStatus !== 'MISS') {
+            if (page === 1 && this.loadedPriceKey !== searchKey) {
+              this.analytics.capture('search_results_loaded', {
+                search_type: 'product',
+                result_count: response.data?.pagination.total_records ?? 0,
+                days: this.days(),
+                location_mode: location ? 'nearby' : 'municipality',
+                ...(location
+                  ? { radius: location.radius }
+                  : { municipality: this.municipality().name }),
+              });
+            }
             this.loadedPriceKey = searchKey;
             this.applyPriceData(response);
             this.pricesLoading.set(false);

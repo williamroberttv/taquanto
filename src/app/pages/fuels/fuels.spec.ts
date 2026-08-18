@@ -234,9 +234,18 @@ describe('FuelsPage', () => {
         params: { municipality: '2700300', days: 3, limit: 50, page: 1 },
       },
     ]);
-    expect(analytics.capture).toHaveBeenCalledWith('fuel_search_submitted', {
+    expect(analytics.capture).toHaveBeenNthCalledWith(1, 'search_submitted', {
+      search_type: 'fuel',
       fuel: 'Gasolina aditivada',
       fuel_id: 2,
+      days: 3,
+      location_mode: 'municipality',
+      municipality: 'Arapiraca',
+    });
+    expect(analytics.capture).toHaveBeenNthCalledWith(2, 'search_results_loaded', {
+      search_type: 'fuel',
+      fuel_id: 2,
+      result_count: 1,
       days: 3,
       location_mode: 'municipality',
       municipality: 'Arapiraca',
@@ -256,6 +265,9 @@ describe('FuelsPage', () => {
     favorite.click();
     await fixture.whenStable();
     expect(favorite.getAttribute('aria-pressed')).toBe('true');
+    expect(analytics.capture).toHaveBeenNthCalledWith(3, 'favorite_added', {
+      search_type: 'fuel',
+    });
     const mapButton = element.querySelector<HTMLButtonElement>('.map-record-button')!;
     expect(mapButton.disabled).toBe(true);
     expect(mapButton.style.color).toBe('var(--tq-muted)');
@@ -263,6 +275,9 @@ describe('FuelsPage', () => {
     element.querySelector<HTMLButtonElement>('.detail-button')!.click();
     await fixture.whenStable();
     expect(element.querySelector('app-sale-record-detail-dialog dialog')).not.toBeNull();
+    expect(analytics.capture).toHaveBeenNthCalledWith(4, 'result_detail_opened', {
+      search_type: 'fuel',
+    });
     expect(element.textContent).not.toContain('oferta garantida');
   });
 
@@ -313,7 +328,8 @@ describe('FuelsPage', () => {
         page: 1,
       },
     });
-    expect(analytics.capture).toHaveBeenCalledWith('fuel_search_submitted', {
+    expect(analytics.capture).toHaveBeenCalledWith('search_submitted', {
+      search_type: 'fuel',
       fuel: 'Gasolina comum',
       fuel_id: 1,
       days: 1,
@@ -380,6 +396,21 @@ describe('FuelsPage', () => {
     expect(api.fuelCalls).toHaveLength(2);
     expect(element.textContent).toContain('Gasolina Aditivada');
     expect(element.textContent).toContain('Resultados atualizados.');
+    expect(
+      analytics.capture.mock.calls.filter(([event]) => event === 'search_results_loaded'),
+    ).toEqual([
+      [
+        'search_results_loaded',
+        {
+          search_type: 'fuel',
+          fuel_id: 1,
+          result_count: 1,
+          days: 1,
+          location_mode: 'municipality',
+          municipality: 'Maceió',
+        },
+      ],
+    ]);
   });
 
   it('shows empty and failure states without confusing either one', async () => {

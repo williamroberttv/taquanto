@@ -191,9 +191,17 @@ describe('SearchPage', () => {
     expect(scrollIntoView).not.toHaveBeenCalled();
     expect(element.querySelector('app-sale-record-card')).not.toBeNull();
     expect(element.querySelector('app-search-pagination')).not.toBeNull();
-    expect(analytics.capture).toHaveBeenCalledWith('product_search_submitted', {
+    expect(analytics.capture).toHaveBeenNthCalledWith(1, 'search_submitted', {
+      search_type: 'product',
       query: 'arroz',
       query_type: 'description',
+      days: 1,
+      location_mode: 'municipality',
+      municipality: 'Maceió',
+    });
+    expect(analytics.capture).toHaveBeenNthCalledWith(2, 'search_results_loaded', {
+      search_type: 'product',
+      result_count: 1,
       days: 1,
       location_mode: 'municipality',
       municipality: 'Maceió',
@@ -203,6 +211,9 @@ describe('SearchPage', () => {
     await fixture.whenStable();
 
     expect(element.querySelector('app-sale-record-detail-dialog dialog')).not.toBeNull();
+    expect(analytics.capture).toHaveBeenNthCalledWith(3, 'result_detail_opened', {
+      search_type: 'product',
+    });
   });
 
   it('prioritizes search and keeps the map lazy', async () => {
@@ -352,7 +363,8 @@ describe('SearchPage', () => {
         page: 1,
       },
     });
-    expect(analytics.capture).toHaveBeenCalledWith('product_search_submitted', {
+    expect(analytics.capture).toHaveBeenCalledWith('search_submitted', {
+      search_type: 'product',
       query: 'arroz',
       query_type: 'description',
       days: 1,
@@ -566,6 +578,7 @@ describe('SearchPage', () => {
     input.dispatchEvent(new Event('input'));
     element.querySelector<HTMLFormElement>('form')!.dispatchEvent(new SubmitEvent('submit'));
     await fixture.whenStable();
+    analytics.capture.mockClear();
 
     const cardToggle = element.querySelector<HTMLButtonElement>('.favorite-toggle')!;
     expect(cardToggle.getAttribute('aria-pressed')).toBe('false');
@@ -573,6 +586,9 @@ describe('SearchPage', () => {
     cardToggle.click();
     await fixture.whenStable();
     expect(cardToggle.getAttribute('aria-pressed')).toBe('true');
+    expect(analytics.capture).toHaveBeenNthCalledWith(1, 'favorite_added', {
+      search_type: 'product',
+    });
     expect(
       (
         JSON.parse(localStorage.getItem('taquanto:favorite-sales') ?? '[]') as {
@@ -592,6 +608,15 @@ describe('SearchPage', () => {
         .querySelector<HTMLDialogElement>('dialog .favorite-toggle')
         ?.getAttribute('aria-pressed'),
     ).toBe('true');
+    expect(analytics.capture).toHaveBeenNthCalledWith(2, 'result_detail_opened', {
+      search_type: 'product',
+    });
+
+    element.querySelector<HTMLButtonElement>('dialog .favorite-toggle')!.click();
+    await fixture.whenStable();
+    expect(analytics.capture).toHaveBeenNthCalledWith(3, 'favorite_removed', {
+      search_type: 'product',
+    });
   });
 
   it('loads a page selected in the numbered pagination', async () => {
@@ -664,6 +689,20 @@ describe('SearchPage', () => {
     expect(element.textContent).toContain('101-126 de 126 registros');
     expect(element.querySelector('[aria-current="page"]')?.textContent).toContain('3');
     expect(element.textContent).toContain('Macarrão 500g');
+    expect(
+      analytics.capture.mock.calls.filter(([event]) => event === 'search_results_loaded'),
+    ).toEqual([
+      [
+        'search_results_loaded',
+        {
+          search_type: 'product',
+          result_count: 126,
+          days: 1,
+          location_mode: 'municipality',
+          municipality: 'Maceió',
+        },
+      ],
+    ]);
   });
 
   it('hides the records count while loading another page', async () => {
@@ -824,6 +863,9 @@ describe('SearchPage', () => {
     form.dispatchEvent(new SubmitEvent('submit'));
 
     expect(api.priceCalls).toHaveLength(1);
+    expect(
+      analytics.capture.mock.calls.filter(([event]) => event === 'search_submitted'),
+    ).toHaveLength(1);
     await vi.waitFor(() => expect(element.querySelectorAll('.skeleton')).toHaveLength(20));
     expect(element.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
     expect(element.querySelector('main')?.hasAttribute('inert')).toBe(false);
@@ -877,6 +919,13 @@ describe('SearchPage', () => {
     expect(element.querySelector('.empty-results')).not.toBeNull();
     expect(element.querySelector('.text-warning')).toBeNull();
     expect(element.querySelector('.toast')).toBeNull();
+    expect(analytics.capture).toHaveBeenCalledWith('search_results_loaded', {
+      search_type: 'product',
+      result_count: 0,
+      days: 1,
+      location_mode: 'municipality',
+      municipality: 'Maceió',
+    });
   });
 
   it('aborts a pending request when the query changes', async () => {
@@ -960,6 +1009,20 @@ describe('SearchPage', () => {
     expect(element.querySelector('.cache-status-dot')).not.toBeNull();
     expect(element.querySelector('.cache-status-dot-pending')).toBeNull();
     expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(
+      analytics.capture.mock.calls.filter(([event]) => event === 'search_results_loaded'),
+    ).toEqual([
+      [
+        'search_results_loaded',
+        {
+          search_type: 'product',
+          result_count: 1,
+          days: 1,
+          location_mode: 'municipality',
+          municipality: 'Maceió',
+        },
+      ],
+    ]);
   });
 
   it('cancels stale revalidation when filters change', async () => {

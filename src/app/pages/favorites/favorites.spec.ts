@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { Analytics } from '../../services/analytics';
 import { Favorites as FavoritesStore } from '../../services/favorites';
 import { PriceRecord } from '../../services/taquanto-api';
 import { FavoritesPage } from './favorites';
@@ -25,11 +26,14 @@ const favoriteRecord: PriceRecord = {
 };
 
 describe('FavoritesPage', () => {
+  let analytics: { capture: ReturnType<typeof vi.fn> };
+
   beforeEach(async () => {
     localStorage.clear();
+    analytics = { capture: vi.fn() };
     await TestBed.configureTestingModule({
       imports: [FavoritesPage],
-      providers: [provideRouter([])],
+      providers: [{ provide: Analytics, useValue: analytics }, provideRouter([])],
     }).compileComponents();
   });
 
@@ -77,6 +81,7 @@ describe('FavoritesPage', () => {
 
     expect(element.querySelectorAll('.favorite-record')).toHaveLength(1);
     expect(element.textContent).not.toContain('Feijão Carioca 1kg');
+    expect(analytics.capture).toHaveBeenCalledWith('favorite_removed');
   });
 
   afterEach(() => {

@@ -1,12 +1,10 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import type { PostHogConfig, PostHogInterface } from 'posthog-js';
 import { environment } from '../../environments/environment';
 import { Analytics } from './analytics';
 
 const posthog = vi.hoisted(() => ({
   capture: vi.fn(),
-  has_opted_out_capturing: vi.fn(() => false),
   init: vi.fn(),
 }));
 
@@ -21,9 +19,7 @@ describe('Analytics', () => {
       posthogHost: 'https://us.i.posthog.com',
     });
     posthog.capture.mockClear();
-    posthog.has_opted_out_capturing.mockClear();
     posthog.init.mockReset().mockReturnValue(posthog);
-    vi.spyOn(console, 'info').mockImplementation(() => undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
@@ -45,7 +41,6 @@ describe('Analytics', () => {
         disable_session_recording: false,
         person_profiles: 'never',
         session_recording: { maskAllInputs: true },
-        loaded: expect.any(Function),
       }),
     );
   });
@@ -59,7 +54,6 @@ describe('Analytics', () => {
     expect(posthog.init).not.toHaveBeenCalled();
     expect(console.warn).toHaveBeenCalledWith(
       '[Analytics] PostHog disabled: invalid project token',
-      { host: '[redacted project token]', tokenConfigured: false },
     );
   });
 
@@ -69,32 +63,16 @@ describe('Analytics', () => {
     TestBed.inject(Analytics);
 
     expect(posthog.init).not.toHaveBeenCalled();
-    expect(console.warn).toHaveBeenCalledWith('[Analytics] PostHog disabled: invalid host', {
-      host: environment.posthogHost,
-      tokenConfigured: true,
-    });
+    expect(console.warn).toHaveBeenCalledWith('[Analytics] PostHog disabled: invalid host');
   });
 
   it('forwards custom events to PostHog', () => {
     const analytics = TestBed.inject(Analytics);
 
-    analytics.capture('product_search_submitted', { query: 'arroz' });
+    analytics.capture('search_submitted', { query: 'arroz' });
 
-    expect(posthog.capture).toHaveBeenCalledWith('product_search_submitted', {
+    expect(posthog.capture).toHaveBeenCalledWith('search_submitted', {
       query: 'arroz',
-    });
-  });
-
-  it('captures the diagnostic event when PostHog loads', () => {
-    TestBed.inject(Analytics);
-    const config = posthog.init.mock.calls[0]?.[1] as PostHogConfig;
-
-    config.loaded(posthog as unknown as PostHogInterface);
-
-    expect(posthog.has_opted_out_capturing).toHaveBeenCalled();
-    expect(console.info).toHaveBeenCalledWith('[Analytics] opted out: false');
-    expect(posthog.capture).toHaveBeenCalledWith('posthog_init_test', {
-      source: 'frontend',
     });
   });
 
@@ -103,7 +81,7 @@ describe('Analytics', () => {
       providers: [{ provide: PLATFORM_ID, useValue: 'server' }],
     });
 
-    TestBed.inject(Analytics).capture('landing_cta_clicked');
+    TestBed.inject(Analytics).capture('search_submitted');
 
     expect(posthog.init).not.toHaveBeenCalled();
     expect(posthog.capture).not.toHaveBeenCalled();
@@ -115,9 +93,8 @@ describe('Analytics', () => {
     });
 
     expect(() => TestBed.inject(Analytics)).not.toThrow();
-    expect(console.warn).toHaveBeenCalledWith(
-      '[Analytics] Failed to initialize PostHog',
-      { name: 'TypeError' },
-    );
+    expect(console.warn).toHaveBeenCalledWith('[Analytics] Failed to initialize PostHog', {
+      name: 'TypeError',
+    });
   });
 });

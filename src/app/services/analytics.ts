@@ -3,6 +3,13 @@ import { NgZone, PLATFORM_ID, Service, inject } from '@angular/core';
 import posthog, { type PostHog, type Properties } from 'posthog-js';
 import { environment } from '../../environments/environment';
 
+export type AnalyticsEvent =
+  | 'search_submitted'
+  | 'search_results_loaded'
+  | 'result_detail_opened'
+  | 'favorite_added'
+  | 'favorite_removed';
+
 @Service()
 export class Analytics {
   private readonly client: PostHog | null;
@@ -15,26 +22,18 @@ export class Analytics {
     }
 
     const tokenConfigured = environment.posthogKey.startsWith('phc_');
-    const diagnostics = {
-      host: environment.posthogHost.startsWith('phc_')
-        ? '[redacted project token]'
-        : environment.posthogHost,
-      tokenConfigured,
-    };
-
     if (!tokenConfigured) {
-      console.warn('[Analytics] PostHog disabled: invalid project token', diagnostics);
+      console.warn('[Analytics] PostHog disabled: invalid project token');
       this.client = null;
       return;
     }
 
     if (!environment.posthogHost.startsWith('https://')) {
-      console.warn('[Analytics] PostHog disabled: invalid host', diagnostics);
+      console.warn('[Analytics] PostHog disabled: invalid host');
       this.client = null;
       return;
     }
 
-    console.info('[Analytics] initializing PostHog', diagnostics);
     try {
       this.client = inject(NgZone).runOutsideAngular(() => this.initialize());
     } catch (error: unknown) {
@@ -45,7 +44,7 @@ export class Analytics {
     }
   }
 
-  capture(event: string, properties?: Properties): void {
+  capture(event: AnalyticsEvent, properties?: Properties): void {
     this.client?.capture(event, properties);
   }
 
@@ -59,11 +58,6 @@ export class Analytics {
       person_profiles: 'never',
       session_recording: {
         maskAllInputs: true,
-      },
-      loaded: (client) => {
-        console.info('[Analytics] PostHog loaded');
-        console.info(`[Analytics] opted out: ${client.has_opted_out_capturing()}`);
-        client.capture('posthog_init_test', { source: 'frontend' });
       },
     });
   }

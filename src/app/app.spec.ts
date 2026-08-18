@@ -3,8 +3,6 @@ import { environment } from '../environments/environment';
 import { App } from './app';
 
 const posthog = vi.hoisted(() => ({
-  capture: vi.fn(),
-  has_opted_out_capturing: vi.fn(() => false),
   init: vi.fn(),
 }));
 
@@ -49,7 +47,6 @@ describe('App', () => {
         disable_session_recording: false,
         person_profiles: 'never',
         session_recording: { maskAllInputs: true },
-        loaded: expect.any(Function),
       }),
     );
   });
