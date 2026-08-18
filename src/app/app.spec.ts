@@ -4,6 +4,7 @@ import { App } from './app';
 
 const posthog = vi.hoisted(() => ({
   capture: vi.fn(),
+  has_opted_out_capturing: vi.fn(() => false),
   init: vi.fn(),
 }));
 
@@ -18,6 +19,7 @@ describe('App', () => {
       posthogHost: 'https://us.i.posthog.com',
     });
     posthog.init.mockClear();
+    posthog.init.mockReturnValue(posthog);
 
     await TestBed.configureTestingModule({
       imports: [App],
@@ -37,14 +39,19 @@ describe('App', () => {
   it('should initialize PostHog when the root component is created', () => {
     TestBed.createComponent(App);
 
-    expect(posthog.init).toHaveBeenCalledWith('phc_test', {
-      api_host: 'https://us.i.posthog.com',
-      defaults: '2026-05-30',
-      autocapture: false,
-      capture_pageview: 'history_change',
-      disable_session_recording: true,
-      person_profiles: 'never',
-    });
+    expect(posthog.init).toHaveBeenCalledWith(
+      'phc_test',
+      expect.objectContaining({
+        api_host: 'https://us.i.posthog.com',
+        defaults: '2026-05-30',
+        autocapture: true,
+        capture_pageview: 'history_change',
+        disable_session_recording: false,
+        person_profiles: 'never',
+        session_recording: { maskAllInputs: true },
+        loaded: expect.any(Function),
+      }),
+    );
   });
 
   it('should render the router outlet shell', async () => {
