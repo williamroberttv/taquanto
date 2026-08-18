@@ -20,6 +20,7 @@ import {
 } from '../../municipalities';
 import { PricePolling } from '../../services/price-polling';
 import { Favorites } from '../../services/favorites';
+import { Analytics } from '../../services/analytics';
 import {
   CachedSearchResponse,
   GeographicSearch,
@@ -47,6 +48,7 @@ const FUEL_TYPES = [
   styleUrl: '../search/search.scss',
 })
 export class FuelsPage {
+  private readonly analytics = inject(Analytics);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly route = inject(ActivatedRoute);
@@ -233,6 +235,14 @@ export class FuelsPage {
     this.records.set([]);
     this.pagination.set(null);
     this.emptyMessage.set(null);
+    const location = this.location();
+    this.analytics.capture('fuel_search_submitted', {
+      fuel: FUEL_TYPES.find(({ id }) => id === this.type())?.label,
+      fuel_id: this.type(),
+      days: this.days(),
+      location_mode: location ? 'nearby' : 'municipality',
+      ...(location ? { radius: location.radius } : { municipality: this.municipality().name }),
+    });
     if (updateUrl) {
       this.updateUrl();
     }

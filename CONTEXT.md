@@ -5,10 +5,10 @@ Este documento mantém o vocabulário usado no produto, no código e na document
 ## Limites fundamentais
 
 - O TaQuanto apresenta registros públicos de vendas emitidas em NFC-e em Alagoas.
-- Este frontend conversa apenas com a API TaQuanto; credenciais e integração com a fonte oficial pertencem ao backend.
+- Este frontend consulta preços apenas pela API TaQuanto; credenciais e integração com a fonte oficial pertencem ao backend. Eventos anônimos de uso são enviados separadamente ao PostHog.
 - Um registro histórico não é uma oferta, promoção ou garantia de preço atual.
 - Coordenadas são opcionais e nunca devem ser inferidas quando a fonte não as fornece.
-- A localização atual do visitante só é solicitada após consentimento, é enviada à API para a consulta e não é salva no navegador.
+- A localização atual do visitante só é solicitada após consentimento, é enviada à API para a consulta, não é salva no navegador e nunca é enviada ao PostHog.
 - A consulta pública e os recursos locais não exigem autenticação.
 
 ## Termos
@@ -21,7 +21,7 @@ _Evitar_: substituto da SEFAZ, scraper do Economiza Alagoas, loja
 
 **Frontend TaQuanto**
 
-Este repositório: a aplicação Angular responsável pela interface pública, pelo estado do navegador e por futuras experiências autenticadas. Não chama a SEFAZ-AL diretamente.
+Este repositório: a aplicação Angular responsável pela interface pública, pelo estado do navegador, por eventos anônimos de uso e por futuras experiências autenticadas. Não chama a SEFAZ-AL diretamente.
 
 _Evitar_: backend, proxy SEFAZ, token SEFAZ no navegador
 

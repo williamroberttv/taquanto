@@ -1,14 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
+import { Analytics } from '../../services/analytics';
 import { Home } from './home';
 
 describe('Home', () => {
   let component: Home;
   let fixture: ComponentFixture<Home>;
+  let analytics: { capture: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
+    analytics = { capture: vi.fn() };
     await TestBed.configureTestingModule({
       imports: [Home],
+      providers: [{ provide: Analytics, useValue: analytics }, provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Home);
@@ -72,5 +77,21 @@ describe('Home', () => {
         expect.stringContaining('/images/elephant-3.png'),
       ]),
     );
+  });
+
+  it('tracks the landing page calls to action', () => {
+    const trackCta = component as unknown as {
+      trackCta(cta: string, destination: string): void;
+    };
+
+    trackCta.trackCta('products', '/produtos');
+    trackCta.trackCta('fuels', '/combustiveis');
+    trackCta.trackCta('favorites', '/favoritos');
+
+    expect(analytics.capture.mock.calls).toEqual([
+      ['landing_cta_clicked', { cta: 'products', destination: '/produtos' }],
+      ['landing_cta_clicked', { cta: 'fuels', destination: '/combustiveis' }],
+      ['landing_cta_clicked', { cta: 'favorites', destination: '/favoritos' }],
+    ]);
   });
 });

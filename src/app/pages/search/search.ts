@@ -18,6 +18,7 @@ import {
   MunicipalitySelection,
 } from '../../municipalities';
 import { Favorites } from '../../services/favorites';
+import { Analytics } from '../../services/analytics';
 import { PricePolling } from '../../services/price-polling';
 import {
   CachedSearchResponse,
@@ -47,6 +48,7 @@ import { SearchResults } from './search-results';
   styleUrl: './search.scss',
 })
 export class SearchPage {
+  private readonly analytics = inject(Analytics);
   private readonly destroyRef = inject(DestroyRef);
   private readonly favorites = inject(Favorites);
   private readonly platformId = inject(PLATFORM_ID);
@@ -277,6 +279,14 @@ export class SearchPage {
     this.pagination.set(null);
     this.loadedPriceKey = null;
     this.saveRecentSearch(query);
+    const location = this.location();
+    this.analytics.capture('product_search_submitted', {
+      query: query.toLocaleLowerCase('pt-BR'),
+      query_type: this.isGTIN(query) ? 'gtin' : 'description',
+      days: this.days(),
+      location_mode: location ? 'nearby' : 'municipality',
+      ...(location ? { radius: location.radius } : { municipality: this.municipality().name }),
+    });
 
     if (updateUrl) {
       this.updateUrl();
