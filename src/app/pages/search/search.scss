@@ -23,11 +23,19 @@
   .fuel-type-filter {
     grid-column: span 2;
   }
+
+  .search-submit {
+    grid-column: span 2;
+  }
 }
 
 @media (min-width: 768px) {
   .filter-form {
     grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .search-submit {
+    grid-column: span 1;
   }
 }
 

@@ -47,8 +47,7 @@ export class Home {
     },
     {
       title: 'Defina município e período',
-      description:
-        'Escolha um município ou, com sua permissão, busque em um raio de 5, 10 ou 15 km.',
+      description: 'Escolha um município de Alagoas e o período dos registros.',
     },
     {
       title: 'Compare os registros',

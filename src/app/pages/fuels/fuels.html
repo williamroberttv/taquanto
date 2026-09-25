@@ -55,18 +55,11 @@
         <app-search-filters
           [municipality]="municipality()"
           [days]="days()"
-          [location]="location()"
           (municipalityChange)="selectMunicipality($event)"
           (daysChange)="selectPeriod($event)"
-          (locationChange)="selectLocation($event)"
-          (locationPendingChange)="locationPending.set($event)"
         />
 
-        <button
-          type="submit"
-          class="search-submit btn btn-primary btn-sm min-h-10 self-end"
-          [disabled]="locationPending()"
-        >
+        <button type="submit" class="search-submit btn btn-primary btn-sm min-h-10 self-end">
           <svg
             class="h-5 w-5 fill-none stroke-current stroke-2"
             viewBox="0 0 24 24"
@@ -75,7 +68,7 @@
             <circle cx="11" cy="11" r="7" />
             <path d="m16 16 4 4" />
           </svg>
-          {{ locationPending() ? 'Obtendo localização...' : loading() ? 'Buscando...' : 'Buscar' }}
+          {{ loading() ? 'Buscando...' : 'Buscar' }}
         </button>
       </form>
 
@@ -87,7 +80,6 @@
         [emptyMessage]="emptyMessage()"
         [cacheMessage]="cacheMessage()"
         [cachePending]="cachePending()"
-        [searchLocation]="location()"
         [isFavorite]="isFavorite"
         (favoriteToggled)="toggleFavorite($event)"
         (detailsRequested)="openRecordDetail($event)"

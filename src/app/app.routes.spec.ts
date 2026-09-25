@@ -51,8 +51,7 @@ describe('app routes', () => {
     {
       path: '/combustiveis',
       title: 'Preços de Combustíveis em Alagoas | TaQuanto',
-      description:
-        'Compare preços de gasolina, etanol, diesel e GNV em Alagoas e encontre combustível mais barato perto de você.',
+      description: 'Compare preços de gasolina, etanol, diesel e GNV nos municípios de Alagoas.',
     },
   ])('sets the SEO metadata for $path', async ({ path, title, description }) => {
     await harness.navigateByUrl(path, RouteTarget);

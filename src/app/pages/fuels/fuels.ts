@@ -21,12 +21,7 @@ import {
 import { PricePolling } from '../../services/price-polling';
 import { Favorites } from '../../services/favorites';
 import { Analytics } from '../../services/analytics';
-import {
-  CachedSearchResponse,
-  GeographicSearch,
-  Pagination,
-  PriceRecord,
-} from '../../services/taquanto-api';
+import { CachedSearchResponse, Pagination, PriceRecord } from '../../services/taquanto-api';
 import { SearchFilters } from '../search/search-filters';
 import { SaleRecordDetailDialog } from '../search/sale-record-detail-dialog';
 import { SEARCH_PERIODS } from '../search/search.models';
@@ -56,22 +51,18 @@ export class FuelsPage {
   private readonly polling = inject(PricePolling);
   private readonly favorites = inject(Favorites);
   private readonly form = viewChild.required<ElementRef<HTMLFormElement>>('fuelForm');
-  private readonly searchFilters = viewChild(SearchFilters);
   private readonly resultsSection = viewChild(SearchResults);
   private readonly pageSize = 50;
   private pollingSubscription: Subscription | null = null;
   private activeSearchKey: string | null = null;
   private loadedSearchKey: string | null = null;
   private searchFromUrl = false;
-  private pendingSearch = false;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly fuelTypes = FUEL_TYPES;
   protected readonly type = signal(1);
   protected readonly municipality = signal(DEFAULT_MUNICIPALITY);
   protected readonly days = signal(1);
-  protected readonly location = signal<GeographicSearch | null>(null);
-  protected readonly locationPending = signal(false);
   protected readonly filtersVisible = signal(true);
   protected readonly records = signal<PriceRecord[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
@@ -131,11 +122,6 @@ export class FuelsPage {
 
   protected submit(event: SubmitEvent): void {
     event.preventDefault();
-    const filters = this.searchFilters();
-    if (filters && !filters.validateLocationPermission()) {
-      this.pendingSearch = true;
-      return;
-    }
     this.runSearch(true);
   }
 
@@ -165,19 +151,6 @@ export class FuelsPage {
     }
     this.days.set(days);
     this.filtersChanged();
-  }
-
-  protected selectLocation(location: GeographicSearch | null): void {
-    if (!location) {
-      this.pendingSearch = false;
-    }
-    if (this.sameLocation(location, this.location())) {
-      this.resumePendingSearch(location);
-      return;
-    }
-    this.location.set(location);
-    this.filtersChanged();
-    this.resumePendingSearch(location);
   }
 
   protected loadPage(page: number): void {
@@ -241,14 +214,13 @@ export class FuelsPage {
     this.records.set([]);
     this.pagination.set(null);
     this.emptyMessage.set(null);
-    const location = this.location();
     this.analytics.capture('search_submitted', {
       search_type: 'fuel',
       fuel: FUEL_TYPES.find(({ id }) => id === this.type())?.label,
       fuel_id: this.type(),
       days: this.days(),
-      location_mode: location ? 'nearby' : 'municipality',
-      ...(location ? { radius: location.radius } : { municipality: this.municipality().name }),
+      location_mode: 'municipality',
+      municipality: this.municipality().name,
     });
     if (updateUrl) {
       this.updateUrl();
@@ -260,13 +232,12 @@ export class FuelsPage {
     this.loading.set(true);
     const key = this.searchKey();
     let scrolled = false;
-    const location = this.location();
     const subscription = this.polling
       .pollFuel(this.type(), {
         days: this.days(),
         limit: this.pageSize,
         page,
-        ...(location ?? { municipality: this.municipality().code }),
+        municipality: this.municipality().code,
       })
       .subscribe({
         next: (event) => {
@@ -286,10 +257,8 @@ export class FuelsPage {
                 fuel_id: this.type(),
                 result_count: event.response.data?.pagination.total_records ?? 0,
                 days: this.days(),
-                location_mode: location ? 'nearby' : 'municipality',
-                ...(location
-                  ? { radius: location.radius }
-                  : { municipality: this.municipality().name }),
+                location_mode: 'municipality',
+                municipality: this.municipality().name,
               });
             }
             this.loadedSearchKey = key;
@@ -354,7 +323,7 @@ export class FuelsPage {
     void this.router.navigate([], {
       queryParams: {
         type: this.type(),
-        municipality: this.location() ? null : this.municipality().code,
+        municipality: this.municipality().code,
         days: this.days(),
       },
       relativeTo: this.route,
@@ -363,11 +332,7 @@ export class FuelsPage {
   }
 
   private searchKey(): string {
-    const location = this.location();
-    const place = location
-      ? `${location.latitude}:${location.longitude}:${location.radius}`
-      : this.municipality().code;
-    return `${this.type()}:${place}:${this.days()}`;
+    return `${this.type()}:${this.municipality().code}:${this.days()}`;
   }
 
   private revalidationFailureMessage(): string {
@@ -394,24 +359,5 @@ export class FuelsPage {
     }
     this.toast.set(message);
     this.toastTimer = setTimeout(() => this.toast.set(null), 4500);
-  }
-
-  private sameLocation(first: GeographicSearch | null, second: GeographicSearch | null): boolean {
-    return (
-      first === second ||
-      (!!first &&
-        !!second &&
-        first.latitude === second.latitude &&
-        first.longitude === second.longitude &&
-        first.radius === second.radius)
-    );
-  }
-
-  private resumePendingSearch(location: GeographicSearch | null): void {
-    if (!location || !this.pendingSearch) {
-      return;
-    }
-    this.pendingSearch = false;
-    this.runSearch(true);
   }
 }
