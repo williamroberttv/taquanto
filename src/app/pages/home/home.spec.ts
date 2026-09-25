@@ -41,8 +41,8 @@ describe('Home', () => {
     expect(compiled.querySelector('.text-rotate')?.textContent).toContain('o etanol');
     expect(text).toContain('Vendas registradas em NFC-e, organizadas para consulta');
     expect(text).toContain('Três passos para comparar registros de venda.');
-    expect(text).toContain('Busque por município ou perto de você.');
-    expect(text).toContain('raio de 5, 10 ou 15 km');
+    expect(text).toContain('Busque por município.');
+    expect(text).toContain('Escolha um município de Alagoas e o período dos registros.');
     expect(text).toContain('Retome pesquisas e guarde vendas, não promessas de preço.');
     expect(text).toContain('Exemplo de busca por produto');
     expect(text).toContain('Prévia no mapa');
@@ -65,7 +65,7 @@ describe('Home', () => {
       'Pesquisar combustíveis',
     );
     expect(compiled.querySelectorAll('[aria-label="Tipos de consulta"] article')).toHaveLength(2);
-    expect(text).toContain('Compare preços de combustíveis perto de você.');
+    expect(text).toContain('Compare preços de combustíveis por município.');
     expect(text).not.toContain('nos registros encontrados');
     expect(compiled.querySelector('footer a[href="/#como-funciona"]')).not.toBeNull();
     expect(

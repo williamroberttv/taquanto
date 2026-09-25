@@ -159,9 +159,6 @@ describe('FuelsPage', () => {
     expect(
       getComputedStyle(element.querySelector<HTMLElement>('app-municipality-select')!).order,
     ).toBe('');
-    expect(getComputedStyle(element.querySelector<HTMLElement>('.proximity-filter')!).order).toBe(
-      '',
-    );
     expect(getComputedStyle(element.querySelector<HTMLElement>('.search-submit')!).order).toBe('');
     expect(element.querySelector('#municipality-select')?.getAttribute('aria-required')).toBe(
       'true',
@@ -279,79 +276,6 @@ describe('FuelsPage', () => {
       search_type: 'fuel',
     });
     expect(element.textContent).not.toContain('oferta garantida');
-  });
-
-  it('searches fuels near the confirmed browser location', async () => {
-    localStorage.setItem('taquanto:location-consent', 'true');
-    const getCurrentPosition = vi.fn((success: PositionCallback) =>
-      success({
-        coords: {
-          accuracy: 10,
-          altitude: null,
-          altitudeAccuracy: null,
-          heading: null,
-          latitude: -9.665,
-          longitude: -35.735,
-          speed: null,
-          toJSON: () => ({}),
-        },
-        timestamp: Date.now(),
-        toJSON: () => ({}),
-      }),
-    );
-    vi.stubGlobal('navigator', {
-      platform: navigator.platform,
-      userAgent: navigator.userAgent,
-      geolocation: { getCurrentPosition },
-    });
-    const element = fixture.nativeElement as HTMLElement;
-
-    element.querySelector<HTMLInputElement>('#use-location')!.click();
-    await fixture.whenStable();
-    element.querySelector<HTMLSelectElement>('#search-radius')!.value = '10';
-    element.querySelector<HTMLSelectElement>('#search-radius')!.dispatchEvent(new Event('change'));
-    element
-      .querySelector<HTMLFormElement>('#fuel-search')!
-      .dispatchEvent(new SubmitEvent('submit'));
-    await fixture.whenStable();
-
-    expect(element.querySelector('#municipality-select')).toBeNull();
-    expect(element.querySelector('app-location-permission-dialog')).toBeNull();
-    expect(api.fuelCalls.at(-1)).toEqual({
-      type: 1,
-      params: {
-        latitude: -9.665,
-        longitude: -35.735,
-        radius: 10,
-        days: 1,
-        limit: 50,
-        page: 1,
-      },
-    });
-    expect(analytics.capture).toHaveBeenCalledWith('search_submitted', {
-      search_type: 'fuel',
-      fuel: 'Gasolina comum',
-      fuel_id: 1,
-      days: 1,
-      location_mode: 'nearby',
-      radius: 10,
-    });
-
-    localStorage.removeItem('taquanto:location-consent');
-    element.querySelector<HTMLSelectElement>('#fuel-type')!.value = '2';
-    element.querySelector<HTMLSelectElement>('#fuel-type')!.dispatchEvent(new Event('change'));
-    element
-      .querySelector<HTMLFormElement>('#fuel-search')!
-      .dispatchEvent(new SubmitEvent('submit'));
-    await fixture.whenStable();
-    expect(element.querySelector('app-location-permission-dialog dialog')).not.toBeNull();
-    expect(api.fuelCalls).toHaveLength(1);
-    element
-      .querySelector<HTMLButtonElement>('app-location-permission-dialog .btn-primary')!
-      .click();
-    await fixture.whenStable();
-    expect(getCurrentPosition).toHaveBeenCalledTimes(2);
-    expect(api.fuelCalls.at(-1)?.type).toBe(2);
   });
 
   it('loads a shared fuel URL directly', async () => {

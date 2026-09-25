@@ -75,6 +75,6 @@ export class RecentSearches {
   }
 
   protected locationLabel(search: RecentSearch): string {
-    return search.useLocation ? `Perto de mim (${search.radius} km)` : search.municipality.name;
+    return search.municipality.name;
   }
 }

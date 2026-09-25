@@ -153,21 +153,16 @@ describe('SearchPage', () => {
     api.results = [priceRecord];
     const element = fixture.nativeElement as HTMLElement;
     const filterLayout = () =>
-      [
-        '.query-field',
-        '.period-filter',
-        'app-municipality-select',
-        '.proximity-filter',
-        '.search-submit',
-      ].map((selector) => ({
-        order: getComputedStyle(element.querySelector<HTMLElement>(selector)!).order,
-        selector,
-      }));
+      ['.query-field', '.period-filter', 'app-municipality-select', '.search-submit'].map(
+        (selector) => ({
+          order: getComputedStyle(element.querySelector<HTMLElement>(selector)!).order,
+          selector,
+        }),
+      );
     const expectedLayout = [
       { order: '', selector: '.query-field' },
       { order: '', selector: '.period-filter' },
       { order: '', selector: 'app-municipality-select' },
-      { order: '', selector: '.proximity-filter' },
       { order: '', selector: '.search-submit' },
     ];
 
@@ -234,9 +229,6 @@ describe('SearchPage', () => {
     expect(
       getComputedStyle(element.querySelector<HTMLElement>('app-municipality-select')!).order,
     ).toBe('');
-    expect(getComputedStyle(element.querySelector<HTMLElement>('.proximity-filter')!).order).toBe(
-      '',
-    );
     expect(getComputedStyle(element.querySelector<HTMLElement>('.search-submit')!).order).toBe('');
     expect(
       filters.compareDocumentPosition(recentSearches) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -253,7 +245,7 @@ describe('SearchPage', () => {
     expect(filters.querySelector('#municipality-select')?.getAttribute('aria-required')).toBe(
       'true',
     );
-    expect(filters.querySelector('#use-location')).not.toBeNull();
+    expect(filters.querySelector('#use-location')).toBeNull();
     expect(
       filters
         .querySelector('#search-period')!
@@ -292,148 +284,6 @@ describe('SearchPage', () => {
         params: { municipality: '2700300', days: 1, limit: 50, page: 1 },
       },
     ]);
-  });
-
-  it('confirms current location once and searches with the selected radius', async () => {
-    api.results = [
-      {
-        ...priceRecord,
-        location: { ...priceRecord.location, latitude: -9.6658, longitude: -35.735 },
-      },
-    ];
-    const getCurrentPosition = vi.fn((success: PositionCallback) =>
-      success({
-        coords: {
-          accuracy: 10,
-          altitude: null,
-          altitudeAccuracy: null,
-          heading: null,
-          latitude: -9.665,
-          longitude: -35.735,
-          speed: null,
-          toJSON: () => ({}),
-        },
-        timestamp: Date.now(),
-        toJSON: () => ({}),
-      }),
-    );
-    vi.stubGlobal('navigator', {
-      platform: navigator.platform,
-      userAgent: navigator.userAgent,
-      geolocation: { getCurrentPosition },
-    });
-    const element = fixture.nativeElement as HTMLElement;
-    const useLocation = element.querySelector<HTMLInputElement>('#use-location')!;
-
-    useLocation.checked = true;
-    useLocation.dispatchEvent(new Event('change'));
-    await fixture.whenStable();
-
-    expect(element.querySelector('app-location-permission-dialog dialog')).not.toBeNull();
-    expect(element.querySelector('#municipality-select')).toBeNull();
-    element
-      .querySelector<HTMLButtonElement>('app-location-permission-dialog .btn-primary')!
-      .click();
-    await fixture.whenStable();
-
-    expect(getCurrentPosition).toHaveBeenCalledOnce();
-    expect(localStorage.getItem('taquanto:location-consent')).toBe('true');
-    expect(element.querySelector('app-location-permission-dialog')).toBeNull();
-    const radius = element.querySelector<HTMLSelectElement>('#search-radius')!;
-    expect(radius.required).toBe(true);
-    expect([...radius.options].map(({ text }) => text)).toEqual(['5 km', '10 km', '15 km']);
-    radius.value = '15';
-    radius.dispatchEvent(new Event('change'));
-    const input = element.querySelector<HTMLInputElement>('#product-query')!;
-    input.value = 'arroz';
-    input.dispatchEvent(new Event('input'));
-    element
-      .querySelector<HTMLFormElement>('#product-search')!
-      .dispatchEvent(new SubmitEvent('submit'));
-    await fixture.whenStable();
-
-    expect(api.priceCalls.at(-1)).toEqual({
-      query: 'arroz',
-      params: {
-        latitude: -9.665,
-        longitude: -35.735,
-        radius: 15,
-        days: 1,
-        limit: 50,
-        page: 1,
-      },
-    });
-    expect(analytics.capture).toHaveBeenCalledWith('search_submitted', {
-      search_type: 'product',
-      query: 'arroz',
-      query_type: 'description',
-      days: 1,
-      location_mode: 'nearby',
-      radius: 15,
-    });
-    await vi.waitFor(() => expect(element.querySelector('.results-sale-marker')).not.toBeNull());
-    expect(element.querySelector('.search-radius')).not.toBeNull();
-    expect(element.textContent).toContain('1 de 1 registros exibidos no mapa.');
-    const resultsMap = element.querySelector<HTMLElement>('.results-map')!;
-    resultsMap.scrollIntoView = vi.fn();
-    element.querySelector<HTMLButtonElement>('.map-record-button')!.click();
-    expect(resultsMap.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
-    expect(element.querySelector('.leaflet-popup')).not.toBeNull();
-    const marker = element.querySelector<SVGElement>('.results-sale-marker')!;
-    marker.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-    const popupElement = element.querySelector('.leaflet-popup');
-    const popup = popupElement?.textContent;
-    expect(popupElement?.querySelector('.map-record-card')).not.toBeNull();
-    expect(popupElement?.querySelector('.price-value')).not.toBeNull();
-    expect(popupElement?.querySelector('.card-title-slot')).not.toBeNull();
-    expect(popup).toContain('R$ 6,29 / UN');
-    expect(popup).toContain('Arroz Branco 1kg');
-    expect(popup).toContain('Mercado Centro');
-    expect(popup).toContain('Rua Do Comércio, 10');
-    expect(element.querySelector('.recent-search-link')?.textContent).toContain(
-      'Arroz - Perto de mim (15 km) - Últimas 24 horas',
-    );
-    expect(JSON.parse(localStorage.getItem('taquanto:recent-searches') ?? '[]')[0]).toEqual({
-      query: 'arroz',
-      municipality: { code: '2704302', name: 'Maceió' },
-      days: 1,
-      useLocation: true,
-      radius: 15,
-    });
-
-    localStorage.removeItem('taquanto:location-consent');
-    input.value = 'feijão';
-    input.dispatchEvent(new Event('input'));
-    element
-      .querySelector<HTMLFormElement>('#product-search')!
-      .dispatchEvent(new SubmitEvent('submit'));
-    await fixture.whenStable();
-    expect(element.querySelector('app-location-permission-dialog dialog')).not.toBeNull();
-    expect(api.priceCalls).toHaveLength(1);
-    element
-      .querySelector<HTMLButtonElement>('app-location-permission-dialog .btn-primary')!
-      .click();
-    await fixture.whenStable();
-    expect(getCurrentPosition).toHaveBeenCalledTimes(2);
-    expect(element.querySelector('app-location-permission-dialog')).toBeNull();
-    expect(api.priceCalls.at(-1)?.query).toBe('feijão');
-
-    element.querySelector<HTMLInputElement>('#use-location')!.click();
-    localStorage.removeItem('taquanto:location-consent');
-    element.querySelector<HTMLButtonElement>('.recent-search-link')!.click();
-    await fixture.whenStable();
-    expect(element.querySelector('app-location-permission-dialog dialog')).not.toBeNull();
-    expect(api.priceCalls).toHaveLength(2);
-    element
-      .querySelector<HTMLButtonElement>('app-location-permission-dialog .btn-primary')!
-      .click();
-    await fixture.whenStable();
-    expect(getCurrentPosition).toHaveBeenCalledTimes(3);
-    expect(api.priceCalls.at(-1)?.params).toMatchObject({
-      latitude: -9.665,
-      longitude: -35.735,
-      radius: 15,
-    });
   });
 
   it('only searches when the form is submitted', async () => {

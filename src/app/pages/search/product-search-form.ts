@@ -67,13 +67,13 @@ import { Component, ElementRef, computed, input, output, viewChild } from '@angu
       <button
         type="submit"
         class="search-submit btn btn-primary btn-sm min-h-10 self-end"
-        [disabled]="locationPending() || queryOverLimit()"
+        [disabled]="queryOverLimit()"
       >
         <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
           <path d="m16 16 4 4" />
         </svg>
-        {{ locationPending() ? 'Obtendo localização...' : loading() ? 'Buscando...' : 'Buscar' }}
+        {{ loading() ? 'Buscando...' : 'Buscar' }}
       </button>
     </form>
 
@@ -147,11 +147,19 @@ import { Component, ElementRef, computed, input, output, viewChild } from '@angu
       .query-field {
         grid-column: span 2;
       }
+
+      .search-submit {
+        grid-column: span 2;
+      }
     }
 
     @media (min-width: 768px) {
       .search-form {
         grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+
+      .search-submit {
+        grid-column: span 1;
       }
     }
   `,
@@ -161,7 +169,6 @@ export class ProductSearchForm {
 
   readonly query = input.required<string>();
   readonly loading = input.required<boolean>();
-  readonly locationPending = input(false);
   readonly message = input.required<string | null>();
   readonly queryChange = output<string>();
   readonly searchSubmitted = output<void>();

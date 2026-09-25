@@ -30,8 +30,7 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/fuels/fuels').then((m) => m.FuelsPage),
     title: 'Preços de Combustíveis em Alagoas | TaQuanto',
     data: {
-      description:
-        'Compare preços de gasolina, etanol, diesel e GNV em Alagoas e encontre combustível mais barato perto de você.',
+      description: 'Compare preços de gasolina, etanol, diesel e GNV nos municípios de Alagoas.',
     },
   },
   {

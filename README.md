@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript" alt="TypeScript strict mode" />
 </p>
 
-TaQuanto turns public price data from Economiza Alagoas/SEFAZ-AL into a focused comparison interface. Visitors can search for products or fuel sale records by municipality or near their current location, inspect results on a map, and save useful records locally without creating an account.
+TaQuanto turns public price data from Economiza Alagoas/SEFAZ-AL into a focused comparison interface. Visitors can search for product or fuel sale records by municipality, inspect results on a map, and save useful records locally without creating an account.
 
 This repository contains the Angular frontend. A separate TaQuanto API protects source credentials, integrates with the official data source, and normalizes its responses. The browser never calls SEFAZ-AL directly.
 
@@ -35,18 +35,18 @@ This repository contains the Angular frontend. A separate TaQuanto API protects 
 ### Public landing page (`/`)
 
 - Explains the source and limits of the price data.
-- Presents product and fuel searches, nearby search, recent product searches, and local favorites.
+- Presents product and fuel searches, recent product searches, and local favorites.
 - Uses optimized static imagery and a browser-only Leaflet preview.
 - Is prerendered at build time for fast, indexable initial HTML.
 
 ### Price search (`/produtos`)
 
 - Searches by a 3–50 character description or an 8, 12, 13, or 14 digit GTIN.
-- Filters by municipality or the browser's current location within 5, 10, or 15 km, plus a recent period of 1, 3, 7, or 10 days.
+- Filters by municipality and a recent period of 1, 3, 7, or 10 days.
 - Provides a searchable selector containing every municipality in Alagoas.
 - Keeps `q`, `municipality`, and `days` in the URL for municipality searches.
 - Shows up to 50 records per page with accessible pagination.
-- Plots geolocated results on a theme-aware map and draws the selected nearby-search radius.
+- Plots source records with valid coordinates on a theme-aware map.
 - Displays sale value, unit, product, establishment, time, address, GTIN, and declared value when it differs.
 - Opens a native dialog with the full record and a map marker only when the source provides valid coordinates.
 - Preserves responsive loading, empty, validation, stale-cache, and failure states.
@@ -54,13 +54,13 @@ This repository contains the Angular frontend. A separate TaQuanto API protects 
 ### Fuel search (`/combustiveis`)
 
 - Searches six source-defined categories: gasolina comum, gasolina aditivada, álcool, diesel comum, diesel aditivado/S10, and GNV.
-- Uses the same municipality, nearby location, radius, period, pagination, cache, result map, detail, and favorite behavior as product search.
+- Uses the same municipality, period, pagination, cache, result map, detail, and favorite behavior as product search.
 - Keeps `type`, `municipality`, and `days` in the URL for municipality searches.
 - Calls the dedicated fuel endpoint instead of converting a fuel category into a product-description query.
 
 ### Recent searches
 
-- Stores the 10 most recent unique product searches, including the municipality or nearby-search radius; precise browser coordinates are not saved.
+- Stores the 10 most recent unique product searches, including the municipality.
 - Lets visitors repeat a complete search from its list entry.
 - Remains on the current browser through `localStorage`; it is not an account history.
 
@@ -87,12 +87,11 @@ flowchart LR
     Gateway --> API[Separate TaQuanto API]
     API --> Source[Economiza Alagoas / SEFAZ-AL]
     App --> Storage[(localStorage)]
-    Visitor -->|Optional geolocation permission| App
     App --> OSM[OpenStreetMap tiles]
     App -->|Anonymous page and product events| PostHog[PostHog ingestion]
 ```
 
-The frontend owns presentation, ephemeral browser state, and anonymous usage events. The API owns source integration, credentials, normalization, and cache policy. Coordinates used for nearby searches are sent only to the API and never to PostHog.
+The frontend owns presentation, ephemeral browser state, and anonymous usage events. The API owns source integration, credentials, normalization, and cache policy.
 
 | Route           | Loading | Rendering                 | Reason                                                         |
 | --------------- | ------- | ------------------------- | -------------------------------------------------------------- |
@@ -105,7 +104,7 @@ The production build uses Angular's static output mode. CloudFront serves the ge
 
 ### Search and cache flow
 
-1. The UI validates the product query or fuel category and sends the period, pagination, and either the selected municipality or permitted coordinates and radius to the TaQuanto API.
+1. The UI validates the product query or fuel category and sends the period, pagination, and selected municipality to the TaQuanto API.
 2. A fresh cache hit is rendered immediately.
 3. A stale response remains visible while the client revalidates every five seconds.
 4. An accepted cache miss is polled without blocking the interface.
@@ -171,9 +170,7 @@ The search service calls:
 
 ```http
 GET /v1/prices?query=<text-or-gtin>&municipality=<ibge-code>&days=<1-10>&limit=50&page=<number>
-GET /v1/prices?query=<text-or-gtin>&latitude=<number>&longitude=<number>&radius=<1-15>&days=<1-10>&limit=50&page=<number>
 GET /v1/fuels?type=<1-6>&municipality=<ibge-code>&days=<1-10>&limit=50&page=<number>
-GET /v1/fuels?type=<1-6>&latitude=<number>&longitude=<number>&radius=<1-15>&days=<1-10>&limit=50&page=<number>
 ```
 
 The response contains normalized sale records and pagination metadata. The frontend also validates the API cache protocol:
@@ -240,7 +237,7 @@ ci/prod/              Production Dockerfile and Nginx configuration
 
 ## Product boundaries and roadmap
 
-The public product and fuel searches, municipality and nearby filters, result maps, record details, recent product searches, favorites, and themes are implemented. Authentication, cross-device synchronization, saved-search alerts, consumer accounts, and personalized history are intentionally outside the current scope.
+The public product and fuel searches, municipality filters, result maps, record details, recent product searches, favorites, and themes are implemented. Authentication, cross-device synchronization, saved-search alerts, consumer accounts, and personalized history are intentionally outside the current scope.
 
 Future work must preserve these rules:
 

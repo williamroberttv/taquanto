@@ -12,7 +12,7 @@ This document is the visual and interaction source of truth. It describes the de
 
 1. **Evidence before promotion.** Lead with the sale value, establishment, date, and location. Never style a historical record like a guaranteed offer.
 2. **Useful without an account.** Search, recent searches, favorites, and theme selection work in the browser without sign-up friction.
-3. **Alagoas is the context.** Municipality selection, optional consent-based proximity, and maps make geography understandable without implying visitor tracking.
+3. **Alagoas is the context.** Municipality selection and source-record maps make geography understandable without implying visitor tracking.
 4. **Quiet structure, memorable brand.** Neutral cards hold dense information; violet actions and the elephant mascot provide recognition.
 5. **Accessible by default.** Semantic HTML, keyboard operation, readable contrast, and reduced motion are part of every component definition.
 
@@ -86,18 +86,16 @@ The product-search journey is ordered as:
 
 1. Enter a product description or GTIN.
 2. Select a supported period.
-3. Select a municipality or enable nearby search and choose a radius.
+3. Select a municipality.
 4. Submit explicitly.
 
-Fuel search replaces the text query with one of the six source-defined categories and otherwise reuses the same location, period, result, and cache patterns.
+Fuel search replaces the text query with one of the six source-defined categories and otherwise reuses the same municipality, period, result, and cache patterns.
 
 Fields use visible labels or a screen-reader label, helper text, native input constraints, and an adjacent action. Validation is specific enough to recover from the error.
 
-### Municipality and proximity controls
+### Municipality control
 
 The municipality control is a searchable native disclosure containing every Alagoas municipality and its IBGE code. Filtering ignores case and accents, returns focus to the trigger after selection, and exposes listbox semantics.
-
-Nearby search is an explicit alternative to municipality selection. Before requesting browser geolocation, a native dialog explains that coordinates are sent to the API and not stored. Radius choices are 5, 10, and 15 km; permission or geolocation failures are announced next to the filters.
 
 ### Sale record cards
 
@@ -111,13 +109,13 @@ The information hierarchy is value, product, establishment, address, sale time, 
 
 ### Dialogs and maps
 
-Use native `<dialog>` through daisyUI's modal styling. A visible close button and backdrop close action are both provided. Result and detail map markers appear only for valid source coordinates. Result maps state how many records could be positioned and show the selected radius for nearby searches.
+Use native `<dialog>` through daisyUI's modal styling. A visible close button and backdrop close action are both provided. Result and detail map markers appear only for valid source coordinates. Result maps state how many records could be positioned.
 
 Leaflet is imported only in the browser and only when a map is needed. OpenStreetMap attribution remains visible.
 
 ### Recent searches and favorites
 
-Recent product searches use a compact list that shows query, municipality or nearby radius, and period. Precise coordinates are never stored. Favorites preserve the sale snapshot rather than representing a live product. Empty states explain the next useful action.
+Recent product searches use a compact list that shows query, municipality, and period. Favorites preserve the sale snapshot rather than representing a live product. Empty states explain the next useful action.
 
 ### Feedback states
 

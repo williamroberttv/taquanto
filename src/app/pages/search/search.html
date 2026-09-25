@@ -29,7 +29,6 @@
       <app-product-search-form
         [query]="query()"
         [loading]="pricesLoading()"
-        [locationPending]="locationPending()"
         [message]="inlineMessage()"
         (queryChange)="updateQuery($event)"
         (searchSubmitted)="submitSearch()"
@@ -37,11 +36,8 @@
         <app-search-filters
           [municipality]="municipality()"
           [days]="days()"
-          [location]="location()"
           (municipalityChange)="selectMunicipality($event)"
           (daysChange)="selectPeriod($event)"
-          (locationChange)="selectLocation($event)"
-          (locationPendingChange)="locationPending.set($event)"
         />
       </app-product-search-form>
 
@@ -54,7 +50,6 @@
         [emptyMessage]="emptyMessage()"
         [cacheMessage]="cacheMessage()"
         [cachePending]="cachePending()"
-        [searchLocation]="location()"
         [isFavorite]="isFavorite"
         (favoriteToggled)="toggleFavorite($event)"
         (detailsRequested)="openRecordDetail($event)"
